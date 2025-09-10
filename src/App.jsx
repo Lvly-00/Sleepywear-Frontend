@@ -8,12 +8,14 @@ import Order from "./assets/pages/Order";
 import Settings from "./assets/pages/Settings";
 import Analytics from "./assets/pages/Analytics";
 import Invoice from "./assets/pages/Invoice";
+import Users from "./Users";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Users />} />
+        <Route path="/login" element={<Login />} />
         <Route path={"/dashboard"} element={<Dashboard />} />{" "}
         <Route path={"/inventory"} element={<Inventory />} />
         <Route path={"/order"} element={<Order />} />
