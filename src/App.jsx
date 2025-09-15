@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
+import Layout from "./assets/layouts/Layout";
 import Login from "./assets/pages/auth/Login";
 import PasswordResetRequest from "./assets/pages/auth/PasswordResetRequest";
 import PasswordResetNew from "./assets/pages/auth/PasswordResetNew";
@@ -31,36 +32,38 @@ function App() {
         <Route path="/password-reset" element={<PasswordResetRequest />} />
         <Route path="/password-reset/new" element={<PasswordResetNew />} />
 
-        {/* Main */}
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route element={<Layout />}>
+          {/* Main */}
+          <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* Orders */}
-        <Route path="/orders" element={<Orders />} />
-        <Route path="/orders/:id" element={<OrderDetails />} />
-        <Route path="/customer-orders" element={<CustomerOrderHistory />} />
+          {/* Orders */}
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/orders/:id" element={<OrderDetails />} />
+          <Route path="/customer-orders" element={<CustomerOrderHistory />} />
 
-        {/* Add Order */}
-        <Route path="/add-order/shipping" element={<AddOrderShipping />} />
-        <Route path="/add-order/payment" element={<AddOrderPayment />} />
-        <Route path="/add-order/invoice" element={<AddOrderInvoice />} />
+          {/* Add Order */}
+          <Route path="/add-order/shipping" element={<AddOrderShipping />} />
+          <Route path="/add-order/payment" element={<AddOrderPayment />} />
+          <Route path="/add-order/invoice" element={<AddOrderInvoice />} />
 
-        {/* Collections */}
-        <Route path="/collections" element={<CollectionOverview />} />
-        <Route path="/collections/new" element={<NewCollection />} />
-        <Route path="/collections/:id/edit" element={<EditCollection />} />
+          {/* Collections */}
+          <Route path="/collections" element={<CollectionOverview />} />
+          <Route path="/collections/new" element={<NewCollection />} />
+          <Route path="/collections/:id/edit" element={<EditCollection />} />
 
-        {/* Inventory */}
-        <Route path="/inventory" element={<Inventory />} />
-        <Route path="/inventory/new" element={<NewItem />} />
-        <Route path="/inventory/:id/edit" element={<EditItem />} />
-        <Route path="/inventory/:id/details" element={<ItemDetails />} />
+          {/* Inventory */}
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/inventory/new" element={<NewItem />} />
+          <Route path="/inventory/:id/edit" element={<EditItem />} />
+          <Route path="/inventory/:id/details" element={<ItemDetails />} />
 
-        {/* Invoices */}
-        <Route path="/invoices" element={<Invoices />} />
-        <Route path="/invoices/:id" element={<InvoiceDetails />} />
+          {/* Invoices */}
+          <Route path="/invoices" element={<Invoices />} />
+          <Route path="/invoices/:id" element={<InvoiceDetails />} />
 
-        {/* Account */}
-        <Route path="/settings" element={<Settings />} />
+          {/* Account */}
+          <Route path="/settings" element={<Settings />} />
+        </Route>
       </Routes>
     </Router>
   );
