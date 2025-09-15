@@ -1,27 +1,27 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
-import Layout from "./assets/layouts/Layout";
-import Login from "./assets/pages/auth/Login";
-import PasswordResetRequest from "./assets/pages/auth/PasswordResetRequest";
-import PasswordResetNew from "./assets/pages/auth/PasswordResetNew";
-import Dashboard from "./assets/pages/dashboard/Dashboard";
-import Orders from "./assets/pages/orders/Order";
-import OrderDetails from "./assets/pages/orders/OrderDetails";
-import CustomerOrderHistory from "./assets/pages/orders/CustomerOrderHistory";
-import AddOrderShipping from "./assets/pages/add-order/AddOrderShipping";
-import AddOrderPayment from "./assets/pages/add-order/AddOrderPayment";
-import AddOrderInvoice from "./assets/pages/add-order/AddOrderInvoice";
-import CollectionOverview from "./assets/pages/collections/CollectionOverview";
-import NewCollection from "./assets/pages/collections/NewCollection";
-import EditCollection from "./assets/pages/collections/EditCollection";
-import Inventory from "./assets/pages/item/Inventory";
-import NewItem from "./assets/pages/item/NewItem";
-import EditItem from "./assets/pages/item/EditItem";
-import ItemDetails from "./assets/pages/item/ItemDetails";
-import Invoices from "./assets/pages/invoices/Invoice";
-import InvoiceDetails from "./assets/pages/invoices/InvoiceDetails";
-import Settings from "./assets/pages/account/Settings";
+import MainLayout from "./layouts/Layout";
+import Login from "./pages/auth/Login";
+import PasswordResetRequest from "./pages/auth/PasswordResetRequest";
+import PasswordResetNew from "./pages/auth/PasswordResetNew";
+import Dashboard from "./pages/dashboard/Dashboard";
+import Orders from "./pages/orders/Order";
+import OrderDetails from "./pages/orders/OrderDetails";
+import CustomerOrderHistory from "./pages/orders/CustomerOrderHistory";
+import AddOrderShipping from "./pages/add-order/AddOrderShipping";
+import AddOrderPayment from "./pages/add-order/AddOrderPayment";
+import AddOrderInvoice from "./pages/add-order/AddOrderInvoice";
+import CollectionOverview from "./pages/collections/CollectionOverview";
+import NewCollection from "./pages/collections/NewCollection";
+import EditCollection from "./pages/collections/EditCollection";
+import Inventory from "./pages/item/Inventory";
+import NewItem from "./pages/item/NewItem";
+import EditItem from "./pages/item/EditItem";
+import ItemDetails from "./pages/item/ItemDetails";
+import Invoices from "./pages/invoices/Invoice";
+import InvoiceDetails from "./pages/invoices/InvoiceDetails";
+import Settings from "./pages/account/Settings";
 
 function App() {
   return (
@@ -32,7 +32,7 @@ function App() {
         <Route path="/password-reset" element={<PasswordResetRequest />} />
         <Route path="/password-reset/new" element={<PasswordResetNew />} />
 
-        <Route element={<Layout />}>
+        <Route element={<MainLayout />}>
           {/* Main */}
           <Route path="/dashboard" element={<Dashboard />} />
 
