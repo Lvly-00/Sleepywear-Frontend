@@ -52,10 +52,11 @@ function App() {
           <Route path="/collections/:id/edit" element={<EditCollection />} />
 
           {/* Inventory */}
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/inventory/new" element={<NewItem />} />
+          {/* Inventory Routes */}
+          <Route path="/collections/:id/items" element={<Inventory />} />
+          <Route path="/collections/:id/items/new" element={<NewItem />} />
           <Route path="/inventory/:id/edit" element={<EditItem />} />
-          <Route path="/inventory/:id/details" element={<ItemDetails />} />
+          <Route path="/inventory/:id" element={<ItemDetails />} />
 
           {/* Invoices */}
           <Route path="/invoices" element={<Invoices />} />

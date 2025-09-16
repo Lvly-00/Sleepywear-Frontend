@@ -14,7 +14,7 @@ import classes from "../css/NavbarMinimal.module.css";
 const links = [
   { icon: IconLayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: IconShoppingBag, label: "Orders", path: "/orders" },
-  { icon: IconArchive, label: "Inventory", path: "/inventory" },
+  { icon: IconArchive, label: "Inventory", path: "/collections" },
   { icon: IconReceipt2, label: "Invoices", path: "/invoices" },
 ];
 

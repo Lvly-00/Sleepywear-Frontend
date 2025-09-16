@@ -1,18 +1,101 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../../api/axios";
+import {
+  TextInput,
+  NumberInput,
+  FileInput,
+  Textarea,
+  Button,
+  Group,
+  Paper,
+  Title,
+} from "@mantine/core";
+import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
-function NewItem() {
+export default function NewItem() {
+  const { id } = useParams(); // collection ID
   const navigate = useNavigate();
+  const [form, setForm] = useState({
+    code: "",
+    name: "",
+    price: 0,
+    notes: "",
+  });
+  const [file, setFile] = useState(null);
 
-  const handleLogin = () => {
-    navigate("/dashboard");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const data = new FormData();
+    data.append("collection_id", id);
+    data.append("code", form.code);
+    data.append("name", form.name);
+    data.append("price", form.price);
+    data.append("notes", form.notes);
+    if (file) data.append("image", file);
+
+    await api.post("/api/items", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    navigate(`/collections/${id}/items`);
   };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      <h1>NewItem Page</h1>
-      <button onClick={handleLogin}>Dashboard</button>
-    </div>
+    <Paper shadow="sm" p="md">
+      <CollectionBreadcrumbs
+        items={[
+          { label: "Dashboard", to: "/dashboard" },
+          { label: "Collections", to: "/collections" },
+          { label: `Collection #${id}`, to: `/collections/${id}/items` },
+          { label: "Add Item" },
+        ]}
+      />
+
+      <Title order={3} mb="md">
+        Add Item to Collection #{id}
+      </Title>
+
+      <form onSubmit={handleSubmit}>
+        <TextInput
+          label="Item Code"
+          value={form.code}
+          onChange={(e) => setForm({ ...form, code: e.target.value })}
+          required
+        />
+        <TextInput
+          label="Item Name"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          required
+          mt="sm"
+        />
+        <NumberInput
+          label="Price"
+          value={form.price}
+          onChange={(val) => setForm({ ...form, price: val })}
+          required
+          mt="sm"
+        />
+        <FileInput
+          label="Item Image"
+          value={file}
+          onChange={setFile}
+          mt="sm"
+        />
+        <Textarea
+          label="Notes"
+          value={form.notes}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          mt="sm"
+        />
+
+        <Group mt="md">
+          <Button type="submit">Save</Button>
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            Cancel
+          </Button>
+        </Group>
+      </form>
+    </Paper>
   );
 }
-
-export default NewItem;
