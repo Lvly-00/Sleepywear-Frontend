@@ -33,8 +33,9 @@ function SidebarNav() {
             <NavLink
               key={label}
               to={path}
-              className={classes.link}
-              data-active={({ isActive }) => (isActive ? true : undefined)}
+              className={({ isActive }) =>
+                `${classes.link} ${isActive ? classes.active : ""}`
+              }
             >
               <Icon size={22} stroke={1.5} />
               <span className={classes.linkLabel}>{label}</span>
