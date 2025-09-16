@@ -17,7 +17,6 @@ export default function NewItem() {
   const { id } = useParams(); // collection ID
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    code: "",
     name: "",
     price: 0,
     notes: "",
@@ -28,15 +27,15 @@ export default function NewItem() {
     e.preventDefault();
     const data = new FormData();
     data.append("collection_id", id);
-    data.append("code", form.code);
     data.append("name", form.name);
     data.append("price", form.price);
     data.append("notes", form.notes);
     if (file) data.append("image", file);
 
-    await api.post("/api/items", data, {
+    await api.post("api/items", data, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+
     navigate(`/collections/${id}/items`);
   };
 
@@ -56,12 +55,8 @@ export default function NewItem() {
       </Title>
 
       <form onSubmit={handleSubmit}>
-        <TextInput
-          label="Item Code"
-          value={form.code}
-          onChange={(e) => setForm({ ...form, code: e.target.value })}
-          required
-        />
+        {/* ✅ Removed Item Code (auto-generated in backend) */}
+
         <TextInput
           label="Item Name"
           value={form.name}
@@ -69,6 +64,7 @@ export default function NewItem() {
           required
           mt="sm"
         />
+
         <NumberInput
           label="Price"
           value={form.price}
@@ -76,12 +72,14 @@ export default function NewItem() {
           required
           mt="sm"
         />
+
         <FileInput
           label="Item Image"
           value={file}
           onChange={setFile}
           mt="sm"
         />
+
         <Textarea
           label="Notes"
           value={form.notes}
