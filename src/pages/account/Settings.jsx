@@ -9,7 +9,7 @@ import {
   Stack,
   Divider,
 } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+import { showNotification } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 const Settings = () => {
@@ -21,7 +21,7 @@ const Settings = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Load user settings on mount
+  // Load user settings
   useEffect(() => {
     api
       .get("/api/user/settings")
@@ -31,56 +31,67 @@ const Settings = () => {
           email: res.data.email || "",
         });
       })
-      .catch((err) => console.error("Error fetching settings:", err));
+      .catch((err) => {
+        showNotification({
+          title: "Error",
+          message: "Failed to load user settings",
+          color: "red",
+          icon: <IconX size={16} />,
+        });
+        console.error(err);
+      });
   }, []);
 
-  // Reusable notification function
-  const showNotification = (title, message, type = "success") => {
-    notifications.show({
-      title,
-      message,
-      color: type === "success" ? "green" : "red",
-      icon: type === "success" ? <IconCheck size={16} /> : <IconX size={16} />,
-    });
-  };
-
-  // Update Profile Handler
+  // Profile update handler
   const updateProfile = (e) => {
     e.preventDefault();
     setLoading(true);
+
     api
       .put("/api/user/settings", profile)
       .then((res) => {
-        showNotification("Success", res.data.message);
+        showNotification({
+          title: "Success",
+          message: res.data.message || "Profile updated successfully",
+          color: "green",
+          icon: <IconCheck size={16} />,
+        });
       })
       .catch((err) => {
         if (err.response?.status === 422) {
           const errors = err.response.data.errors;
-          showNotification(
-            "Validation Error",
-            Object.values(errors).flat().join(" "),
-            "error"
-          );
+          showNotification({
+            title: "Validation Error",
+            message: Object.values(errors).flat().join(" "),
+            color: "red",
+            icon: <IconX size={16} />,
+          });
         } else {
-          showNotification("Error", "Failed to update profile", "error");
+          showNotification({
+            title: "Error",
+            message: "Something went wrong updating profile",
+            color: "red",
+            icon: <IconX size={16} />,
+          });
         }
       })
       .finally(() => setLoading(false));
   };
 
-  // Update Password Handler
+  // Password update handler
   const updatePassword = (e) => {
     e.preventDefault();
     setLoading(true);
 
     api
-      .put("/api/user/settings/password", {
-        current_password: passwords.current_password,
-        new_password: passwords.new_password,
-        new_password_confirmation: passwords.new_password_confirmation,
-      })
+      .put("/api/user/settings/password", passwords)
       .then((res) => {
-        showNotification("Success", res.data.message);
+        showNotification({
+          title: "Success",
+          message: res.data.message || "Password updated successfully",
+          color: "green",
+          icon: <IconCheck size={16} />,
+        });
         setPasswords({
           current_password: "",
           new_password: "",
@@ -90,13 +101,19 @@ const Settings = () => {
       .catch((err) => {
         if (err.response?.status === 422) {
           const errors = err.response.data.errors;
-          showNotification(
-            "Validation Error",
-            Object.values(errors).flat().join(" "),
-            "error"
-          );
+          showNotification({
+            title: "Validation Error",
+            message: Object.values(errors).flat().join(" "),
+            color: "red",
+            icon: <IconX size={16} />,
+          });
         } else {
-          showNotification("Error", "Failed to update password", "error");
+          showNotification({
+            title: "Error",
+            message: "Failed to update password",
+            color: "red",
+            icon: <IconX size={16} />,
+          });
         }
       })
       .finally(() => setLoading(false));
@@ -123,9 +140,7 @@ const Settings = () => {
             <TextInput
               label="Email"
               value={profile.email}
-              onChange={(e) =>
-                setProfile({ ...profile, email: e.target.value })
-              }
+              onChange={(e) => setProfile({ ...profile, email: e.target.value })}
               required
             />
             <Button type="submit" loading={loading} fullWidth mt="md">
@@ -166,13 +181,7 @@ const Settings = () => {
               }
               required
             />
-            <Button
-              type="submit"
-              color="blue"
-              loading={loading}
-              fullWidth
-              mt="md"
-            >
+            <Button type="submit" color="blue" loading={loading} fullWidth mt="md">
               Change Password
             </Button>
           </Stack>
