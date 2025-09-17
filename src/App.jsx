@@ -22,48 +22,93 @@ import ItemDetails from "./pages/item/ItemDetails";
 import Invoices from "./pages/invoices/Invoice";
 import InvoiceDetails from "./pages/invoices/InvoiceDetails";
 import Settings from "./pages/account/Settings";
+import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Authentication */}
+        {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/password-reset" element={<PasswordResetRequest />} />
         <Route path="/password-reset/new" element={<PasswordResetNew />} />
 
+        {/* Protected Routes */}
         <Route element={<MainLayout />}>
-          {/* Main */}
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route
+            path="/dashboard"
+            element={<PrivateRoute><Dashboard /></PrivateRoute>}
+          />
 
-          {/* Orders */}
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/orders/:id" element={<OrderDetails />} />
-          <Route path="/customer-orders" element={<CustomerOrderHistory />} />
+          <Route
+            path="/orders"
+            element={<PrivateRoute><Orders /></PrivateRoute>}
+          />
+          <Route
+            path="/orders/:id"
+            element={<PrivateRoute><OrderDetails /></PrivateRoute>}
+          />
+          <Route
+            path="/customer-orders"
+            element={<PrivateRoute><CustomerOrderHistory /></PrivateRoute>}
+          />
 
-          {/* Add Order */}
-          <Route path="/add-order/shipping" element={<AddOrderShipping />} />
-          <Route path="/add-order/payment" element={<AddOrderPayment />} />
-          <Route path="/add-order/invoice" element={<AddOrderInvoice />} />
+          <Route
+            path="/add-order/shipping"
+            element={<PrivateRoute><AddOrderShipping /></PrivateRoute>}
+          />
+          <Route
+            path="/add-order/payment"
+            element={<PrivateRoute><AddOrderPayment /></PrivateRoute>}
+          />
+          <Route
+            path="/add-order/invoice"
+            element={<PrivateRoute><AddOrderInvoice /></PrivateRoute>}
+          />
 
-          {/* Collections */}
-          <Route path="/collections" element={<CollectionOverview />} />
-          <Route path="/collections/new" element={<NewCollection />} />
-          <Route path="/collections/:id/edit" element={<EditCollection />} />
+          <Route
+            path="/collections"
+            element={<PrivateRoute><CollectionOverview /></PrivateRoute>}
+          />
+          <Route
+            path="/collections/new"
+            element={<PrivateRoute><NewCollection /></PrivateRoute>}
+          />
+          <Route
+            path="/collections/:id/edit"
+            element={<PrivateRoute><EditCollection /></PrivateRoute>}
+          />
 
-          {/* Inventory */}
-          {/* Inventory Routes */}
-          <Route path="/collections/:id/items" element={<Inventory />} />
-          <Route path="/collections/:id/items/new" element={<NewItem />} />
-          <Route path="/inventory/:id/edit" element={<EditItem />} />
-          <Route path="/inventory/:id" element={<ItemDetails />} />
+          <Route
+            path="/collections/:id/items"
+            element={<PrivateRoute><Inventory /></PrivateRoute>}
+          />
+          <Route
+            path="/collections/:id/items/new"
+            element={<PrivateRoute><NewItem /></PrivateRoute>}
+          />
+          <Route
+            path="/inventory/:id/edit"
+            element={<PrivateRoute><EditItem /></PrivateRoute>}
+          />
+          <Route
+            path="/inventory/:id"
+            element={<PrivateRoute><ItemDetails /></PrivateRoute>}
+          />
 
-          {/* Invoices */}
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/invoices/:id" element={<InvoiceDetails />} />
+          <Route
+            path="/invoices"
+            element={<PrivateRoute><Invoices /></PrivateRoute>}
+          />
+          <Route
+            path="/invoices/:id"
+            element={<PrivateRoute><InvoiceDetails /></PrivateRoute>}
+          />
 
-          {/* Account */}
-          <Route path="/settings" element={<Settings />} />
+          <Route
+            path="/settings"
+            element={<PrivateRoute><Settings /></PrivateRoute>}
+          />
         </Route>
       </Routes>
     </Router>
