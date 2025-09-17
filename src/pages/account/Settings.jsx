@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import api from "../../api/axios";
 import {
   Card,
   TextInput,
@@ -6,11 +7,9 @@ import {
   Button,
   Title,
   Stack,
-  Group,
   Divider,
-  Notification
 } from "@mantine/core";
-import { useNotifications } from "@mantine/notifications";
+import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 
 const Settings = () => {
@@ -18,89 +17,103 @@ const Settings = () => {
   const [passwords, setPasswords] = useState({
     current_password: "",
     new_password: "",
-    new_password_confirmation: ""
+    new_password_confirmation: "",
   });
   const [loading, setLoading] = useState(false);
-  const notifications = useNotifications();
 
+  // Load user settings on mount
   useEffect(() => {
-    fetch("/api/user/settings", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
-      .then((res) => res.json())
-      .then((data) =>
+    api
+      .get("/api/user/settings")
+      .then((res) => {
         setProfile({
-          business_name: data.business_name || "",
-          email: data.email || "",
-        })
-      )
+          business_name: res.data.business_name || "",
+          email: res.data.email || "",
+        });
+      })
       .catch((err) => console.error("Error fetching settings:", err));
   }, []);
 
-  const handleResponse = (res) => {
-    if (res.message) {
-      notifications.showNotification({
-        title: "Success",
-        message: res.message,
-        color: "green",
-        icon: <Check size={16} />,
-      });
-    } else {
-      notifications.showNotification({
-        title: "Error",
-        message: res.error || "Something went wrong",
-        color: "red",
-        icon: <X size={16} />,
-      });
-    }
+  // Reusable notification function
+  const showNotification = (title, message, type = "success") => {
+    notifications.show({
+      title,
+      message,
+      color: type === "success" ? "green" : "red",
+      icon: type === "success" ? <IconCheck size={16} /> : <IconX size={16} />,
+    });
   };
 
+  // Update Profile Handler
   const updateProfile = (e) => {
     e.preventDefault();
     setLoading(true);
-    fetch("/api/user/settings", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify(profile),
-    })
-      .then((res) => res.json())
-      .then(handleResponse)
+    api
+      .put("/api/user/settings", profile)
+      .then((res) => {
+        showNotification("Success", res.data.message);
+      })
+      .catch((err) => {
+        if (err.response?.status === 422) {
+          const errors = err.response.data.errors;
+          showNotification(
+            "Validation Error",
+            Object.values(errors).flat().join(" "),
+            "error"
+          );
+        } else {
+          showNotification("Error", "Failed to update profile", "error");
+        }
+      })
       .finally(() => setLoading(false));
   };
 
+  // Update Password Handler
   const updatePassword = (e) => {
     e.preventDefault();
     setLoading(true);
-    fetch("/api/user/settings/password", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
+
+    api
+      .put("/api/user/settings/password", {
         current_password: passwords.current_password,
         new_password: passwords.new_password,
         new_password_confirmation: passwords.new_password_confirmation,
-      }),
-    })
-      .then((res) => res.json())
-      .then(handleResponse)
+      })
+      .then((res) => {
+        showNotification("Success", res.data.message);
+        setPasswords({
+          current_password: "",
+          new_password: "",
+          new_password_confirmation: "",
+        });
+      })
+      .catch((err) => {
+        if (err.response?.status === 422) {
+          const errors = err.response.data.errors;
+          showNotification(
+            "Validation Error",
+            Object.values(errors).flat().join(" "),
+            "error"
+          );
+        } else {
+          showNotification("Error", "Failed to update password", "error");
+        }
+      })
       .finally(() => setLoading(false));
   };
 
   return (
     <div style={{ maxWidth: 500, margin: "40px auto" }}>
       <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Title order={3} align="center" mb="md">Account Settings</Title>
+        <Title order={3} align="center" mb="md">
+          Account Settings
+        </Title>
 
+        {/* Profile Form */}
         <form onSubmit={updateProfile}>
           <Stack spacing="sm">
             <TextInput
               label="Business Name"
-              placeholder="Enter your business name"
               value={profile.business_name}
               onChange={(e) =>
                 setProfile({ ...profile, business_name: e.target.value })
@@ -109,9 +122,10 @@ const Settings = () => {
             />
             <TextInput
               label="Email"
-              placeholder="Enter your email"
               value={profile.email}
-              onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+              onChange={(e) =>
+                setProfile({ ...profile, email: e.target.value })
+              }
               required
             />
             <Button type="submit" loading={loading} fullWidth mt="md">
@@ -122,11 +136,12 @@ const Settings = () => {
 
         <Divider my="lg" label="Change Password" labelPosition="center" />
 
+        {/* Password Form */}
         <form onSubmit={updatePassword}>
           <Stack spacing="sm">
             <PasswordInput
               label="Current Password"
-              placeholder="Enter current password"
+              value={passwords.current_password}
               onChange={(e) =>
                 setPasswords({ ...passwords, current_password: e.target.value })
               }
@@ -134,7 +149,7 @@ const Settings = () => {
             />
             <PasswordInput
               label="New Password"
-              placeholder="Enter new password"
+              value={passwords.new_password}
               onChange={(e) =>
                 setPasswords({ ...passwords, new_password: e.target.value })
               }
@@ -142,7 +157,7 @@ const Settings = () => {
             />
             <PasswordInput
               label="Confirm New Password"
-              placeholder="Confirm new password"
+              value={passwords.new_password_confirmation}
               onChange={(e) =>
                 setPasswords({
                   ...passwords,
@@ -151,7 +166,13 @@ const Settings = () => {
               }
               required
             />
-            <Button type="submit" color="blue" loading={loading} fullWidth mt="md">
+            <Button
+              type="submit"
+              color="blue"
+              loading={loading}
+              fullWidth
+              mt="md"
+            >
               Change Password
             </Button>
           </Stack>
