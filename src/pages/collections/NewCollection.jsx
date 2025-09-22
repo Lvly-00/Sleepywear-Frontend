@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Button, TextInput, Stack, Container, Paper, Title, Divider } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/axios";
 import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
 function NewCollection() {
   const [form, setForm] = useState({
     name: "",
-    release_date: "",
+    release_date: new Date().toISOString().split("T")[0], // today
     qty: 0,
-    status: "Active",
+    status: "active", // lowercase to match enum
   });
   const navigate = useNavigate();
 
@@ -18,8 +18,13 @@ function NewCollection() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await axios.post("http://localhost:8000/api/collections", form);
-    navigate("/collections");
+    try {
+      const response = await api.post("/api/collections", form);
+      console.log("Collection created:", response.data);
+      navigate("/collections");
+    } catch (error) {
+      console.error("Error creating collection:", error.response?.data || error.message);
+    }
   };
 
   return (
@@ -33,9 +38,7 @@ function NewCollection() {
       />
 
       <Paper shadow="xs" p="lg" radius="md" withBorder>
-        <Title order={2} mb="sm">
-          Add New Collection
-        </Title>
+        <Title order={2} mb="sm">Add New Collection</Title>
         <Divider mb="md" />
 
         <form onSubmit={handleSubmit}>
