@@ -11,7 +11,6 @@ createRoot(document.getElementById("root")).render(
     <MantineProvider withGlobalStyles withNormalizeCSS>
       <Notifications position="top-right" autoClose={4000}/>
         <App />
-    
     </MantineProvider>
   </StrictMode>
 );

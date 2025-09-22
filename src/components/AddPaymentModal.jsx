@@ -1,21 +1,38 @@
 import React, { useState } from "react";
-import { TextInput, Button, Stack, Select } from "@mantine/core";
+import { Stack, Select, NumberInput, FileInput, Button } from "@mantine/core";
 import api from "../api/axios";
 
-const AddPaymentModal = ({ order, onClose }) => {
+const AddPaymentModal = ({ order, onClose, refreshOrders }) => {
   const [payment, setPayment] = useState({
     method: "",
-    image: "",
-    total: "",
-    status: "Pending",
+    image: null,
+    total: order?.total || 0,
   });
 
   const savePayment = async () => {
+    if (!payment.method) {
+      alert("Please select a payment method");
+      return;
+    }
+
     try {
-      await api.post(`/api/orders/${order.id}/payment`, payment);
+      const formData = new FormData();
+      formData.append("payment_method", payment.method);
+      formData.append("total_paid", payment.total);
+
+      if (payment.image) {
+        formData.append("payment_image", payment.image);
+      }
+
+      await api.post(`/api/orders/${order.id}/payment`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (refreshOrders) refreshOrders();
       onClose();
     } catch (err) {
       console.error("Error saving payment:", err);
+      alert("Failed to save payment. Check console for details.");
     }
   };
 
@@ -23,12 +40,29 @@ const AddPaymentModal = ({ order, onClose }) => {
     <Stack>
       <Select
         label="Payment Method"
-        data={["GCash", "Cash"]}
+        placeholder="Select method"
+        data={["Cash", "GCash"]}
+        value={payment.method}
         onChange={(value) => setPayment({ ...payment, method: value })}
       />
-      <TextInput label="Payment Image URL" onChange={(e) => setPayment({ ...payment, image: e.target.value })} />
-      <TextInput label="Total Amount" onChange={(e) => setPayment({ ...payment, total: e.target.value })} />
-      <Button mt="md" onClick={savePayment}>Save Payment</Button>
+
+      <FileInput
+        label="Payment Proof (Upload Image)"
+        placeholder="Choose file"
+        accept="image/*"
+        onChange={(file) => setPayment({ ...payment, image: file })}
+      />
+
+      <NumberInput
+        label="Total Amount"
+        value={payment.total}
+        onChange={(value) => setPayment({ ...payment, total: value || 0 })}
+        min={0}
+      />
+
+      <Button mt="md" onClick={savePayment}>
+        Save Payment
+      </Button>
     </Stack>
   );
 };
