@@ -1,6 +1,16 @@
 import { useState } from "react";
 import axios from "../../api/axios";
 import { useNavigate } from "react-router-dom";
+import {
+  Stack,
+  TextInput,
+  PasswordInput,
+  Button,
+  Title,
+  Text,
+  Paper,
+  Center,
+} from "@mantine/core";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -26,7 +36,6 @@ function Login() {
       if (e.response && e.response.status === 422) {
         setErrors(e.response.data.errors || {});
       } else {
-        // Fallback for any unexpected error
         setServerError({
           general: "An unexpected error occurred. Please try again.",
         });
@@ -37,72 +46,47 @@ function Login() {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "400px", margin: "0 auto" }}>
-      <h1 style={{ textAlign: "center" }}>Login</h1>
-      <form
-        onSubmit={handleLogin}
-        style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-          }}
-        >
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          {errors.email && (
-            <small style={{ color: "red" }}>{errors.email[0]}</small>
-          )}
-          {serverError.email && (
-            <small style={{ color: "red" }}>{serverError.email}</small>
-          )}
-        </div>
+    <Center style={{ height: "100vh" }}>
+      <Paper shadow="lg" radius="md" p="xl" withBorder style={{ width: 400 }}>
+        <Stack spacing="md">
+          <Title order={2} align="center">
+            Login
+          </Title>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-          }}
-        >
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          {errors.password && (
-            <small style={{ color: "red" }}>{errors.password[0]}</small>
+          {serverError.general && (
+            <Text color="red" align="center">
+              {serverError.general}
+            </Text>
           )}
 
-          {serverError.password && (
-            <small style={{ color: "red" }}>{serverError.password}</small>
-          )}
-        </div>
+          <form onSubmit={handleLogin}>
+            <Stack spacing="sm">
+              <TextInput
+                label="Email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                error={errors.email ? errors.email[0] : undefined}
+                required
+              />
 
-        {serverError.general && (
-          <p style={{ color: "red", textAlign: "center" }}>
-            {serverError.general}
-          </p>
-        )}
+              <PasswordInput
+                label="Password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={errors.password ? errors.password[0] : undefined}
+                required
+              />
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-    </div>
+              <Button type="submit" fullWidth loading={loading}>
+                Login
+              </Button>
+            </Stack>
+          </form>
+        </Stack>
+      </Paper>
+    </Center>
   );
 }
 

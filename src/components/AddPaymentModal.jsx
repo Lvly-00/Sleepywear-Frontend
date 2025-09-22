@@ -17,13 +17,15 @@ const AddPaymentModal = ({ order, onClose, refreshOrders }) => {
 
     try {
       const formData = new FormData();
-      formData.append("payment_method", payment.method);
-      formData.append("total_paid", payment.total);
+      formData.append("payment_method", payment.method); // match orders table
+      formData.append("total_paid", payment.total);      // match orders table
+      formData.append("payment_status", "paid");         // mark as paid
 
       if (payment.image) {
-        formData.append("payment_image", payment.image);
+        formData.append("payment_image", payment.image); // match orders table
       }
 
+      // POST to backend
       await api.post(`/api/orders/${order.id}/payment`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });

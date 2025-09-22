@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   IconLayoutDashboard,
   IconShoppingBag,
@@ -10,6 +10,7 @@ import {
 import { Center, Stack } from "@mantine/core";
 import AppLogo from "../assets/AppLogo.svg";
 import classes from "../css/NavbarMinimal.module.css";
+import axios from "../api/axios"; // make sure axios is correctly configured
 
 const links = [
   { icon: IconLayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -19,6 +20,26 @@ const links = [
 ];
 
 function SidebarNav() {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    if (!window.confirm("Are you sure you want to logout?")) return;
+
+    try {
+      // Sanctum requires CSRF cookie first
+      await axios.get("/sanctum/csrf-cookie");
+      await axios.post("/api/logout");
+
+      // Optional: Clear localStorage or auth state if needed
+      localStorage.removeItem("user");
+      // Redirect to login page
+      navigate("/");
+    } catch (err) {
+      console.error("Logout failed:", err);
+      alert("Failed to logout. Please try again.");
+    }
+  };
+
   return (
     <nav className={classes.navbar}>
       {/* Logo */}
@@ -50,10 +71,22 @@ function SidebarNav() {
           <IconUser size={22} stroke={1.5} />
           <span className={classes.linkLabel}>Account</span>
         </NavLink>
-        <NavLink to="/" className={classes.link}>
+        <button
+          onClick={handleLogout}
+          className={classes.link}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
           <IconLogout size={22} stroke={1.5} />
           <span className={classes.linkLabel}>Logout</span>
-        </NavLink>
+        </button>
       </Stack>
     </nav>
   );
