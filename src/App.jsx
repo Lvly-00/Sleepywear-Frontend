@@ -9,6 +9,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import Orders from "./pages/orders/Order";
 import OrderDetails from "./pages/orders/OrderDetails";
 import CustomerOrderHistory from "./pages/orders/CustomerOrderHistory";
+import AddOrder from "./pages/orders/AddOrder";
 import AddOrderShipping from "./pages/add-order/AddOrderShipping";
 import AddOrderPayment from "./pages/add-order/AddOrderPayment";
 import AddOrderInvoice from "./pages/add-order/AddOrderInvoice";
@@ -47,6 +48,10 @@ function App() {
           <Route
             path="/orders/:id"
             element={<PrivateRoute><OrderDetails /></PrivateRoute>}
+          />
+          <Route
+            path="/add-order"
+            element={<PrivateRoute><AddOrder/></PrivateRoute>}
           />
           <Route
             path="/customer-orders"
