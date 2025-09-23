@@ -8,6 +8,7 @@ import {
   Modal,
   Text,
   Anchor,
+  Badge,
 } from "@mantine/core";
 import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
@@ -19,7 +20,13 @@ export default function CollectionOverview() {
 
   useEffect(() => {
     api.get("api/collections").then((res) => {
-      setCollections(res.data);
+      // Sort so Active comes first, then Sold Out
+      const sorted = res.data.sort((a, b) => {
+        if (a.status === "Active" && b.status !== "Active") return -1;
+        if (a.status !== "Active" && b.status === "Active") return 1;
+        return 0;
+      });
+      setCollections(sorted);
     });
   }, []);
 
@@ -27,6 +34,16 @@ export default function CollectionOverview() {
     await api.delete(`api/collections/${deleteId}`);
     setCollections(collections.filter((c) => c.id !== deleteId));
     setOpened(false);
+  };
+
+  // Helper: Return badge for status
+  const getStatusBadge = (status) => {
+    if (status === "Active") {
+      return <Badge color="green">Active</Badge>;
+    } else if (status === "Sold Out") {
+      return <Badge color="red">Sold Out</Badge>;
+    }
+    return <Badge color="gray">{status}</Badge>;
   };
 
   return (
@@ -78,7 +95,10 @@ export default function CollectionOverview() {
 
               <Table.Td>{col.release_date}</Table.Td>
               <Table.Td>{col.qty}</Table.Td>
-              <Table.Td>{col.status}</Table.Td>
+
+              {/* ✅ Status Badge */}
+              <Table.Td>{getStatusBadge(col.status)}</Table.Td>
+
               <Table.Td>{col.total_sales}</Table.Td>
               <Table.Td>{col.stock_qty}</Table.Td>
 

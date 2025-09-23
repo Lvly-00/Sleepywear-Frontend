@@ -13,6 +13,7 @@ import {
   Modal,
   Text,
   Image,
+  Badge,
 } from "@mantine/core";
 import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
@@ -27,15 +28,17 @@ function Inventory() {
     api
       .get(`/api/items?collection_id=${id}`)
       .then((res) => {
-        console.log("Fetched items:", res.data);
-        setItems(res.data);
+        // Sort: Available first, Taken last
+        const sorted = res.data.sort((a, b) => {
+          if (a.status === "available" && b.status !== "available") return -1;
+          if (a.status !== "available" && b.status === "available") return 1;
+          return 0;
+        });
+        setItems(sorted);
         setLoading(false);
       })
       .catch((err) => {
-        console.error(
-          "Error fetching items:",
-          err.response?.data || err.message
-        );
+        console.error(err.response?.data || err.message);
         setLoading(false);
       });
   }, [id]);
@@ -46,11 +49,16 @@ function Inventory() {
       setItems(items.filter((i) => i.id !== deleteId));
       setOpened(false);
     } catch (error) {
-      console.error(
-        "Error deleting item:",
-        error.response?.data || error.message
-      );
+      console.error("Error deleting item:", error.response?.data || error.message);
     }
+  };
+
+  const getStatusBadge = (status) => {
+    return status === "available" ? (
+      <Badge color="green">Available</Badge>
+    ) : (
+      <Badge color="red">Taken</Badge>
+    );
   };
 
   if (loading) {
@@ -93,6 +101,7 @@ function Inventory() {
                 <Table.Th>Item Name</Table.Th>
                 <Table.Th>Item Image</Table.Th>
                 <Table.Th>Price</Table.Th>
+                <Table.Th>Status</Table.Th>
                 <Table.Th>Notes</Table.Th>
                 <Table.Th>Actions</Table.Th>
               </Table.Tr>
@@ -110,7 +119,6 @@ function Inventory() {
                       {item.name}
                     </Button>
                   </Table.Td>
-
                   <Table.Td>
                     {item.image_url ? (
                       <Image
@@ -118,7 +126,7 @@ function Inventory() {
                         alt={item.name}
                         fit="cover"
                         radius="sm"
-                        style={{ width: 100, height: 100 }} 
+                        style={{ width: 100, height: 100 }}
                       />
                     ) : (
                       <Text size="sm" c="dimmed">
@@ -126,9 +134,9 @@ function Inventory() {
                       </Text>
                     )}
                   </Table.Td>
-
-                  <Table.Td>${item.price}</Table.Td>
-                  <Table.Td>{item.notes}</Table.Td>
+                  <Table.Td>${Number(item.price).toFixed(2)}</Table.Td>
+                  <Table.Td>{getStatusBadge(item.status)}</Table.Td>
+                  <Table.Td>{item.notes || "-"}</Table.Td>
                   <Table.Td>
                     <Group gap="xs">
                       <Button
