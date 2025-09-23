@@ -32,9 +32,13 @@ const Order = () => {
       else if (Array.isArray(res.data.orders)) ordersArray = res.data.orders;
       else if (Array.isArray(res.data.data)) ordersArray = res.data.data;
 
-      const sortedOrders = ordersArray.sort(
-        (a, b) => new Date(b.order_date) - new Date(a.order_date)
-      );
+      // ✅ Sort unpaid orders on top, paid at the bottom, newest first in each group
+      const sortedOrders = ordersArray.sort((a, b) => {
+        if (a.payment_status === "pending" && b.payment_status === "paid") return -1;
+        if (a.payment_status === "paid" && b.payment_status === "pending") return 1;
+        return new Date(b.order_date) - new Date(a.order_date);
+      });
+
       setOrders(sortedOrders);
     } catch (err) {
       console.error("Error fetching orders:", err);
