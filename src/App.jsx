@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import MainLayout from "./layouts/Layout";
 import Login from "./pages/auth/Login";
-import PasswordResetRequest from "./pages/auth/PasswordResetRequest";
-import PasswordResetNew from "./pages/auth/PasswordResetNew";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Orders from "./pages/orders/Order";
 import AddOrder from "./pages/orders/AddOrder";
@@ -26,8 +26,8 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
-        <Route path="/password-reset" element={<PasswordResetRequest />} />
-        <Route path="/password-reset/new" element={<PasswordResetNew />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/password-reset/:token" element={<ResetPassword />} />
 
         {/* Protected Routes */}
         <Route element={<MainLayout />}>
@@ -48,7 +48,7 @@ function App() {
               </PrivateRoute>
             }
           />
-         
+
           <Route
             path="/add-order"
             element={

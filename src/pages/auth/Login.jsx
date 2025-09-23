@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "../../api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Stack,
   TextInput,
@@ -84,6 +84,13 @@ function Login() {
               </Button>
             </Stack>
           </form>
+
+          {/* Forgot Password Link */}
+          <Text align="center" mt="sm">
+            <Link to="/forgot-password" style={{ color: "#1c7ed6", textDecoration: "none" }}>
+              Forgot your password?
+            </Link>
+          </Text>
         </Stack>
       </Paper>
     </Center>
