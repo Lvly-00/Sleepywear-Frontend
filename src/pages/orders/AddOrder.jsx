@@ -20,10 +20,25 @@ const AddOrder = () => {
   const [invoiceData, setInvoiceData] = useState(null);
   const navigate = useNavigate();
 
+  // Fetch collections and items, only Active collections and Available items
   const fetchCollections = async () => {
     try {
       const res = await api.get("/api/collections");
-      setCollections(res.data.filter((c) => c.items.length > 0));
+      // Filter Active collections only
+      const activeCollections = res.data
+        .filter((c) => c.status === "Active")
+        .map((c) => ({
+          ...c,
+          items: c.items.filter((i) => i.status === "available"), // Only available items
+        }))
+        .filter((c) => c.items.length > 0); // Remove collections with no available items
+
+      setCollections(activeCollections);
+      // Reset selection if previously selected collection is now empty
+      if (!activeCollections.find((c) => c.id.toString() === selectedCollection)) {
+        setSelectedCollection("");
+        setSelectedItem("");
+      }
     } catch (err) {
       console.error("Error fetching collections:", err);
     }
@@ -71,7 +86,9 @@ const AddOrder = () => {
       };
 
       await api.post("/api/orders", payload);
-      await fetchCollections(); // refresh to hide taken items
+
+      // Refresh collections to remove taken items
+      await fetchCollections();
 
       const invoice = {
         customer_name: `${form.first_name} ${form.last_name}`,
@@ -87,11 +104,18 @@ const AddOrder = () => {
       };
       setInvoiceData(invoice);
       setInvoiceModal(true);
+
+      // Clear orderItems
+      setOrderItems([]);
     } catch (err) {
       console.error(err);
       alert("Order failed. Check console.");
     }
   };
+
+  // Get available items for the selected collection
+  const availableItems =
+    collections.find((c) => c.id.toString() === selectedCollection)?.items || [];
 
   return (
     <div style={{ padding: 20 }}>
@@ -99,23 +123,27 @@ const AddOrder = () => {
 
       <Group mt="md">
         <Select
-          placeholder="Collection"
+          placeholder="Select Collection"
           data={collections.map((c) => ({
             value: c.id.toString(),
             label: c.name,
           }))}
           value={selectedCollection}
-          onChange={setSelectedCollection}
+          onChange={(val) => {
+            setSelectedCollection(val);
+            setSelectedItem(""); // reset item when collection changes
+          }}
         />
         <Select
-          placeholder="Item"
-          data={
-            (collections.find((c) => c.id.toString() === selectedCollection)?.items || [])
-          .map((i) => ({ value: i.id.toString(), label: i.name }))}
+          placeholder="Select Item"
+          data={availableItems.map((i) => ({ value: i.id.toString(), label: i.name }))}
           value={selectedItem}
           onChange={setSelectedItem}
+          disabled={!selectedCollection}
         />
-        <Button onClick={handleAddItem}>Add</Button>
+        <Button onClick={handleAddItem} disabled={!selectedItem}>
+          Add
+        </Button>
       </Group>
 
       <Table withBorder mt="md">
@@ -127,8 +155,12 @@ const AddOrder = () => {
             </tr>
           ))}
           <tr>
-            <td><b>Total</b></td>
-            <td><b>₱{total.toFixed(2)}</b></td>
+            <td>
+              <b>Total</b>
+            </td>
+            <td>
+              <b>₱{total.toFixed(2)}</b>
+            </td>
           </tr>
         </tbody>
       </Table>
