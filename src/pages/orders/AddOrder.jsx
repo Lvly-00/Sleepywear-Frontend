@@ -20,15 +20,16 @@ const AddOrder = () => {
   const [invoiceData, setInvoiceData] = useState(null);
   const navigate = useNavigate();
 
+  const fetchCollections = async () => {
+    try {
+      const res = await api.get("/api/collections");
+      setCollections(res.data.filter((c) => c.items.length > 0));
+    } catch (err) {
+      console.error("Error fetching collections:", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchCollections = async () => {
-      try {
-        const res = await api.get("/api/collections");
-        setCollections(res.data);
-      } catch (err) {
-        console.error("Error fetching collections:", err);
-      }
-    };
     fetchCollections();
   }, []);
 
@@ -43,10 +44,7 @@ const AddOrder = () => {
     }
   };
 
-  const total = orderItems.reduce(
-    (sum, item) => sum + parseFloat(item.price),
-    0
-  );
+  const total = orderItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
 
   const handlePlaceOrder = async () => {
     if (orderItems.length === 0) return alert("Please add at least one item");
@@ -73,6 +71,7 @@ const AddOrder = () => {
       };
 
       await api.post("/api/orders", payload);
+      await fetchCollections(); // refresh to hide taken items
 
       const invoice = {
         customer_name: `${form.first_name} ${form.last_name}`,
@@ -110,10 +109,9 @@ const AddOrder = () => {
         />
         <Select
           placeholder="Item"
-          data={(
-            collections.find((c) => c.id.toString() === selectedCollection)
-              ?.items || []
-          ).map((i) => ({ value: i.id.toString(), label: i.name }))}
+          data={
+            (collections.find((c) => c.id.toString() === selectedCollection)?.items || [])
+          .map((i) => ({ value: i.id.toString(), label: i.name }))}
           value={selectedItem}
           onChange={setSelectedItem}
         />
@@ -129,32 +127,24 @@ const AddOrder = () => {
             </tr>
           ))}
           <tr>
-            <td>
-              <b>Total</b>
-            </td>
-            <td>
-              <b>₱{total.toFixed(2)}</b>
-            </td>
+            <td><b>Total</b></td>
+            <td><b>₱{total.toFixed(2)}</b></td>
           </tr>
         </tbody>
       </Table>
 
-      {[
-        "first_name",
-        "last_name",
-        "address",
-        "contact_number",
-        "social_handle",
-      ].map((field) => (
-        <TextInput
-          key={field}
-          label={field.replace("_", " ")}
-          required={["first_name", "address"].includes(field)}
-          value={form[field]}
-          onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-          mt="sm"
-        />
-      ))}
+      {["first_name", "last_name", "address", "contact_number", "social_handle"].map(
+        (field) => (
+          <TextInput
+            key={field}
+            label={field.replace("_", " ")}
+            required={["first_name", "address"].includes(field)}
+            value={form[field]}
+            onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+            mt="sm"
+          />
+        )
+      )}
 
       <Button fullWidth mt="md" onClick={handlePlaceOrder}>
         Place Order
