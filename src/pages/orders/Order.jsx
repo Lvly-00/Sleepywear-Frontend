@@ -9,8 +9,9 @@ import {
   Text,
   Badge,
   ScrollArea,
+  TextInput,
 } from "@mantine/core";
-import { IconPlus, IconEdit, IconTrash } from "@tabler/icons-react";
+import { IconPlus, IconEdit, IconTrash, IconSearch } from "@tabler/icons-react";
 import AddPaymentModal from "../../components/AddPaymentModal";
 import InvoicePreview from "../../components/InvoicePreview";
 import api from "../../api/axios";
@@ -22,6 +23,7 @@ const Order = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
   const fetchOrders = async () => {
@@ -32,7 +34,6 @@ const Order = () => {
       else if (Array.isArray(res.data.orders)) ordersArray = res.data.orders;
       else if (Array.isArray(res.data.data)) ordersArray = res.data.data;
 
-      // ✅ Sort unpaid orders on top, paid at the bottom, newest first in each group
       const sortedOrders = ordersArray.sort((a, b) => {
         if (a.payment_status === "pending" && b.payment_status === "paid") return -1;
         if (a.payment_status === "paid" && b.payment_status === "pending") return 1;
@@ -59,16 +60,31 @@ const Order = () => {
     }
   };
 
+  // ✅ Filter orders based on search term
+  const filteredOrders = orders.filter((order) => {
+    const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
+    return fullName.includes(search.toLowerCase());
+  });
+
   return (
     <Stack p="lg" spacing="lg">
       <Group position="apart" align="center">
         <Title order={2}>Orders</Title>
-        <Button
-          leftIcon={<IconPlus size={16} />}
-          onClick={() => navigate("/add-order")}
-        >
-          Add Order
-        </Button>
+        <Group>
+          <TextInput
+            placeholder="Search orders..."
+            icon={<IconSearch size={16} />}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ maxWidth: 250 }}
+          />
+          <Button
+            leftIcon={<IconPlus size={16} />}
+            onClick={() => navigate("/add-order")}
+          >
+            Add Order
+          </Button>
+        </Group>
       </Group>
 
       <ScrollArea>
@@ -87,17 +103,14 @@ const Order = () => {
           </Table.Thead>
 
           <Table.Tbody>
-            {orders.length > 0 ? (
-              orders.map((order) => {
+            {filteredOrders.length > 0 ? (
+              filteredOrders.map((order) => {
                 const fullName = `${order.first_name} ${order.last_name}`;
                 const totalQty =
                   order.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
                 const totalPrice =
                   order.total ||
-                  order.items?.reduce(
-                    (sum, i) => sum + i.price * i.quantity,
-                    0
-                  );
+                  order.items?.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
                 return (
                   <Table.Tr key={order.id}>
