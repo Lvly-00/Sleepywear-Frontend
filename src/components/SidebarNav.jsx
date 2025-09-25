@@ -3,7 +3,7 @@ import {
   IconLayoutDashboard,
   IconShoppingBag,
   IconArchive,
-  IconReceipt2,
+  IconUsers,
   IconUser,
   IconLogout,
 } from "@tabler/icons-react";
@@ -16,7 +16,8 @@ const links = [
   { icon: IconLayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: IconShoppingBag, label: "Orders", path: "/orders" },
   { icon: IconArchive, label: "Inventory", path: "/collections" },
-  { icon: IconReceipt2, label: "Invoices", path: "/invoices" },
+  { icon: IconUsers, label: "Customers Log", path: "/customers" },
+
 ];
 
 function SidebarNav() {

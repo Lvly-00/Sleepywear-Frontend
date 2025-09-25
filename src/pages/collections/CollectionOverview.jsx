@@ -9,15 +9,19 @@ import {
   Text,
   Anchor,
   Badge,
+  TextInput,
 } from "@mantine/core";
 import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
 export default function CollectionOverview() {
   const [collections, setCollections] = useState([]);
+  const [filteredCollections, setFilteredCollections] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
   const [opened, setOpened] = useState(false);
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
+  // Fetch collections
   useEffect(() => {
     api.get("api/collections").then((res) => {
       // Sort so Active comes first, then Sold Out
@@ -27,12 +31,27 @@ export default function CollectionOverview() {
         return 0;
       });
       setCollections(sorted);
+      setFilteredCollections(sorted);
     });
   }, []);
 
+  // Search filter
+  useEffect(() => {
+    if (!search.trim()) {
+      setFilteredCollections(collections);
+    } else {
+      const lower = search.toLowerCase();
+      setFilteredCollections(
+        collections.filter((col) => col.name.toLowerCase().includes(lower))
+      );
+    }
+  }, [search, collections]);
+
   const handleDelete = async () => {
     await api.delete(`api/collections/${deleteId}`);
-    setCollections(collections.filter((c) => c.id !== deleteId));
+    const updated = collections.filter((c) => c.id !== deleteId);
+    setCollections(updated);
+    setFilteredCollections(updated);
     setOpened(false);
   };
 
@@ -56,12 +75,20 @@ export default function CollectionOverview() {
         ]}
       />
 
-      {/* Header with add button */}
+      {/* Header with Search + Add Button */}
       <Group justify="space-between" mb="md">
         <h1>Collections</h1>
-        <Button component={Link} to="/collections/new">
-          + Add Collection
-        </Button>
+        <Group>
+          <TextInput
+            placeholder="Search collections..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ maxWidth: 250 }}
+          />
+          <Button component={Link} to="/collections/new">
+            + Add Collection
+          </Button>
+        </Group>
       </Group>
 
       {/* Collections Table */}
@@ -79,7 +106,7 @@ export default function CollectionOverview() {
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {collections.map((col) => (
+          {filteredCollections.map((col) => (
             <Table.Tr key={col.id}>
               <Table.Td>{col.id}</Table.Td>
 
