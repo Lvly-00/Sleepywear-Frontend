@@ -15,9 +15,8 @@ import Inventory from "./pages/item/Inventory";
 import NewItem from "./pages/item/NewItem";
 import EditItem from "./pages/item/EditItem";
 import ItemDetails from "./pages/item/ItemDetails";
-import Invoices from "./pages/invoices/Invoice";
-import InvoiceDetails from "./pages/invoices/InvoiceDetails";
 import Settings from "./pages/account/Settings";
+import CustomerLogs from "./pages/customer-logs/CustomerLogs";
 import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
@@ -117,18 +116,10 @@ function App() {
           />
 
           <Route
-            path="/invoices"
+            path="/customers"
             element={
               <PrivateRoute>
-                <Invoices />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/invoices/:id"
-            element={
-              <PrivateRoute>
-                <InvoiceDetails />
+                <CustomerLogs />
               </PrivateRoute>
             }
           />
