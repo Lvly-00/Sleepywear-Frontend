@@ -17,12 +17,12 @@ const AddPaymentModal = ({ order, onClose, refreshOrders }) => {
 
     try {
       const formData = new FormData();
-      formData.append("payment_method", payment.method); // match orders table
-      formData.append("total_paid", payment.total);      // match orders table
-      formData.append("payment_status", "paid");         // mark as paid
+      formData.append("payment_method", payment.method);
+      formData.append("total_paid", payment.total);
+      formData.append("payment_status", "paid");
 
       if (payment.image) {
-        formData.append("payment_image", payment.image); // match orders table
+        formData.append("payment_image", payment.image);
       }
 
       // POST to backend
@@ -43,7 +43,7 @@ const AddPaymentModal = ({ order, onClose, refreshOrders }) => {
       <Select
         label="Payment Method"
         placeholder="Select method"
-        data={["Cash", "GCash"]}
+        data={["Cash", "GCash", "Paypal", "Bank"]}
         value={payment.method}
         onChange={(value) => setPayment({ ...payment, method: value })}
       />
