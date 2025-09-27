@@ -10,7 +10,12 @@ import {
 } from "@mantine/core";
 import api from "../api/axios";
 
-export default function AddItemModal({ opened, onClose, collectionId, onItemAdded }) {
+export default function AddItemModal({
+  opened,
+  onClose,
+  collectionId,
+  onItemAdded,
+}) {
   const [form, setForm] = useState({ name: "", price: 0, notes: "" });
   const [file, setFile] = useState(null);
   const [errors, setErrors] = useState({ name: "", price: "", file: "" });
@@ -29,7 +34,10 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
     }
 
     if (isNaN(form.price) || form.price < 0) {
-      setErrors((prev) => ({ ...prev, price: "Price must be a valid number ≥ 0." }));
+      setErrors((prev) => ({
+        ...prev,
+        price: "Price must be a valid number ≥ 0.",
+      }));
       hasError = true;
     }
 
@@ -58,7 +66,10 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
       onClose();
     } catch (err) {
       console.error("Error adding item:", err.response?.data || err.message);
-      setErrors((prev) => ({ ...prev, name: "Failed to add item. Try again." }));
+      setErrors((prev) => ({
+        ...prev,
+        name: "Failed to add item. Try again.",
+      }));
     }
   };
 
@@ -83,7 +94,7 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
           label="Price"
           value={form.price}
           onChange={(val) => setForm({ ...form, price: val })}
-          min={0}
+          placeholder="0" 
           parser={(value) => value.replace(/[^\d.]/g, "")}
           error={errors.price}
           mt="sm"

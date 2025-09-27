@@ -1,29 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import api from "../../api/axios";
 import {
   Container,
-  Table,
-  Loader,
-  Center,
-  Paper,
+  Card,
+  Text,
+  Badge,
   Button,
   Group,
-  Modal,
-  Text,
-  Image,
-  Badge,
+  Center,
+  SimpleGrid,
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
 import AddItemModal from "../../components/AddItemModal";
+import EditItemModal from "../../components/EditItemModal";
+import SleepyLoader from "../../components/SleepyLoader";
 import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 
 function Inventory() {
   const { id } = useParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [deleteModal, setDeleteModal] = useState(false);
   const [addModal, setAddModal] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
     api
@@ -47,17 +47,23 @@ function Inventory() {
     setItems((prev) => [...prev, newItem]);
   };
 
-  const handleDelete = (collectionId, collectionName) => {
+  const handleItemUpdated = (updatedItem) => {
+    setItems((prev) =>
+      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+    );
+  };
+
+  const handleDelete = (itemId, itemName) => {
     openDeleteConfirmModal({
-      title: "Delete Collection",
-      name: collectionName,
+      title: "Delete Item",
+      name: itemName,
       onConfirm: async () => {
         try {
-          await api.delete(`/api/collections/${collectionId}`);
-          // Optionally, you can add logic here to update the UI after deletion if needed.
+          await api.delete(`/api/items/${itemId}`);
+          setItems((prev) => prev.filter((item) => item.id !== itemId));
         } catch (error) {
           console.error(
-            "Error deleting collection:",
+            "Error deleting item:",
             error.response?.data || error.message
           );
         }
@@ -65,13 +71,7 @@ function Inventory() {
     });
   };
 
-  if (loading) {
-    return (
-      <Center style={{ height: "100vh" }}>
-        <Loader />
-      </Center>
-    );
-  }
+  if (loading) return <SleepyLoader />;
 
   return (
     <Container>
@@ -82,90 +82,111 @@ function Inventory() {
         onAdd={() => setAddModal(true)}
       />
 
-      <Paper withBorder shadow="sm" p="md" radius="md">
-        {items.length === 0 ? (
-          <Center py="lg">
-            <Text>No items found for this collection.</Text>
-          </Center>
-        ) : (
-          <Table striped highlightOnHover withColumnBorders>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Item Code</Table.Th>
-                <Table.Th>Item Name</Table.Th>
-                <Table.Th>Item Image</Table.Th>
-                <Table.Th>Price</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Notes</Table.Th>
-                <Table.Th>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {items.map((item) => (
-                <Table.Tr key={item.id}>
-                  <Table.Td>{item.code}</Table.Td>
-                  <Table.Td>
-                    <Button
-                      variant="subtle"
-                      component={Link}
-                      to={`/inventory/${item.id}`}
-                    >
-                      {item.name}
-                    </Button>
-                  </Table.Td>
-                  <Table.Td>
-                    {item.image_url ? (
-                      <Image
-                        src={item.image_url}
-                        alt={item.name}
-                        fit="cover"
-                        radius="sm"
-                        style={{ width: 100, height: 100 }}
-                      />
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        No image
-                      </Text>
-                    )}
-                  </Table.Td>
-                  <Table.Td>${Number(item.price).toFixed(2)}</Table.Td>
-                  <Table.Td>
-                    {item.status === "available" ? (
-                      <Badge color="green">Available</Badge>
-                    ) : (
-                      <Badge color="red">Taken</Badge>
-                    )}
-                  </Table.Td>
-                  <Table.Td>{item.notes || "-"}</Table.Td>
-                  <Table.Td>
-                    <Group gap="xs">
-                      <Button
-                        size="xs"
-                        component={Link}
-                        to={`/inventory/${item.id}/edit`}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="xs"
-                        color="red"
-                        onClick={() => {
-                          setDeleteId(item.id);
-                          setDeleteModal(true);
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        )}
-      </Paper>
+      {items.length === 0 ? (
+        <Center py="lg">
+          <Text>No items found for this collection.</Text>
+        </Center>
+      ) : (
+        <SimpleGrid
+          cols={3}
+          spacing="lg"
+          breakpoints={[
+            { maxWidth: 980, cols: 2 },
+            { maxWidth: 600, cols: 1 },
+          ]}
+        >
+          {items.map((item) => (
+            <Card
+              key={item.id}
+              shadow="sm"
+              padding="md"
+              radius="md"
+              withBorder
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                height: 500,
+              }}
+            >
+              {/* Image Section */}
+              <Card.Section>
+                <div
+                  style={{
+                    height: 250,
+                    width: "100%",
+                    overflow: "hidden",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "#f0f0f0",
+                  }}
+                >
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      style={{
+                        height: "100%",
+                        width: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      No image
+                    </Text>
+                  )}
+                </div>
+              </Card.Section>
 
-      {/* Add Item Modal Component */}
+              {/* Info Section */}
+              <div style={{ flexGrow: 1, marginTop: 12 }}>
+                <Text weight={500} lineClamp={1}>
+                  {item.name}
+                </Text>
+
+                <Text size="sm" mt="xs">
+                  Price: ${Number(item.price).toFixed(2)}
+                </Text>
+
+                <Badge
+                  color={item.status === "available" ? "green" : "red"}
+                  mt="xs"
+                >
+                  {item.status === "available" ? "Available" : "Taken"}
+                </Badge>
+
+                <Text size="sm" mt="xs" lineClamp={3}>
+                  {item.notes || "-"}
+                </Text>
+              </div>
+
+              {/* Action Buttons - Bottom Left */}
+              <Group mt="md" spacing="xs" position="left">
+                <Button
+                  size="xs"
+                  onClick={() => {
+                    setSelectedItem(item);
+                    setEditModal(true);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="xs"
+                  color="red"
+                  onClick={() => handleDelete(item.id, item.name)}
+                >
+                  Delete
+                </Button>
+              </Group>
+            </Card>
+          ))}
+        </SimpleGrid>
+      )}
+
+      {/* Add Item Modal */}
       <AddItemModal
         opened={addModal}
         onClose={() => setAddModal(false)}
@@ -173,7 +194,15 @@ function Inventory() {
         onItemAdded={handleItemAdded}
       />
 
-
+      {/* Edit Item Modal */}
+      {selectedItem && (
+        <EditItemModal
+          opened={editModal}
+          onClose={() => setEditModal(false)}
+          item={selectedItem}
+          onItemUpdated={handleItemUpdated}
+        />
+      )}
     </Container>
   );
 }
