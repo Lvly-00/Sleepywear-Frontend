@@ -17,10 +17,12 @@ import InvoicePreview from "../../components/InvoicePreview";
 import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 import api from "../../api/axios";
 import PageHeader from "../../components/PageHeader";
+import SleepyLoader from "../../components/SleepyLoader";
 import { useNavigate } from "react-router-dom";
 
 const Order = () => {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [invoiceModal, setInvoiceModal] = useState(false);
@@ -29,6 +31,7 @@ const Order = () => {
   const navigate = useNavigate();
 
   const fetchOrders = async () => {
+    setLoading(true);
     try {
       const res = await api.get("/api/orders");
       let ordersArray = [];
@@ -47,6 +50,8 @@ const Order = () => {
       setOrders(sortedOrders);
     } catch (err) {
       console.error("Error fetching orders:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,6 +79,10 @@ const Order = () => {
     const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
     return fullName.includes(search.toLowerCase());
   });
+
+  if (loading) {
+    return <SleepyLoader />;
+  }
 
   return (
     <Stack p="lg" spacing="lg">

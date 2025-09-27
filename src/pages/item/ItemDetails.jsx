@@ -12,6 +12,7 @@ import {
   Button,
   Group,
 } from "@mantine/core";
+import SleepyLoader from "../../components/SleepyLoader";
 
 export default function ItemDetails() {
   const { id } = useParams(); // item ID
@@ -32,12 +33,8 @@ export default function ItemDetails() {
       });
   }, [id]);
 
-  if (loading) {
-    return (
-      <Center style={{ height: "100vh" }}>
-        <Loader />
-      </Center>
-    );
+ if (loading) {
+    return <SleepyLoader />; 
   }
 
   if (!item) {
@@ -50,14 +47,7 @@ export default function ItemDetails() {
 
   return (
     <Container>
-      <CollectionBreadcrumbs
-        items={[
-          { label: "Dashboard", to: "/dashboard" },
-          { label: "Collections", to: "/collections" },
-          { label: `Collection #${item.collection_id}`, to: `/collections/${item.collection_id}/items` },
-          { label: item.name },
-        ]}
-      />
+     
 
       <Paper shadow="sm" p="md" radius="md" withBorder>
         <Group justify="space-between">

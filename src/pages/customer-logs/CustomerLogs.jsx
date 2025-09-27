@@ -10,17 +10,26 @@ import {
   Stack,
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
+import SleepyLoader from "../../components/SleepyLoader";
 
 function CustomerLogs() {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const [opened, setOpened] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Fetch customers
   const fetchCustomers = async () => {
-    const res = await api.get(`/api/customers?search=${search}`);
-    setCustomers(res.data);
+    setLoading(true); // start loader
+    try {
+      const res = await api.get(`/api/customers?search=${search}`);
+      setCustomers(res.data);
+    } catch (err) {
+      console.error("Error fetching customers:", err);
+    } finally {
+      setLoading(false); // stop loader
+    }
   };
 
   useEffect(() => {
@@ -42,6 +51,7 @@ function CustomerLogs() {
     }
   };
 
+  if (loading) return <SleepyLoader />;
   return (
     <div style={{ padding: "1rem" }}>
       <PageHeader

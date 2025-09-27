@@ -1,0 +1,43 @@
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: "Comic Sans MS", cursive, sans-serif;
+}
+
+.moon-loader {
+  width: 100px;
+  height: 100px;
+  transform: rotate(-90deg); /* start at top */
+}
+
+.moon-bg {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 10;
+}
+
+.moon-fill {
+  fill: none;
+  stroke: #f6e58d;
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 282; /* 2 * pi * r (approx 2*3.14*45) */
+  stroke-dashoffset: 282;
+  animation: fillMoon 2s linear infinite;
+}
+
+@keyframes fillMoon {
+  0% { stroke-dashoffset: 282; }
+  50% { stroke-dashoffset: 141; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.loading-text {
+  margin-top: 15px;
+  font-size: 1rem;
+  color: #333;
+  text-align: center;
+}

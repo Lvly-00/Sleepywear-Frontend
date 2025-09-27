@@ -12,6 +12,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
+import SleepyLoader from "../../components/SleepyLoader";
 
 export default function CollectionOverview() {
   const [collections, setCollections] = useState([]);
@@ -19,20 +20,30 @@ export default function CollectionOverview() {
   const [deleteId, setDeleteId] = useState(null);
   const [opened, setOpened] = useState(false);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   // Fetch collections
   useEffect(() => {
-    api.get("api/collections").then((res) => {
-      // Sort so Active comes first, then Sold Out
-      const sorted = res.data.sort((a, b) => {
-        if (a.status === "Active" && b.status !== "Active") return -1;
-        if (a.status !== "Active" && b.status === "Active") return 1;
-        return 0;
-      });
-      setCollections(sorted);
-      setFilteredCollections(sorted);
-    });
+    const fetchCollections = async () => {
+      setLoading(true); // start loader
+      try {
+        const res = await api.get("api/collections");
+        // Sort so Active comes first, then Sold Out
+        const sorted = res.data.sort((a, b) => {
+          if (a.status === "Active" && b.status !== "Active") return -1;
+          if (a.status !== "Active" && b.status === "Active") return 1;
+          return 0;
+        });
+        setCollections(sorted);
+        setFilteredCollections(sorted);
+      } catch (err) {
+        console.error("Error fetching collections:", err);
+      } finally {
+        setLoading(false); // stop loader
+      }
+    };
+    fetchCollections();
   }, []);
 
   // Search filter
@@ -65,6 +76,7 @@ export default function CollectionOverview() {
     return <Badge color="gray">{status}</Badge>;
   };
 
+  if (loading) return <SleepyLoader />;
   return (
     <>
       <PageHeader

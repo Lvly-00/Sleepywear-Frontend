@@ -15,12 +15,11 @@ import {
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
 import AddItemModal from "../../components/AddItemModal";
+import SleepyLoader from "../../components/SleepyLoader";
 import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 
 function Inventory() {
   const { id } = useParams();
-  const navigate = useNavigate();
-
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addModal, setAddModal] = useState(false);
@@ -66,29 +65,9 @@ function Inventory() {
     });
   };
 
-  // Handle collection deletion
-  const handleCollectionDelete = () => {
-    if (!collection) return;
-    openDeleteConfirmModal({
-      title: "Delete Collection",
-      name: collection.name,
-      onConfirm: async () => {
-        try {
-          await api.delete(`/api/collections/${collection.id}`);
-          navigate("/collections"); // redirect to collections page after deletion
-        } catch (err) {
-          console.error("Error deleting collection:", err);
-        }
-      },
-    });
-  };
 
   if (loading) {
-    return (
-      <Center style={{ height: "100vh" }}>
-        <Loader />
-      </Center>
-    );
+    return <SleepyLoader />; 
   }
 
   return (
@@ -98,11 +77,6 @@ function Inventory() {
         showSearch={false}
         addLabel="Add Item"
         onAdd={() => setAddModal(true)}
-        extraActions={
-          <Button color="red" onClick={handleCollectionDelete}>
-            Delete Collection
-          </Button>
-        }
       />
 
       <Paper withBorder shadow="sm" p="md" radius="md">

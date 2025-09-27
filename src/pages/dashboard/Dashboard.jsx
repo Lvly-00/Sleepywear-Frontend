@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Title, Stack, Card, Text, Grid } from "@mantine/core";
+import { Stack, Card, Text, Grid } from "@mantine/core";
 import {
   ResponsiveContainer,
   LineChart,
@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import api from "../../api/axios";
 import PageHeader from "../../components/PageHeader";
+import SleepyLoader from "../../components/SleepyLoader"; 
 
 function Dashboard() {
   const [summary, setSummary] = useState(null);
@@ -23,7 +24,8 @@ function Dashboard() {
       .catch((err) => console.error(err));
   }, []);
 
-  if (!summary) return <Text>Loading...</Text>;
+  // Show SleepyWares loader while fetching data
+  if (!summary) return <SleepyLoader />;
 
   return (
     <Stack p="lg" spacing="xl">

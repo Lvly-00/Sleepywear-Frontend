@@ -22,7 +22,7 @@ const PrivateRoute = ({ children }) => {
     checkAuth();
   }, []);
 
-  if (isAuthenticated === null) return <div>Loading...</div>;
+  if (isAuthenticated === null) return null;
 
   return isAuthenticated ? children : <Navigate to="/" />;
 };
