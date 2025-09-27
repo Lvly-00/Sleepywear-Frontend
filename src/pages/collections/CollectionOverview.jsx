@@ -11,7 +11,6 @@ import {
   Badge,
   TextInput,
 } from "@mantine/core";
-import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
 export default function CollectionOverview() {
   const [collections, setCollections] = useState([]);
@@ -67,13 +66,7 @@ export default function CollectionOverview() {
 
   return (
     <>
-      {/* Breadcrumbs */}
-      <CollectionBreadcrumbs
-        items={[
-          { label: "Dashboard", to: "/dashboard" },
-          { label: "Collections" },
-        ]}
-      />
+      
 
       {/* Header with Search + Add Button */}
       <Group justify="space-between" mb="md">
