@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Title, Stack, Card, Text, Grid } from "@mantine/core";
+import { Stack, Card, Text, Grid } from "@mantine/core";
 import {
   ResponsiveContainer,
   LineChart,
@@ -11,21 +11,25 @@ import {
   Area,
 } from "recharts";
 import api from "../../api/axios";
+import PageHeader from "../../components/PageHeader";
+import SleepyLoader from "../../components/SleepyLoader"; 
 
 function Dashboard() {
   const [summary, setSummary] = useState(null);
 
   useEffect(() => {
-    api.get("/api/dashboard-summary")
+    api
+      .get("/api/dashboard-summary")
       .then((res) => setSummary(res.data))
       .catch((err) => console.error(err));
   }, []);
 
-  if (!summary) return <Text>Loading...</Text>;
+  // Show SleepyWares loader while fetching data
+  if (!summary) return <SleepyLoader />;
 
   return (
     <Stack p="lg" spacing="xl">
-      <Title order={1}>Dashboard</Title>
+      <PageHeader title="Dashboard" />
 
       {/* Summary Cards */}
       <Grid mt="lg">
@@ -93,7 +97,12 @@ function Dashboard() {
             <XAxis dataKey="month" />
             <YAxis />
             <Tooltip />
-            <Area type="monotone" dataKey="sales" stroke="#82ca9d" fill="#82ca9d" />
+            <Area
+              type="monotone"
+              dataKey="sales"
+              stroke="#82ca9d"
+              fill="#82ca9d"
+            />
           </AreaChart>
         </ResponsiveContainer>
       </Card>

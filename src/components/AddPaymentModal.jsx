@@ -8,10 +8,18 @@ const AddPaymentModal = ({ order, onClose, refreshOrders }) => {
     image: null,
     total: order?.total || 0,
   });
+  const [errors, setErrors] = useState({});
 
   const savePayment = async () => {
+    const newErrors = {};
+
+    // Validate payment method
     if (!payment.method) {
-      alert("Please select a payment method");
+      newErrors.paymentMethod = "Please select a payment method";
+    }
+    // Stop if errors
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -45,7 +53,9 @@ const AddPaymentModal = ({ order, onClose, refreshOrders }) => {
         placeholder="Select method"
         data={["Cash", "GCash", "Paypal", "Bank"]}
         value={payment.method}
+        error={errors.paymentMethod}
         onChange={(value) => setPayment({ ...payment, method: value })}
+        required
       />
 
       <FileInput
@@ -60,6 +70,7 @@ const AddPaymentModal = ({ order, onClose, refreshOrders }) => {
         value={payment.total}
         onChange={(value) => setPayment({ ...payment, total: value || 0 })}
         min={0}
+        readOnly
       />
 
       <Button mt="md" onClick={savePayment}>

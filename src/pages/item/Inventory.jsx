@@ -1,34 +1,34 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import api from "../../api/axios";
 import {
   Container,
-  Table,
-  Title,
-  Loader,
-  Center,
-  Paper,
+  Card,
+  Text,
+  Badge,
   Button,
   Group,
-  Modal,
-  Text,
-  Image,
-  Badge,
+  Center,
+  SimpleGrid,
 } from "@mantine/core";
-import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
+import PageHeader from "../../components/PageHeader";
+import AddItemModal from "../../components/AddItemModal";
+import EditItemModal from "../../components/EditItemModal";
+import SleepyLoader from "../../components/SleepyLoader";
+import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 
 function Inventory() {
-  const { id } = useParams(); // collection ID
+  const { id } = useParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [deleteId, setDeleteId] = useState(null);
-  const [opened, setOpened] = useState(false);
+  const [addModal, setAddModal] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
     api
       .get(`/api/items?collection_id=${id}`)
       .then((res) => {
-        // Sort: Available first, Taken last
         const sorted = res.data.sort((a, b) => {
           if (a.status === "available" && b.status !== "available") return -1;
           if (a.status !== "available" && b.status === "available") return 1;
@@ -43,145 +43,166 @@ function Inventory() {
       });
   }, [id]);
 
-  const handleDelete = async () => {
-    try {
-      await api.delete(`/api/items/${deleteId}`);
-      setItems(items.filter((i) => i.id !== deleteId));
-      setOpened(false);
-    } catch (error) {
-      console.error("Error deleting item:", error.response?.data || error.message);
-    }
+  const handleItemAdded = (newItem) => {
+    setItems((prev) => [...prev, newItem]);
   };
 
-  const getStatusBadge = (status) => {
-    return status === "available" ? (
-      <Badge color="green">Available</Badge>
-    ) : (
-      <Badge color="red">Taken</Badge>
+  const handleItemUpdated = (updatedItem) => {
+    setItems((prev) =>
+      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
     );
   };
 
-  if (loading) {
-    return (
-      <Center style={{ height: "100vh" }}>
-        <Loader />
-      </Center>
-    );
-  }
+  const handleDelete = (itemId, itemName) => {
+    openDeleteConfirmModal({
+      title: "Delete Item",
+      name: itemName,
+      onConfirm: async () => {
+        try {
+          await api.delete(`/api/items/${itemId}`);
+          setItems((prev) => prev.filter((item) => item.id !== itemId));
+        } catch (error) {
+          console.error(
+            "Error deleting item:",
+            error.response?.data || error.message
+          );
+        }
+      },
+    });
+  };
+
+  if (loading) return <SleepyLoader />;
 
   return (
     <Container>
-      {/* Breadcrumbs */}
-      <CollectionBreadcrumbs
-        items={[
-          { label: "Dashboard", to: "/dashboard" },
-          { label: "Collections", to: "/collections" },
-          { label: `Collection #${id}`, to: `/collections/${id}/items` },
-          { label: "Inventory" },
-        ]}
+      <PageHeader
+        title="Items"
+        showSearch={false}
+        addLabel="Add Item"
+        onAdd={() => setAddModal(true)}
       />
 
-      <Group justify="space-between" mb="md">
-        <Title order={2}>Inventory for Collection #{id}</Title>
-        <Button component={Link} to={`/collections/${id}/items/new`}>
-          + Add Item
-        </Button>
-      </Group>
+      {items.length === 0 ? (
+        <Center py="lg">
+          <Text>No items found for this collection.</Text>
+        </Center>
+      ) : (
+        <SimpleGrid
+          cols={3}
+          spacing="lg"
+          breakpoints={[
+            { maxWidth: 980, cols: 2 },
+            { maxWidth: 600, cols: 1 },
+          ]}
+        >
+          {items.map((item) => (
+            <Card
+              key={item.id}
+              shadow="sm"
+              padding="md"
+              radius="md"
+              withBorder
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                height: 500,
+              }}
+            >
+              {/* Image Section */}
+              <Card.Section>
+                <div
+                  style={{
+                    height: 250,
+                    width: "100%",
+                    overflow: "hidden",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "#f0f0f0",
+                  }}
+                >
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      style={{
+                        height: "100%",
+                        width: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      No image
+                    </Text>
+                  )}
+                </div>
+              </Card.Section>
 
-      <Paper withBorder shadow="sm" p="md" radius="md">
-        {items.length === 0 ? (
-          <Center py="lg">
-            <Text>No items found for this collection.</Text>
-          </Center>
-        ) : (
-          <Table striped highlightOnHover withColumnBorders>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Item Code</Table.Th>
-                <Table.Th>Item Name</Table.Th>
-                <Table.Th>Item Image</Table.Th>
-                <Table.Th>Price</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Notes</Table.Th>
-                <Table.Th>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {items.map((item) => (
-                <Table.Tr key={item.id}>
-                  <Table.Td>{item.code}</Table.Td>
-                  <Table.Td>
-                    <Button
-                      variant="subtle"
-                      component={Link}
-                      to={`/inventory/${item.id}`}
-                    >
-                      {item.name}
-                    </Button>
-                  </Table.Td>
-                  <Table.Td>
-                    {item.image_url ? (
-                      <Image
-                        src={item.image_url}
-                        alt={item.name}
-                        fit="cover"
-                        radius="sm"
-                        style={{ width: 100, height: 100 }}
-                      />
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        No image
-                      </Text>
-                    )}
-                  </Table.Td>
-                  <Table.Td>${Number(item.price).toFixed(2)}</Table.Td>
-                  <Table.Td>{getStatusBadge(item.status)}</Table.Td>
-                  <Table.Td>{item.notes || "-"}</Table.Td>
-                  <Table.Td>
-                    <Group gap="xs">
-                      <Button
-                        size="xs"
-                        component={Link}
-                        to={`/inventory/${item.id}/edit`}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="xs"
-                        color="red"
-                        onClick={() => {
-                          setDeleteId(item.id);
-                          setOpened(true);
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        )}
-      </Paper>
+              {/* Info Section */}
+              <div style={{ flexGrow: 1, marginTop: 12 }}>
+                <Text weight={500} lineClamp={1}>
+                  {item.name}
+                </Text>
 
-      {/* Delete Modal */}
-      <Modal
-        opened={opened}
-        onClose={() => setOpened(false)}
-        title="Delete Item"
-        centered
-      >
-        <Text>Are you sure you want to delete this item?</Text>
-        <Group mt="md">
-          <Button color="red" onClick={handleDelete}>
-            Delete
-          </Button>
-          <Button variant="outline" onClick={() => setOpened(false)}>
-            Cancel
-          </Button>
-        </Group>
-      </Modal>
+                <Text size="sm" mt="xs">
+                  Price: ${Number(item.price).toFixed(2)}
+                </Text>
+
+                <Badge
+                  color={item.status === "available" ? "green" : "red"}
+                  mt="xs"
+                >
+                  {item.status === "available" ? "Available" : "Taken"}
+                </Badge>
+
+                <Text size="sm" mt="xs" lineClamp={3}>
+                  {item.notes || "-"}
+                </Text>
+              </div>
+
+              {/* Action Buttons - Bottom Left */}
+              <Group mt="md" spacing="xs" position="left">
+                <Button
+                  size="xs"
+                  onClick={() => {
+                    setSelectedItem(item);
+                    setEditModal(true);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="xs"
+                  color="red"
+                  onClick={() => handleDelete(item.id, item.name)}
+                >
+                  Delete
+                </Button>
+              </Group>
+            </Card>
+          ))}
+        </SimpleGrid>
+      )}
+
+      {/* Add Item Modal */}
+      <AddItemModal
+        opened={addModal}
+        onClose={() => setAddModal(false)}
+        collectionId={id}
+        onItemAdded={handleItemAdded}
+      />
+
+      {/* Edit Item Modal */}
+      {selectedItem && (
+        <EditItemModal
+          opened={editModal}
+          onClose={() => setEditModal(false)}
+          item={selectedItem}
+          onItemUpdated={handleItemUpdated}
+        />
+      )}
     </Container>
   );
 }

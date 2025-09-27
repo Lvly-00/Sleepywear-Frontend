@@ -6,18 +6,18 @@ import {
   IconUsers,
   IconUser,
   IconLogout,
+  IconSettings,
 } from "@tabler/icons-react";
-import { Center, Stack } from "@mantine/core";
-import AppLogo from "../assets/AppLogo.svg";
+import { Center, Stack, Menu } from "@mantine/core";
+import AppLogo from "../assets/Logo.svg";
 import classes from "../css/NavbarMinimal.module.css";
-import axios from "../api/axios"; // make sure axios is correctly configured
+import axios from "../api/axios";
 
 const links = [
   { icon: IconLayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: IconShoppingBag, label: "Orders", path: "/orders" },
   { icon: IconArchive, label: "Inventory", path: "/collections" },
   { icon: IconUsers, label: "Customers Log", path: "/customers" },
-
 ];
 
 function SidebarNav() {
@@ -25,15 +25,10 @@ function SidebarNav() {
 
   const handleLogout = async () => {
     if (!window.confirm("Are you sure you want to logout?")) return;
-
     try {
-      // Sanctum requires CSRF cookie first
       await axios.get("/sanctum/csrf-cookie");
       await axios.post("/api/logout");
-
-      // Optional: Clear localStorage or auth state if needed
       localStorage.removeItem("user");
-      // Redirect to login page
       navigate("/");
     } catch (err) {
       console.error("Logout failed:", err);
@@ -44,7 +39,7 @@ function SidebarNav() {
   return (
     <nav className={classes.navbar}>
       {/* Logo */}
-      <Center>
+      <Center className={classes.logoWrapper}>
         <img src={AppLogo} alt="App Logo" className={classes.logo} />
       </Center>
 
@@ -66,29 +61,38 @@ function SidebarNav() {
         </Stack>
       </div>
 
-      {/* Bottom Links */}
-      <Stack justify="center" gap={10}>
-        <NavLink to="/settings" className={classes.link}>
-          <IconUser size={22} stroke={1.5} />
-          <span className={classes.linkLabel}>Account</span>
-        </NavLink>
-        <button
-          onClick={handleLogout}
-          className={classes.link}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-          }}
+      {/* Account Settings Dropdown */}
+      <div className={classes.navbarBottom}>
+        <Menu
+          shadow="md"
+          width={180}
+          classNames={{ dropdown: classes.dropdown }}
         >
-          <IconLogout size={22} stroke={1.5} />
-          <span className={classes.linkLabel}>Logout</span>
-        </button>
-      </Stack>
+          <Menu.Target>
+            <div className={classes.link} style={{ cursor: "pointer" }}>
+              <IconUser size={22} stroke={1.5} />
+              <span className={classes.linkLabel}>Account Settings</span>
+            </div>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              className={classes.dropdownItem}
+              leftSection={<IconSettings size={18} />}
+              onClick={() => navigate("/settings")}
+            >
+              Settings
+            </Menu.Item>
+            <Menu.Item
+              className={classes.dropdownItem}
+              color="red"
+              leftSection={<IconLogout size={18} />}
+              onClick={handleLogout}
+            >
+              Logout
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      </div>
     </nav>
   );
 }

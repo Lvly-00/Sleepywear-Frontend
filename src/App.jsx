@@ -9,12 +9,8 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import Orders from "./pages/orders/Order";
 import AddOrder from "./pages/orders/AddOrder";
 import CollectionOverview from "./pages/collections/CollectionOverview";
-import NewCollection from "./pages/collections/NewCollection";
 import EditCollection from "./pages/collections/EditCollection";
 import Inventory from "./pages/item/Inventory";
-import NewItem from "./pages/item/NewItem";
-import EditItem from "./pages/item/EditItem";
-import ItemDetails from "./pages/item/ItemDetails";
 import Settings from "./pages/account/Settings";
 import CustomerLogs from "./pages/customer-logs/CustomerLogs";
 import PrivateRoute from "./components/PrivateRoute";
@@ -65,14 +61,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route
-            path="/collections/new"
-            element={
-              <PrivateRoute>
-                <NewCollection />
-              </PrivateRoute>
-            }
-          />
+         
           <Route
             path="/collections/:id/edit"
             element={
@@ -90,30 +79,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route
-            path="/collections/:id/items/new"
-            element={
-              <PrivateRoute>
-                <NewItem />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/inventory/:id/edit"
-            element={
-              <PrivateRoute>
-                <EditItem />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/inventory/:id"
-            element={
-              <PrivateRoute>
-                <ItemDetails />
-              </PrivateRoute>
-            }
-          />
+         
 
           <Route
             path="/customers"

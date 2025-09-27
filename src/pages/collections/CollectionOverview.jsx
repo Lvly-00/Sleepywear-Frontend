@@ -9,37 +9,50 @@ import {
   Text,
   Anchor,
   Badge,
-  TextInput,
+  Paper,
+  Center,
 } from "@mantine/core";
-import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
+import PageHeader from "../../components/PageHeader";
+import SleepyLoader from "../../components/SleepyLoader";
+import AddCollectionModal from "../../components/AddCollectionModal";
+import EditCollectionModal from "../../components/EditCollectionModal";
+import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 
 export default function CollectionOverview() {
   const [collections, setCollections] = useState([]);
   const [filteredCollections, setFilteredCollections] = useState([]);
-  const [deleteId, setDeleteId] = useState(null);
-  const [opened, setOpened] = useState(false);
+  const [openedNew, setOpenedNew] = useState(false);
+  const [openedEdit, setOpenedEdit] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState(null);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
 
-  // Fetch collections
   useEffect(() => {
-    api.get("api/collections").then((res) => {
-      // Sort so Active comes first, then Sold Out
-      const sorted = res.data.sort((a, b) => {
-        if (a.status === "Active" && b.status !== "Active") return -1;
-        if (a.status !== "Active" && b.status === "Active") return 1;
-        return 0;
-      });
-      setCollections(sorted);
-      setFilteredCollections(sorted);
-    });
+    const fetchCollections = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get("api/collections");
+        const sorted = res.data.sort((a, b) => {
+          if (a.status === "Active" && b.status !== "Active") return -1;
+          if (a.status !== "Active" && b.status === "Active") return 1;
+          return 0;
+        });
+        setCollections(sorted);
+        setFilteredCollections(sorted);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCollections();
   }, []);
 
-  // Search filter
   useEffect(() => {
-    if (!search.trim()) {
-      setFilteredCollections(collections);
-    } else {
+    if (!search.trim()) setFilteredCollections(collections);
+    else {
       const lower = search.toLowerCase();
       setFilteredCollections(
         collections.filter((col) => col.name.toLowerCase().includes(lower))
@@ -47,131 +60,155 @@ export default function CollectionOverview() {
     }
   }, [search, collections]);
 
-  const handleDelete = async () => {
-    await api.delete(`api/collections/${deleteId}`);
-    const updated = collections.filter((c) => c.id !== deleteId);
-    setCollections(updated);
-    setFilteredCollections(updated);
-    setOpened(false);
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`api/collections/${id}`);
+      const updated = collections.filter((c) => c.id !== id);
+      setCollections(updated);
+      setFilteredCollections(updated);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  // Helper: Return badge for status
+  const handleCollectionUpdated = (updatedCollection) => {
+    setCollections((prev) =>
+      prev.map((c) => (c.id === updatedCollection.id ? updatedCollection : c))
+    );
+    setFilteredCollections((prev) =>
+      prev.map((c) => (c.id === updatedCollection.id ? updatedCollection : c))
+    );
+  };
+
   const getStatusBadge = (status) => {
-    if (status === "Active") {
-      return <Badge color="green">Active</Badge>;
-    } else if (status === "Sold Out") {
-      return <Badge color="red">Sold Out</Badge>;
-    }
+    if (status === "Active") return <Badge color="green">Active</Badge>;
+    if (status === "Sold Out") return <Badge color="red">Sold Out</Badge>;
     return <Badge color="gray">{status}</Badge>;
   };
 
+  if (loading) return <SleepyLoader />;
+
   return (
     <>
-      {/* Breadcrumbs */}
-      <CollectionBreadcrumbs
-        items={[
-          { label: "Dashboard", to: "/dashboard" },
-          { label: "Collections" },
-        ]}
+      <PageHeader
+        title="Collections"
+        showSearch
+        search={search}
+        setSearch={setSearch}
+        addLabel="Add Collection"
+        onAdd={() => setOpenedNew(true)}
       />
 
-      {/* Header with Search + Add Button */}
-      <Group justify="space-between" mb="md">
-        <h1>Collections</h1>
-        <Group>
-          <TextInput
-            placeholder="Search collections..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ maxWidth: 250 }}
-          />
-          <Button component={Link} to="/collections/new">
-            + Add Collection
-          </Button>
-        </Group>
-      </Group>
+      <Paper withBorder shadow="sm" p="md" radius="md">
+        {filteredCollections.length === 0 ? (
+          <Center py="lg">
+            <Text>No collections found.</Text>
+          </Center>
+        ) : (
+          <Table striped highlightOnHover withColumnBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>ID</Table.Th>
+                <Table.Th>Name</Table.Th>
+                <Table.Th>Release Date</Table.Th>
+                <Table.Th>QTY</Table.Th>
+                <Table.Th>Status</Table.Th>
+                <Table.Th>Total Sales</Table.Th>
+                <Table.Th>Stock QTY</Table.Th>
+                <Table.Th>Actions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {filteredCollections.map((col) => (
+                <Table.Tr key={col.id}>
+                  <Table.Td>{col.id}</Table.Td>
+                  <Table.Td>
+                    <Anchor
+                      component="button"
+                      onClick={() => navigate(`/collections/${col.id}/items`)}
+                    >
+                      {col.name}
+                    </Anchor>
+                  </Table.Td>
+                  <Table.Td>{col.release_date}</Table.Td>
+                  <Table.Td>{col.qty}</Table.Td>
+                  <Table.Td>{getStatusBadge(col.status)}</Table.Td>
+                  <Table.Td>
+                    ₱
+                    {col.total_sales
+                      ? new Intl.NumberFormat("en-PH", {
+                          maximumFractionDigits: 0,
+                        }).format(Math.floor(col.total_sales))
+                      : "0"}
+                  </Table.Td>
+                  <Table.Td>{col.stock_qty}</Table.Td>
+                  <Table.Td>
+                    <Group>
+                      <Button
+                        size="xs"
+                        onClick={() => {
+                          setSelectedCollection(col);
+                          setOpenedEdit(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="xs"
+                        color="red"
+                        onClick={() => {
+                          openDeleteConfirmModal({
+                            name: col.name,
+                            onConfirm: async () => handleDelete(col.id),
+                          });
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        )}
+      </Paper>
 
-      {/* Collections Table */}
-      <Table striped highlightOnHover withBorder withColumnBorders>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>ID</Table.Th>
-            <Table.Th>Name</Table.Th>
-            <Table.Th>Release Date</Table.Th>
-            <Table.Th>QTY</Table.Th>
-            <Table.Th>Status</Table.Th>
-            <Table.Th>Total Sales</Table.Th>
-            <Table.Th>Stock QTY</Table.Th>
-            <Table.Th>Actions</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {filteredCollections.map((col) => (
-            <Table.Tr key={col.id}>
-              <Table.Td>{col.id}</Table.Td>
-
-              {/* ✅ Clicking Name redirects to Inventory */}
-              <Table.Td>
-                <Anchor
-                  component="button"
-                  onClick={() => navigate(`/collections/${col.id}/items`)}
-                >
-                  {col.name}
-                </Anchor>
-              </Table.Td>
-
-              <Table.Td>{col.release_date}</Table.Td>
-              <Table.Td>{col.qty}</Table.Td>
-
-              {/* ✅ Status Badge */}
-              <Table.Td>{getStatusBadge(col.status)}</Table.Td>
-
-              <Table.Td>{col.total_sales}</Table.Td>
-              <Table.Td>{col.stock_qty}</Table.Td>
-
-              {/* Actions */}
-              <Table.Td>
-                <Group>
-                  <Button
-                    size="xs"
-                    component={Link}
-                    to={`/collections/${col.id}/edit`}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="xs"
-                    color="red"
-                    onClick={() => {
-                      setDeleteId(col.id);
-                      setOpened(true);
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </Group>
-              </Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
-
-      {/* Delete Modal */}
+      {/* Add Collection Modal */}
       <Modal
-        opened={opened}
-        onClose={() => setOpened(false)}
-        title="Delete Collection"
+        opened={openedNew}
+        onClose={() => setOpenedNew(false)}
+        title="Add New Collection"
+        size="sm"
       >
-        <Text>Are you sure you want to delete this collection?</Text>
-        <Group mt="md">
-          <Button color="red" onClick={handleDelete}>
-            Delete
-          </Button>
-          <Button variant="outline" onClick={() => setOpened(false)}>
-            Cancel
-          </Button>
-        </Group>
+        <AddCollectionModal
+          onClose={() => setOpenedNew(false)}
+          onCollectionAdded={(newCollection) => {
+            setCollections((prev) => {
+              const updated = [newCollection, ...prev];
+              setFilteredCollections(updated);
+              return updated;
+            });
+            setOpenedNew(false);
+          }}
+        />
       </Modal>
+
+      {/* Edit Collection Modal */}
+      {selectedCollection && (
+        <Modal
+          opened={openedEdit}
+          onClose={() => setOpenedEdit(false)}
+          title="Edit Collection"
+          size="sm"
+        >
+          <EditCollectionModal
+            collection={selectedCollection}
+            onCollectionUpdated={handleCollectionUpdated}
+            onClose={() => setOpenedEdit(false)}
+          />
+        </Modal>
+      )}
     </>
   );
 }

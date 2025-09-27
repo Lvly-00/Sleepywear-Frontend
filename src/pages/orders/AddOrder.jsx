@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { TextInput, Button, Select, Group, Table, Title } from "@mantine/core";
+import { Text, TextInput, Button, Select, Group, Table, Title } from "@mantine/core";
 import api from "../../api/axios";
 import { useNavigate } from "react-router-dom";
 import InvoicePreview from "../../components/InvoicePreview";
@@ -20,6 +20,8 @@ const AddOrder = () => {
   });
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
+  const [errors, setErrors] = useState({});
+
   const navigate = useNavigate();
 
   // Fetch collections and customers
@@ -63,7 +65,7 @@ const AddOrder = () => {
         last_name: customer.last_name,
         address: customer.address,
         contact_number: customer.contact_number,
-        social_handle: customer.social_handle || "",
+        social_handle: customer.social_handle,
       });
     }
   };
@@ -79,11 +81,45 @@ const AddOrder = () => {
     }
   };
 
-  const total = orderItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
+  const total = orderItems.reduce(
+    (sum, item) => sum + parseFloat(item.price),
+    0
+  );
 
   const handlePlaceOrder = async () => {
-    if (orderItems.length === 0) return alert("Please add at least one item");
-    if (!form.first_name || !form.address) return alert("Please fill all required fields");
+    const newErrors = {};
+
+    // Check if order items exist
+    if (orderItems.length === 0) {
+      newErrors.orderItems = "Please add at least one item";
+    }
+
+    // Check all fields for empty values
+    [
+      "first_name",
+      "last_name",
+      "address",
+      "contact_number",
+      "social_handle",
+    ].forEach((field) => {
+      const value = form[field];
+      if (!form[field]) {
+        newErrors[field] = `${field
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())} is required`;
+      }
+
+      if (field === "social_handle" && !/^https?:\/\/.+/.test(value)) {
+        newErrors[field] =
+          "Social handle must be a valid URL starting with http or https";
+      }
+    });
+
+    // Stop if errors exist
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
     try {
       // If customer exists, update; else create new
@@ -96,7 +132,6 @@ const AddOrder = () => {
         customerId = res.data.id;
       }
 
-      // ✅ FIX: payload matches Laravel expectation
       const payload = {
         invoice: {
           customer_name: `${form.first_name} ${form.last_name}`,
@@ -146,7 +181,8 @@ const AddOrder = () => {
   };
 
   const availableItems =
-    collections.find((c) => c.id.toString() === selectedCollection)?.items || [];
+    collections.find((c) => c.id.toString() === selectedCollection)?.items ||
+    [];
 
   return (
     <div style={{ padding: 20 }}>
@@ -191,6 +227,11 @@ const AddOrder = () => {
           Add
         </Button>
       </Group>
+      {errors.orderItems && (
+        <Text color="red" size="sm" mt="xs">
+          {errors.orderItems}
+        </Text>
+      )}
 
       <Table withBorder mt="md">
         <tbody>
@@ -211,14 +252,42 @@ const AddOrder = () => {
         </tbody>
       </Table>
 
-      {["first_name", "last_name", "address", "contact_number", "social_handle"].map((field) => (
+      {[
+        "first_name",
+        "last_name",
+        "address",
+        "contact_number",
+        "social_handle",
+      ].map((field) => (
         <TextInput
           key={field}
-          label={field.replace("_", " ")}
-          required={["first_name", "address"].includes(field)}
+          label={field
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (char) => char.toUpperCase())}
+          required
           value={form[field]}
-          onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+          onChange={(e) => {
+            let value = e.target.value;
+
+            // Validation for contact_number: only digits, max 11 chars
+            if (field === "contact_number") {
+              value = value.replace(/\D/g, ""); // Remove non-numeric
+              if (value.length > 11) return; // Limit to 11 digits
+            }
+
+            // Validation for social_handle: must start with http or https
+            if (
+              field === "social_handle" &&
+              value &&
+              !/^https?:\/\//.test(value)
+            ) {
+              // Do nothing or show error; optional
+            }
+
+            setForm({ ...form, [field]: value });
+          }}
           mt="sm"
+          error={errors[field]}
         />
       ))}
 
