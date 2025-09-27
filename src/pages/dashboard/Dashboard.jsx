@@ -11,12 +11,14 @@ import {
   Area,
 } from "recharts";
 import api from "../../api/axios";
+import PageHeader from "../../components/PageHeader";
 
 function Dashboard() {
   const [summary, setSummary] = useState(null);
 
   useEffect(() => {
-    api.get("/api/dashboard-summary")
+    api
+      .get("/api/dashboard-summary")
       .then((res) => setSummary(res.data))
       .catch((err) => console.error(err));
   }, []);
@@ -25,7 +27,7 @@ function Dashboard() {
 
   return (
     <Stack p="lg" spacing="xl">
-      <Title order={1}>Dashboard</Title>
+      <PageHeader title="Dashboard" />
 
       {/* Summary Cards */}
       <Grid mt="lg">
@@ -93,7 +95,12 @@ function Dashboard() {
             <XAxis dataKey="month" />
             <YAxis />
             <Tooltip />
-            <Area type="monotone" dataKey="sales" stroke="#82ca9d" fill="#82ca9d" />
+            <Area
+              type="monotone"
+              dataKey="sales"
+              stroke="#82ca9d"
+              fill="#82ca9d"
+            />
           </AreaChart>
         </ResponsiveContainer>
       </Card>

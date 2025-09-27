@@ -9,6 +9,7 @@ import {
   Title,
   Stack,
 } from "@mantine/core";
+import PageHeader from "../../components/PageHeader";
 
 function CustomerLogs() {
   const [customers, setCustomers] = useState([]);
@@ -43,13 +44,11 @@ function CustomerLogs() {
 
   return (
     <div style={{ padding: "1rem" }}>
-      <Title order={2}>Customer Logs</Title>
-      <TextInput
-        placeholder="Search customers..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        mt="md"
-        mb="md"
+      <PageHeader
+        title="Customers Log"
+        showSearch
+        search={search}
+        setSearch={setSearch}
       />
 
       <Table highlightOnHover>
@@ -73,7 +72,13 @@ function CustomerLogs() {
               <td>{new Date(c.created_at).toLocaleDateString()}</td>
               <td>
                 <Group spacing="xs">
-                  <Button size="xs" onClick={() => { setSelected(c); setOpened(true); }}>
+                  <Button
+                    size="xs"
+                    onClick={() => {
+                      setSelected(c);
+                      setOpened(true);
+                    }}
+                  >
                     Edit
                   </Button>
                   <Button
@@ -91,33 +96,47 @@ function CustomerLogs() {
       </Table>
 
       {/* Edit Modal */}
-      <Modal opened={opened} onClose={() => setOpened(false)} title="Edit Customer">
+      <Modal
+        opened={opened}
+        onClose={() => setOpened(false)}
+        title="Edit Customer"
+      >
         {selected && (
           <Stack>
             <TextInput
               label="First Name"
               value={selected.first_name}
-              onChange={(e) => setSelected({ ...selected, first_name: e.target.value })}
+              onChange={(e) =>
+                setSelected({ ...selected, first_name: e.target.value })
+              }
             />
             <TextInput
               label="Last Name"
               value={selected.last_name}
-              onChange={(e) => setSelected({ ...selected, last_name: e.target.value })}
+              onChange={(e) =>
+                setSelected({ ...selected, last_name: e.target.value })
+              }
             />
             <TextInput
               label="Contact Number"
               value={selected.contact_number}
-              onChange={(e) => setSelected({ ...selected, contact_number: e.target.value })}
+              onChange={(e) =>
+                setSelected({ ...selected, contact_number: e.target.value })
+              }
             />
             <TextInput
               label="Social Handle"
               value={selected.social_handle || ""}
-              onChange={(e) => setSelected({ ...selected, social_handle: e.target.value })}
+              onChange={(e) =>
+                setSelected({ ...selected, social_handle: e.target.value })
+              }
             />
             <TextInput
               label="Address"
               value={selected.address}
-              onChange={(e) => setSelected({ ...selected, address: e.target.value })}
+              onChange={(e) =>
+                setSelected({ ...selected, address: e.target.value })
+              }
             />
 
             <Group position="right" mt="md">

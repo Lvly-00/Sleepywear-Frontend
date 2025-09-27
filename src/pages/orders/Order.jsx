@@ -16,6 +16,7 @@ import AddPaymentModal from "../../components/AddPaymentModal";
 import InvoicePreview from "../../components/InvoicePreview";
 import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 import api from "../../api/axios";
+import PageHeader from "../../components/PageHeader";
 import { useNavigate } from "react-router-dom";
 
 const Order = () => {
@@ -76,24 +77,14 @@ const Order = () => {
 
   return (
     <Stack p="lg" spacing="lg">
-      <Group position="apart" align="center">
-        <Title order={2}>Orders</Title>
-        <Group>
-          <TextInput
-            placeholder="Search orders..."
-            icon={<IconSearch size={16} />}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ maxWidth: 250 }}
-          />
-          <Button
-            leftIcon={<IconPlus size={16} />}
-            onClick={() => navigate("/add-order")}
-          >
-            Add Order
-          </Button>
-        </Group>
-      </Group>
+      <PageHeader
+        title="Orders"
+        showSearch
+        search={search}
+        setSearch={setSearch}
+        addLabel="Add Order"
+        addLink="/add-order"
+      />
 
       <ScrollArea>
         <Table striped highlightOnHover withColumnBorders>

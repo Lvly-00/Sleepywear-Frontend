@@ -11,6 +11,7 @@ import {
   Badge,
   TextInput,
 } from "@mantine/core";
+import PageHeader from "../../components/PageHeader";
 
 export default function CollectionOverview() {
   const [collections, setCollections] = useState([]);
@@ -66,23 +67,14 @@ export default function CollectionOverview() {
 
   return (
     <>
-      
-
-      {/* Header with Search + Add Button */}
-      <Group justify="space-between" mb="md">
-        <h1>Collections</h1>
-        <Group>
-          <TextInput
-            placeholder="Search collections..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ maxWidth: 250 }}
-          />
-          <Button component={Link} to="/collections/new">
-            + Add Collection
-          </Button>
-        </Group>
-      </Group>
+      <PageHeader
+        title="Collections"
+        showSearch
+        search={search}
+        setSearch={setSearch}
+        addLabel="Add Collection"
+        addLink="/collections/new"
+      />
 
       {/* Collections Table */}
       <Table striped highlightOnHover withBorder withColumnBorders>

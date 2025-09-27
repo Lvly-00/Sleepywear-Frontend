@@ -15,7 +15,7 @@ import {
   Image,
   Badge,
 } from "@mantine/core";
-import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
+import PageHeader from "../../components/PageHeader";
 
 function Inventory() {
   const { id } = useParams(); // collection ID
@@ -49,7 +49,10 @@ function Inventory() {
       setItems(items.filter((i) => i.id !== deleteId));
       setOpened(false);
     } catch (error) {
-      console.error("Error deleting item:", error.response?.data || error.message);
+      console.error(
+        "Error deleting item:",
+        error.response?.data || error.message
+      );
     }
   };
 
@@ -72,21 +75,12 @@ function Inventory() {
   return (
     <Container>
       {/* Breadcrumbs */}
-      <CollectionBreadcrumbs
-        items={[
-          { label: "Dashboard", to: "/dashboard" },
-          { label: "Collections", to: "/collections" },
-          { label: `Collection #${id}`, to: `/collections/${id}/items` },
-          { label: "Inventory" },
-        ]}
+      <PageHeader
+        title="Items"
+        showSearch={false}
+        addLabel="Add Item"
+        addLink="/items/new"
       />
-
-      <Group justify="space-between" mb="md">
-        <Title order={2}>Inventory for Collection #{id}</Title>
-        <Button component={Link} to={`/collections/${id}/items/new`}>
-          + Add Item
-        </Button>
-      </Group>
 
       <Paper withBorder shadow="sm" p="md" radius="md">
         {items.length === 0 ? (
