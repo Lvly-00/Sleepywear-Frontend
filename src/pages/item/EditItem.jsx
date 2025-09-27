@@ -13,7 +13,6 @@ import {
   Loader,
   Center,
 } from "@mantine/core";
-import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
 export default function EditItem() {
   const { id } = useParams(); // item ID
@@ -52,13 +51,7 @@ export default function EditItem() {
 
   return (
     <Paper shadow="sm" p="md">
-      <CollectionBreadcrumbs
-        items={[
-          { label: "Dashboard", to: "/dashboard" },
-          { label: "Collections", to: "/collections" },
-          { label: "Edit Item" },
-        ]}
-      />
+    
 
       <Title order={3} mb="md">
         Edit Item

@@ -11,7 +11,6 @@ import {
   Paper,
   Title,
 } from "@mantine/core";
-import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
 export default function NewItem() {
   const { id } = useParams(); // collection ID
@@ -41,14 +40,7 @@ export default function NewItem() {
 
   return (
     <Paper shadow="sm" p="md">
-      <CollectionBreadcrumbs
-        items={[
-          { label: "Dashboard", to: "/dashboard" },
-          { label: "Collections", to: "/collections" },
-          { label: `Collection #${id}`, to: `/collections/${id}/items` },
-          { label: "Add Item" },
-        ]}
-      />
+      
 
       <Title order={3} mb="md">
         Add Item to Collection #{id}

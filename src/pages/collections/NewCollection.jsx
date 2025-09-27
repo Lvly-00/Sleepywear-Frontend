@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Button, TextInput, Stack, Container, Paper, Title, Divider } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
-import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
 function NewCollection() {
   const [form, setForm] = useState({
@@ -29,13 +28,7 @@ function NewCollection() {
 
   return (
     <Container size="sm" py="md">
-      <CollectionBreadcrumbs
-        items={[
-          { label: "Dashboard", to: "/dashboard" },
-          { label: "Collections", to: "/collections" },
-          { label: "New Collection" },
-        ]}
-      />
+      
 
       <Paper shadow="xs" p="lg" radius="md" withBorder>
         <Title order={2} mb="sm">Add New Collection</Title>

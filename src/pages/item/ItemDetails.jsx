@@ -12,7 +12,6 @@ import {
   Button,
   Group,
 } from "@mantine/core";
-import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
 export default function ItemDetails() {
   const { id } = useParams(); // item ID

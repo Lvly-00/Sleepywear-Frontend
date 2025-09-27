@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Button, TextInput, Stack, Container, Paper, Title, Divider, Select } from "@mantine/core";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
-import CollectionBreadcrumbs from "../../components/CollectionBreadcrumbs";
 
 function EditCollection() {
   const { id } = useParams();
@@ -47,13 +46,7 @@ function EditCollection() {
 
   return (
     <Container size="sm" py="md">
-      <CollectionBreadcrumbs
-        items={[
-          { label: "Dashboard", to: "/dashboard" },
-          { label: "Collections", to: "/collections" },
-          { label: "Edit Collection" },
-        ]}
-      />
+     
 
       <Paper shadow="xs" p="lg" radius="md" withBorder>
         <Title order={2} mb="sm">Edit Collection</Title>
