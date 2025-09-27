@@ -14,6 +14,7 @@ import {
 import { IconPlus, IconEdit, IconTrash, IconSearch } from "@tabler/icons-react";
 import AddPaymentModal from "../../components/AddPaymentModal";
 import InvoicePreview from "../../components/InvoicePreview";
+import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 import api from "../../api/axios";
 import { useNavigate } from "react-router-dom";
 
@@ -35,8 +36,10 @@ const Order = () => {
       else if (Array.isArray(res.data.data)) ordersArray = res.data.data;
 
       const sortedOrders = ordersArray.sort((a, b) => {
-        if (a.payment_status === "pending" && b.payment_status === "paid") return -1;
-        if (a.payment_status === "paid" && b.payment_status === "pending") return 1;
+        if (a.payment_status === "pending" && b.payment_status === "paid")
+          return -1;
+        if (a.payment_status === "paid" && b.payment_status === "pending")
+          return 1;
         return new Date(b.order_date) - new Date(a.order_date);
       });
 
@@ -50,14 +53,19 @@ const Order = () => {
     fetchOrders();
   }, []);
 
-  const handleDelete = async (orderId) => {
-    if (!window.confirm("Are you sure you want to delete this order?")) return;
-    try {
-      await api.delete(`/api/orders/${orderId}`);
-      fetchOrders();
-    } catch (err) {
-      console.error("Error deleting order:", err);
-    }
+  const handleDelete = (order) => {
+    openDeleteConfirmModal({
+      title: "Delete Order",
+      name: `Order #${order.id}`,
+      onConfirm: async () => {
+        try {
+          await api.delete(`/api/orders/${order.id}`);
+          fetchOrders();
+        } catch (err) {
+          console.error("Error deleting order:", err);
+        }
+      },
+    });
   };
 
   // ✅ Filter orders based on search term
@@ -94,7 +102,6 @@ const Order = () => {
               <Table.Th>ID</Table.Th>
               <Table.Th>Customer</Table.Th>
               <Table.Th>Total Qty</Table.Th>
-              <Table.Th>Delivery Status</Table.Th>
               <Table.Th>Order Date</Table.Th>
               <Table.Th>Total Price</Table.Th>
               <Table.Th>Payment Status</Table.Th>
@@ -110,27 +117,24 @@ const Order = () => {
                   order.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
                 const totalPrice =
                   order.total ||
-                  order.items?.reduce((sum, i) => sum + i.price * i.quantity, 0);
+                  order.items?.reduce(
+                    (sum, i) => sum + i.price * i.quantity,
+                    0
+                  );
 
                 return (
-                  <Table.Tr key={order.id}>
+                  <Table.Tr
+                    key={order.id}
+                    onClick={() => {
+                      setInvoiceData(order);
+                      setInvoiceModal(true);
+                    }}
+                    style={{ cursor: "pointer" }} // <-- shows pointer cursor for UX
+                  >
                     <Table.Td>{order.id}</Table.Td>
                     <Table.Td>{fullName}</Table.Td>
                     <Table.Td>{totalQty}</Table.Td>
-                    <Table.Td>
-                      <Badge
-                        color={
-                          order.delivery_status === "delivered"
-                            ? "green"
-                            : order.delivery_status === "processing"
-                            ? "blue"
-                            : "yellow"
-                        }
-                        variant="filled"
-                      >
-                        {order.delivery_status || "Pending"}
-                      </Badge>
-                    </Table.Td>
+
                     <Table.Td>
                       {new Date(order.order_date).toLocaleDateString()}
                     </Table.Td>
@@ -154,7 +158,8 @@ const Order = () => {
                         {order.payment_status !== "paid" && (
                           <Button
                             size="xs"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation(); // prevent row click from firing
                               setSelectedOrder(order);
                               setAddPaymentOpen(true);
                             }}
@@ -164,27 +169,12 @@ const Order = () => {
                         )}
                         <Button
                           size="xs"
-                          color="teal"
-                          onClick={() => {
-                            setInvoiceData(order);
-                            setInvoiceModal(true);
-                          }}
-                        >
-                          Invoice
-                        </Button>
-                        <Button
-                          size="xs"
-                          color="blue"
-                          leftIcon={<IconEdit size={14} />}
-                          onClick={() => navigate(`/edit-order/${order.id}`)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="xs"
                           color="red"
                           leftIcon={<IconTrash size={14} />}
-                          onClick={() => handleDelete(order.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(order);
+                          }}
                         >
                           Delete
                         </Button>
