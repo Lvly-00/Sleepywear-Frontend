@@ -15,20 +15,20 @@ import {
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
 import AddCollectionModal from "../../components/AddCollectionModal";
+import EditCollectionModal from "../../components/EditCollectionModal";
 import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 
 export default function CollectionOverview() {
   const [collections, setCollections] = useState([]);
   const [filteredCollections, setFilteredCollections] = useState([]);
-  const [deleteId, setDeleteId] = useState(null);
-  const [openedDelete, setOpenedDelete] = useState(false);
   const [openedNew, setOpenedNew] = useState(false);
+  const [openedEdit, setOpenedEdit] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
-  // Fetch collections once (totals come from backend)
   useEffect(() => {
     const fetchCollections = async () => {
       setLoading(true);
@@ -47,11 +47,9 @@ export default function CollectionOverview() {
         setLoading(false);
       }
     };
-
     fetchCollections();
   }, []);
 
-  // Search filter
   useEffect(() => {
     if (!search.trim()) setFilteredCollections(collections);
     else {
@@ -62,17 +60,24 @@ export default function CollectionOverview() {
     }
   }, [search, collections]);
 
-  // Delete collection
-  const handleDelete = async () => {
+  const handleDelete = async (id) => {
     try {
-      await api.delete(`api/collections/${deleteId}`);
-      const updated = collections.filter((c) => c.id !== deleteId);
+      await api.delete(`api/collections/${id}`);
+      const updated = collections.filter((c) => c.id !== id);
       setCollections(updated);
       setFilteredCollections(updated);
-      setOpenedDelete(false);
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleCollectionUpdated = (updatedCollection) => {
+    setCollections((prev) =>
+      prev.map((c) => (c.id === updatedCollection.id ? updatedCollection : c))
+    );
+    setFilteredCollections((prev) =>
+      prev.map((c) => (c.id === updatedCollection.id ? updatedCollection : c))
+    );
   };
 
   const getStatusBadge = (status) => {
@@ -141,8 +146,10 @@ export default function CollectionOverview() {
                     <Group>
                       <Button
                         size="xs"
-                        component={Link}
-                        to={`/collections/${col.id}/edit`}
+                        onClick={() => {
+                          setSelectedCollection(col);
+                          setOpenedEdit(true);
+                        }}
                       >
                         Edit
                       </Button>
@@ -152,18 +159,7 @@ export default function CollectionOverview() {
                         onClick={() => {
                           openDeleteConfirmModal({
                             name: col.name,
-                            onConfirm: async () => {
-                              try {
-                                await api.delete(`api/collections/${col.id}`);
-                                const updated = collections.filter(
-                                  (c) => c.id !== col.id
-                                );
-                                setCollections(updated);
-                                setFilteredCollections(updated);
-                              } catch (err) {
-                                console.error(err);
-                              }
-                            },
+                            onConfirm: async () => handleDelete(col.id),
                           });
                         }}
                       >
@@ -177,23 +173,6 @@ export default function CollectionOverview() {
           </Table>
         )}
       </Paper>
-
-      {/* Delete Modal */}
-      <Modal
-        opened={openedDelete}
-        onClose={() => setOpenedDelete(false)}
-        title="Delete Collection"
-      >
-        <Text>Are you sure you want to delete this collection?</Text>
-        <Group mt="md">
-          <Button color="red" onClick={handleDelete}>
-            Delete
-          </Button>
-          <Button variant="outline" onClick={() => setOpenedDelete(false)}>
-            Cancel
-          </Button>
-        </Group>
-      </Modal>
 
       {/* Add Collection Modal */}
       <Modal
@@ -214,6 +193,22 @@ export default function CollectionOverview() {
           }}
         />
       </Modal>
+
+      {/* Edit Collection Modal */}
+      {selectedCollection && (
+        <Modal
+          opened={openedEdit}
+          onClose={() => setOpenedEdit(false)}
+          title="Edit Collection"
+          size="sm"
+        >
+          <EditCollectionModal
+            collection={selectedCollection}
+            onCollectionUpdated={handleCollectionUpdated}
+            onClose={() => setOpenedEdit(false)}
+          />
+        </Modal>
+      )}
     </>
   );
 }
