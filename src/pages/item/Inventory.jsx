@@ -1,67 +1,86 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import {
   Container,
   Table,
-  Title,
   Loader,
   Center,
   Paper,
   Button,
   Group,
-  Modal,
   Text,
   Image,
   Badge,
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
+import AddItemModal from "../../components/AddItemModal";
+import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 
 function Inventory() {
-  const { id } = useParams(); // collection ID
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [deleteId, setDeleteId] = useState(null);
-  const [opened, setOpened] = useState(false);
+  const [addModal, setAddModal] = useState(false);
+  const [collection, setCollection] = useState(null);
 
+  // Fetch collection details and items
   useEffect(() => {
-    api
-      .get(`/api/items?collection_id=${id}`)
-      .then((res) => {
-        // Sort: Available first, Taken last
-        const sorted = res.data.sort((a, b) => {
+    const fetchData = async () => {
+      try {
+        const collectionRes = await api.get(`/api/collections/${id}`);
+        setCollection(collectionRes.data);
+
+        const itemsRes = await api.get(`/api/items?collection_id=${id}`);
+        const sorted = itemsRes.data.sort((a, b) => {
           if (a.status === "available" && b.status !== "available") return -1;
           if (a.status !== "available" && b.status === "available") return 1;
           return 0;
         });
         setItems(sorted);
-        setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error(err.response?.data || err.message);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchData();
   }, [id]);
 
-  const handleDelete = async () => {
-    try {
-      await api.delete(`/api/items/${deleteId}`);
-      setItems(items.filter((i) => i.id !== deleteId));
-      setOpened(false);
-    } catch (error) {
-      console.error(
-        "Error deleting item:",
-        error.response?.data || error.message
-      );
-    }
+  // Handle item deletion
+  const handleItemDelete = (itemId, itemName) => {
+    openDeleteConfirmModal({
+      title: "Delete Item",
+      name: itemName,
+      onConfirm: async () => {
+        try {
+          await api.delete(`/api/items/${itemId}`);
+          setItems((prev) => prev.filter((i) => i.id !== itemId));
+        } catch (err) {
+          console.error("Error deleting item:", err);
+        }
+      },
+    });
   };
 
-  const getStatusBadge = (status) => {
-    return status === "available" ? (
-      <Badge color="green">Available</Badge>
-    ) : (
-      <Badge color="red">Taken</Badge>
-    );
+  // Handle collection deletion
+  const handleCollectionDelete = () => {
+    if (!collection) return;
+    openDeleteConfirmModal({
+      title: "Delete Collection",
+      name: collection.name,
+      onConfirm: async () => {
+        try {
+          await api.delete(`/api/collections/${collection.id}`);
+          navigate("/collections"); // redirect to collections page after deletion
+        } catch (err) {
+          console.error("Error deleting collection:", err);
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -74,12 +93,16 @@ function Inventory() {
 
   return (
     <Container>
-      {/* Breadcrumbs */}
       <PageHeader
-        title="Items"
+        title={collection?.name || "Items"}
         showSearch={false}
         addLabel="Add Item"
-        addLink="/items/new"
+        onAdd={() => setAddModal(true)}
+        extraActions={
+          <Button color="red" onClick={handleCollectionDelete}>
+            Delete Collection
+          </Button>
+        }
       />
 
       <Paper withBorder shadow="sm" p="md" radius="md">
@@ -129,7 +152,13 @@ function Inventory() {
                     )}
                   </Table.Td>
                   <Table.Td>${Number(item.price).toFixed(2)}</Table.Td>
-                  <Table.Td>{getStatusBadge(item.status)}</Table.Td>
+                  <Table.Td>
+                    {item.status === "available" ? (
+                      <Badge color="green">Available</Badge>
+                    ) : (
+                      <Badge color="red">Taken</Badge>
+                    )}
+                  </Table.Td>
                   <Table.Td>{item.notes || "-"}</Table.Td>
                   <Table.Td>
                     <Group gap="xs">
@@ -143,10 +172,7 @@ function Inventory() {
                       <Button
                         size="xs"
                         color="red"
-                        onClick={() => {
-                          setDeleteId(item.id);
-                          setOpened(true);
-                        }}
+                        onClick={() => handleItemDelete(item.id, item.name)}
                       >
                         Delete
                       </Button>
@@ -159,23 +185,13 @@ function Inventory() {
         )}
       </Paper>
 
-      {/* Delete Modal */}
-      <Modal
-        opened={opened}
-        onClose={() => setOpened(false)}
-        title="Delete Item"
-        centered
-      >
-        <Text>Are you sure you want to delete this item?</Text>
-        <Group mt="md">
-          <Button color="red" onClick={handleDelete}>
-            Delete
-          </Button>
-          <Button variant="outline" onClick={() => setOpened(false)}>
-            Cancel
-          </Button>
-        </Group>
-      </Modal>
+      {/* Add Item Modal Component */}
+      <AddItemModal
+        opened={addModal}
+        onClose={() => setAddModal(false)}
+        collectionId={id}
+        onItemAdded={(newItem) => setItems((prev) => [...prev, newItem])}
+      />
     </Container>
   );
 }

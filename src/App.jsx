@@ -12,7 +12,6 @@ import CollectionOverview from "./pages/collections/CollectionOverview";
 import NewCollection from "./pages/collections/NewCollection";
 import EditCollection from "./pages/collections/EditCollection";
 import Inventory from "./pages/item/Inventory";
-import NewItem from "./pages/item/NewItem";
 import EditItem from "./pages/item/EditItem";
 import ItemDetails from "./pages/item/ItemDetails";
 import Settings from "./pages/account/Settings";
@@ -90,14 +89,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route
-            path="/collections/:id/items/new"
-            element={
-              <PrivateRoute>
-                <NewItem />
-              </PrivateRoute>
-            }
-          />
+         
           <Route
             path="/inventory/:id/edit"
             element={
