@@ -1,69 +1,78 @@
-.page-loader-fullscreen {
-  position: fixed;      /* overlay everything */
-  top: 0;
-  left: 0;
-  width: 100vw;         /* full viewport width */
-  height: 100vh;        /* full viewport height */
+/* Fullscreen dark background */
+.loader-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: transparent; /* optional: no bg */
-  z-index: 9999;        /* above everything */
+  height: 100vh;
+  background-color: #1e2235;
 }
 
+/* Moon wrapper */
 .moon-wrapper {
   position: relative;
   width: 120px;
   height: 120px;
 }
 
-.crescent-moon {
+/* Base round moon */
+.moon {
   width: 100px;
   height: 100px;
+  background: #f5db9fcc; /* your requested moon color */
   border-radius: 50%;
-  background: #6c5ce7;
-  position: relative;
-  animation: bounce 1.5s infinite ease-in-out;
+  box-shadow: 0 0 15px rgba(245, 219, 159, 0.5);
+  position: absolute;
+  top: 10px;
+  left: 10px;
 }
 
-.crescent-moon::after {
-  content: "";
-  width: 80px;
+/* Crescent effect */
+.crescent {
+  width: 100px;
   height: 100px;
-  background: #fff;
+  background: #1e2235; /* match background for crescent */
   border-radius: 50%;
   position: absolute;
-  top: 0;
-  left: -30px;
+  top: 10px;
+  left: 10px;
+  transform-origin: center;
+  animation: crescent-slide 1.5s ease-in-out infinite alternate;
 }
 
+/* Crescent sliding animation */
+@keyframes crescent-slide {
+  0% { transform: translateX(0px); }
+  50% { transform: translateX(-15px); }
+  100% { transform: translateX(0px); }
+}
+
+/* Floating Z's */
 .zzz-container {
   position: absolute;
-  top: -30px;
-  left: 40px;
+  top: -40px;
+  left: 60px;
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
 .zzz {
-  font-family: "Comic Sans MS", cursive, sans-serif;
-  font-size: 1.5rem;
+  font-size: 18px;
+  color: #a3a3ff; /* soft Z color */
   font-weight: bold;
-  color: #ffeaa7;
-  animation: floatZzz 1.5s infinite ease-in-out;
+  animation: floatZ 1.5s ease-in-out infinite;
 }
 
-.zzz:nth-child(2) { animation-delay: 0.3s; }
-.zzz:nth-child(3) { animation-delay: 0.6s; }
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+.zzz:nth-child(2) {
+  animation-delay: 0.3s;
 }
 
-@keyframes floatZzz {
-  0% { transform: translateY(0); opacity: 0.7; }
-  50% { transform: translateY(-20px); opacity: 1; }
-  100% { transform: translateY(-40px); opacity: 0; }
+.zzz:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes floatZ {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  50% { transform: translateY(-20px) scale(1.2); opacity: 0.7; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
 }

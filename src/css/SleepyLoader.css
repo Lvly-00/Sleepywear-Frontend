@@ -1,43 +1,42 @@
+/* Fullscreen white background */
 .loader-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  height: 100%;
-  font-family: "Comic Sans MS", cursive, sans-serif;
+  align-items: center;
+  height: 100vh;
+  background-color: #ffffff; /* white bg */
 }
 
+/* Moon loader wrapper */
 .moon-loader {
-  width: 100px;
-  height: 100px;
-  transform: rotate(-90deg); /* start at top */
+  position: relative;
+  width: 80px;
+  height: 80px;
+  animation: rotate 2s linear infinite;
 }
 
-.moon-bg {
-  fill: none;
-  stroke: #eee;
-  stroke-width: 10;
+/* Full moon circle */
+.moon-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #f5db9fcc; /* moon color */
+  box-shadow: 0 0 15px rgba(245, 219, 159, 0.5);
 }
 
-.moon-fill {
-  fill: none;
-  stroke: #f6e58d;
-  stroke-width: 10;
-  stroke-linecap: round;
-  stroke-dasharray: 282; /* 2 * pi * r (approx 2*3.14*45) */
-  stroke-dashoffset: 282;
-  animation: fillMoon 2s linear infinite;
+/* Crescent cutout */
+.moon-crescent {
+  position: absolute;
+  top: 0;
+  left: 20%;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #ffffff; /* same as bg to create crescent */
 }
 
-@keyframes fillMoon {
-  0% { stroke-dashoffset: 282; }
-  50% { stroke-dashoffset: 141; }
-  100% { stroke-dashoffset: 0; }
-}
-
-.loading-text {
-  margin-top: 15px;
-  font-size: 1rem;
-  color: #333;
-  text-align: center;
+/* Smooth rotation */
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

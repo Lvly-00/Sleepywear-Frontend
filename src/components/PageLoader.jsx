@@ -1,28 +1,18 @@
-import React, { useState, useEffect } from "react";
-import "../css/PageLoader.css"; // make sure this exists
+import React from "react";
+import "../css/SleepyLoader.css";
 
-export default function PageLoader({ children, minTime = 1000 }) {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), minTime);
-    return () => clearTimeout(timer);
-  }, [minTime]);
-
-  if (loading) {
-    return (
-      <div className="page-loader-fullscreen">
-        <div className="moon-wrapper">
-          <div className="crescent-moon"></div>
-          <div className="zzz-container">
-            <span className="zzz">Z</span>
-            <span className="zzz">Z</span>
-            <span className="zzz">Z</span>
-          </div>
+export default function PageLoader() {
+  return (
+    <div className="loader-container">
+      <div className="moon-wrapper">
+        <div className="moon"></div>
+        <div className="crescent"></div>
+        <div className="zzz-container">
+          <span className="zzz">Z</span>
+          <span className="zzz">Z</span>
+          <span className="zzz">Z</span>
         </div>
       </div>
-    );
-  }
-
-  return <>{children}</>;
+    </div>
+  );
 }

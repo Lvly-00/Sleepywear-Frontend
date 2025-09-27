@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../api/axios";
+import SleepyLoader from "./SleepyLoader";
 
 const PrivateRoute = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
@@ -22,7 +23,8 @@ const PrivateRoute = ({ children }) => {
     checkAuth();
   }, []);
 
-  if (isAuthenticated === null) return null;
+  // Show loader while auth status is being determined
+  if (isAuthenticated === null) return <SleepyLoader minTime={500} />;
 
   return isAuthenticated ? children : <Navigate to="/" />;
 };

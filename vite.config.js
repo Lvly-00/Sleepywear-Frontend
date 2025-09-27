@@ -11,6 +11,6 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['strong-roses-wish.loca.lt'], // Add LocalTunnel hostname here
+    allowedHosts: ['silver-pianos-eat.loca.lt'], // Add LocalTunnel hostname here
   },
 });
