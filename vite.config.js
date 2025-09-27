@@ -10,4 +10,7 @@ export default defineConfig({
       "@tabler/icons-react": "@tabler/icons-react/dist/esm/icons/index.mjs",
     },
   },
+  server: {
+    allowedHosts: ['strong-roses-wish.loca.lt'], // Add LocalTunnel hostname here
+  },
 });
