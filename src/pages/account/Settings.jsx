@@ -7,10 +7,13 @@ import {
   Button,
   Title,
   Stack,
-  Divider,
+  Text,
+  Grid,
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
+import PageHeader from "../../components/PageHeader";
+import SleepyLoader from "../../components/SleepyLoader";
 
 const Settings = () => {
   const [profile, setProfile] = useState({ business_name: "", email: "" });
@@ -20,8 +23,8 @@ const Settings = () => {
     new_password_confirmation: "",
   });
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true); // For initial fetch
 
-  // Load user settings
   useEffect(() => {
     api
       .get("/api/user/settings")
@@ -31,162 +34,156 @@ const Settings = () => {
           email: res.data.email || "",
         });
       })
-      .catch((err) => {
+      .catch(() => {
         showNotification({
           title: "Error",
           message: "Failed to load user settings",
           color: "red",
           icon: <IconX size={16} />,
         });
-        console.error(err);
-      });
+      })
+      .finally(() => setInitialLoading(false));
   }, []);
 
-  // Profile update handler
+  const handleUpdate = async (data, url, successMessage) => {
+    setLoading(true);
+    try {
+      const res = await api.put(url, data);
+      showNotification({
+        title: "Success",
+        message: res.data.message || successMessage,
+        color: "green",
+        icon: <IconCheck size={16} />,
+      });
+    } catch (err) {
+      const errors = err.response?.data?.errors;
+      showNotification({
+        title: errors ? "Validation Error" : "Error",
+        message: errors
+          ? Object.values(errors).flat().join(" ")
+          : "Something went wrong",
+        color: "red",
+        icon: <IconX size={16} />,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const updateProfile = (e) => {
     e.preventDefault();
-    setLoading(true);
-
-    api
-      .put("/api/user/settings", profile)
-      .then((res) => {
-        showNotification({
-          title: "Success",
-          message: res.data.message || "Profile updated successfully",
-          color: "green",
-          icon: <IconCheck size={16} />,
-        });
-      })
-      .catch((err) => {
-        if (err.response?.status === 422) {
-          const errors = err.response.data.errors;
-          showNotification({
-            title: "Validation Error",
-            message: Object.values(errors).flat().join(" "),
-            color: "red",
-            icon: <IconX size={16} />,
-          });
-        } else {
-          showNotification({
-            title: "Error",
-            message: "Something went wrong updating profile",
-            color: "red",
-            icon: <IconX size={16} />,
-          });
-        }
-      })
-      .finally(() => setLoading(false));
+    handleUpdate(profile, "/api/user/settings", "Profile updated successfully");
   };
 
-  // Password update handler
   const updatePassword = (e) => {
     e.preventDefault();
-    setLoading(true);
-
-    api
-      .put("/api/user/settings/password", passwords)
-      .then((res) => {
-        showNotification({
-          title: "Success",
-          message: res.data.message || "Password updated successfully",
-          color: "green",
-          icon: <IconCheck size={16} />,
-        });
-        setPasswords({
-          current_password: "",
-          new_password: "",
-          new_password_confirmation: "",
-        });
-      })
-      .catch((err) => {
-        if (err.response?.status === 422) {
-          const errors = err.response.data.errors;
-          showNotification({
-            title: "Validation Error",
-            message: Object.values(errors).flat().join(" "),
-            color: "red",
-            icon: <IconX size={16} />,
-          });
-        } else {
-          showNotification({
-            title: "Error",
-            message: "Failed to update password",
-            color: "red",
-            icon: <IconX size={16} />,
-          });
-        }
-      })
-      .finally(() => setLoading(false));
+    handleUpdate(
+      passwords,
+      "/api/user/settings/password",
+      "Password updated successfully"
+    );
+    setPasswords({
+      current_password: "",
+      new_password: "",
+      new_password_confirmation: "",
+    });
   };
 
+  if (initialLoading) return <SleepyLoader />;
+
   return (
-    <div style={{ maxWidth: 500, margin: "40px auto" }}>
-      <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Title order={3} align="center" mb="md">
-          Account Settings
-        </Title>
+    <div style={{ padding: 20, position: "relative" }}>
+      {loading && <SleepyLoader />}
 
-        {/* Profile Form */}
-        <form onSubmit={updateProfile}>
-          <Stack spacing="sm">
-            <TextInput
-              label="Business Name"
-              value={profile.business_name}
-              onChange={(e) =>
-                setProfile({ ...profile, business_name: e.target.value })
-              }
-              required
-            />
-            <TextInput
-              label="Email"
-              value={profile.email}
-              onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-              required
-            />
-            <Button type="submit" loading={loading} fullWidth mt="md">
-              Update Profile
-            </Button>
-          </Stack>
-        </form>
+      <PageHeader title="Account Settings" />
 
-        <Divider my="lg" label="Change Password" labelPosition="center" />
+      {/* Profile Section */}
+      <Grid gutter="xl" align="flex-start" mb="xl">
+        <Grid.Col span={4}>
+          <Title order={3}>Profile Information</Title>
+          <Text size="sm" color="dimmed" mt="sm">
+            Update your account’s Business Name and Email
+          </Text>
+        </Grid.Col>
+        <Grid.Col span={8}>
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <form onSubmit={updateProfile}>
+              <Stack spacing="sm">
+                <TextInput
+                  label="Business Name"
+                  value={profile.business_name}
+                  onChange={(e) =>
+                    setProfile({ ...profile, business_name: e.target.value })
+                  }
+                  required
+                />
+                <TextInput
+                  label="Email"
+                  value={profile.email}
+                  onChange={(e) =>
+                    setProfile({ ...profile, email: e.target.value })
+                  }
+                  required
+                />
+                <Button type="submit" loading={loading} fullWidth mt="md">
+                  Save
+                </Button>
+              </Stack>
+            </form>
+          </Card>
+        </Grid.Col>
+      </Grid>
 
-        {/* Password Form */}
-        <form onSubmit={updatePassword}>
-          <Stack spacing="sm">
-            <PasswordInput
-              label="Current Password"
-              value={passwords.current_password}
-              onChange={(e) =>
-                setPasswords({ ...passwords, current_password: e.target.value })
-              }
-              required
-            />
-            <PasswordInput
-              label="New Password"
-              value={passwords.new_password}
-              onChange={(e) =>
-                setPasswords({ ...passwords, new_password: e.target.value })
-              }
-              required
-            />
-            <PasswordInput
-              label="Confirm New Password"
-              value={passwords.new_password_confirmation}
-              onChange={(e) =>
-                setPasswords({
-                  ...passwords,
-                  new_password_confirmation: e.target.value,
-                })
-              }
-              required
-            />
-            <Button type="submit" color="blue" loading={loading} fullWidth mt="md">
-              Change Password
-            </Button>
-          </Stack>
-        </form>
-      </Card>
+      {/* Password Section */}
+      <Grid gutter="xl" align="flex-start">
+        <Grid.Col span={4}>
+          <Title order={3}>Update Password</Title>
+          <Text size="sm" color="dimmed" mt="sm">
+            Ensure your Account is using a strong password
+          </Text>
+        </Grid.Col>
+        <Grid.Col span={8}>
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <form onSubmit={updatePassword}>
+              <Stack spacing="sm">
+                <PasswordInput
+                  label="Current Password"
+                  value={passwords.current_password}
+                  onChange={(e) =>
+                    setPasswords({
+                      ...passwords,
+                      current_password: e.target.value,
+                    })
+                  }
+                  required
+                />
+                <PasswordInput
+                  label="New Password"
+                  value={passwords.new_password}
+                  onChange={(e) =>
+                    setPasswords({ ...passwords, new_password: e.target.value })
+                  }
+                  required
+                />
+                <PasswordInput
+                  label="Confirm New Password"
+                  value={passwords.new_password_confirmation}
+                  onChange={(e) =>
+                    setPasswords({
+                      ...passwords,
+                      new_password_confirmation: e.target.value,
+                    })
+                  }
+                  required
+                />
+                <Button type="submit" loading={loading} fullWidth mt="md">
+                  Save
+                </Button>
+              </Stack>
+            </form>
+          </Card>
+        </Grid.Col>
+      </Grid>
     </div>
   );
 };

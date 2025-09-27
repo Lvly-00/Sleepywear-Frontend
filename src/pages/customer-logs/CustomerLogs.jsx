@@ -7,11 +7,10 @@ import {
   Modal,
   Group,
   Stack,
-  Text,
-  Center,
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
+import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 
 function CustomerLogs() {
   const [customers, setCustomers] = useState([]);
@@ -20,7 +19,6 @@ function CustomerLogs() {
   const [opened, setOpened] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch customers
   const fetchCustomers = async () => {
     setLoading(true);
     try {
@@ -37,19 +35,26 @@ function CustomerLogs() {
     fetchCustomers();
   }, [search]);
 
-  // Update customer info
   const handleSave = async () => {
     await api.put(`/api/customers/${selected.id}`, selected);
     setOpened(false);
     fetchCustomers();
   };
 
-  // Delete customer
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this customer?")) {
-      await api.delete(`/api/customers/${id}`);
-      fetchCustomers();
-    }
+  // Updated delete to use DeleteConfirmModal
+  const handleDelete = (customer) => {
+    openDeleteConfirmModal({
+      title: "Delete Customer",
+      name: `${customer.first_name} ${customer.last_name}`,
+      onConfirm: async () => {
+        try {
+          await api.delete(`/api/customers/${customer.id}`);
+          fetchCustomers();
+        } catch (err) {
+          console.error("Error deleting customer:", err);
+        }
+      },
+    });
   };
 
   if (loading) return <SleepyLoader />;
@@ -96,7 +101,7 @@ function CustomerLogs() {
                   <Button
                     size="xs"
                     color="red"
-                    onClick={() => handleDelete(c.id)}
+                    onClick={() => handleDelete(c)}
                   >
                     Delete
                   </Button>
