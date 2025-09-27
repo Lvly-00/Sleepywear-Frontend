@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import api from "../../api/axios";
 import {
   Container,
@@ -9,71 +9,74 @@ import {
   Paper,
   Button,
   Group,
+  Modal,
   Text,
   Image,
   Badge,
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
 import AddItemModal from "../../components/AddItemModal";
-import SleepyLoader from "../../components/SleepyLoader";
 import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 
 function Inventory() {
   const { id } = useParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteModal, setDeleteModal] = useState(false);
   const [addModal, setAddModal] = useState(false);
-  const [collection, setCollection] = useState(null);
 
-  // Fetch collection details and items
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const collectionRes = await api.get(`/api/collections/${id}`);
-        setCollection(collectionRes.data);
-
-        const itemsRes = await api.get(`/api/items?collection_id=${id}`);
-        const sorted = itemsRes.data.sort((a, b) => {
+    api
+      .get(`/api/items?collection_id=${id}`)
+      .then((res) => {
+        const sorted = res.data.sort((a, b) => {
           if (a.status === "available" && b.status !== "available") return -1;
           if (a.status !== "available" && b.status === "available") return 1;
           return 0;
         });
         setItems(sorted);
-      } catch (err) {
-        console.error(err.response?.data || err.message);
-      } finally {
         setLoading(false);
-      }
-    };
-
-    fetchData();
+      })
+      .catch((err) => {
+        console.error(err.response?.data || err.message);
+        setLoading(false);
+      });
   }, [id]);
 
-  // Handle item deletion
-  const handleItemDelete = (itemId, itemName) => {
+  const handleItemAdded = (newItem) => {
+    setItems((prev) => [...prev, newItem]);
+  };
+
+  const handleDelete = (collectionId, collectionName) => {
     openDeleteConfirmModal({
-      title: "Delete Item",
-      name: itemName,
+      title: "Delete Collection",
+      name: collectionName,
       onConfirm: async () => {
         try {
-          await api.delete(`/api/items/${itemId}`);
-          setItems((prev) => prev.filter((i) => i.id !== itemId));
-        } catch (err) {
-          console.error("Error deleting item:", err);
+          await api.delete(`/api/collections/${collectionId}`);
+          // Optionally, you can add logic here to update the UI after deletion if needed.
+        } catch (error) {
+          console.error(
+            "Error deleting collection:",
+            error.response?.data || error.message
+          );
         }
       },
     });
   };
 
-
   if (loading) {
-    return <SleepyLoader />; 
+    return (
+      <Center style={{ height: "100vh" }}>
+        <Loader />
+      </Center>
+    );
   }
 
   return (
     <Container>
       <PageHeader
-        title={collection?.name || "Items"}
+        title="Items"
         showSearch={false}
         addLabel="Add Item"
         onAdd={() => setAddModal(true)}
@@ -146,7 +149,10 @@ function Inventory() {
                       <Button
                         size="xs"
                         color="red"
-                        onClick={() => handleItemDelete(item.id, item.name)}
+                        onClick={() => {
+                          setDeleteId(item.id);
+                          setDeleteModal(true);
+                        }}
                       >
                         Delete
                       </Button>
@@ -164,8 +170,10 @@ function Inventory() {
         opened={addModal}
         onClose={() => setAddModal(false)}
         collectionId={id}
-        onItemAdded={(newItem) => setItems((prev) => [...prev, newItem])}
+        onItemAdded={handleItemAdded}
       />
+
+
     </Container>
   );
 }

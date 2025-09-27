@@ -6,8 +6,9 @@ import {
   Button,
   Modal,
   Group,
-  Title,
   Stack,
+  Text,
+  Center,
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
@@ -21,14 +22,14 @@ function CustomerLogs() {
 
   // Fetch customers
   const fetchCustomers = async () => {
-    setLoading(true); // start loader
+    setLoading(true);
     try {
       const res = await api.get(`/api/customers?search=${search}`);
       setCustomers(res.data);
     } catch (err) {
       console.error("Error fetching customers:", err);
     } finally {
-      setLoading(false); // stop loader
+      setLoading(false);
     }
   };
 
@@ -52,6 +53,7 @@ function CustomerLogs() {
   };
 
   if (loading) return <SleepyLoader />;
+
   return (
     <div style={{ padding: "1rem" }}>
       <PageHeader
@@ -61,26 +63,26 @@ function CustomerLogs() {
         setSearch={setSearch}
       />
 
-      <Table highlightOnHover>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Contact Number</th>
-            <th>Social Handle</th>
-            <th>Address</th>
-            <th>Created</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table striped highlightOnHover withColumnBorders>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Name</Table.Th>
+            <Table.Th>Contact Number</Table.Th>
+            <Table.Th>Social Handle</Table.Th>
+            <Table.Th>Address</Table.Th>
+            <Table.Th>Created</Table.Th>
+            <Table.Th>Actions</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
           {customers.map((c) => (
-            <tr key={c.id}>
-              <td>{`${c.first_name} ${c.last_name}`}</td>
-              <td>{c.contact_number}</td>
-              <td>{c.social_handle || "-"}</td>
-              <td>{c.address}</td>
-              <td>{new Date(c.created_at).toLocaleDateString()}</td>
-              <td>
+            <Table.Tr key={c.id}>
+              <Table.Td>{`${c.first_name} ${c.last_name}`}</Table.Td>
+              <Table.Td>{c.contact_number}</Table.Td>
+              <Table.Td>{c.social_handle || "-"}</Table.Td>
+              <Table.Td>{c.address}</Table.Td>
+              <Table.Td>{new Date(c.created_at).toLocaleDateString()}</Table.Td>
+              <Table.Td>
                 <Group spacing="xs">
                   <Button
                     size="xs"
@@ -99,10 +101,10 @@ function CustomerLogs() {
                     Delete
                   </Button>
                 </Group>
-              </td>
-            </tr>
+              </Table.Td>
+            </Table.Tr>
           ))}
-        </tbody>
+        </Table.Tbody>
       </Table>
 
       {/* Edit Modal */}
@@ -148,7 +150,6 @@ function CustomerLogs() {
                 setSelected({ ...selected, address: e.target.value })
               }
             />
-
             <Group position="right" mt="md">
               <Button onClick={handleSave}>Save</Button>
             </Group>

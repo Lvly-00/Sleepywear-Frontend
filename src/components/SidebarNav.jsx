@@ -9,7 +9,7 @@ import {
   IconSettings,
 } from "@tabler/icons-react";
 import { Center, Stack, Menu } from "@mantine/core";
-import AppLogo from "../../public/Logo.svg";
+import AppLogo from "../assets/Logo.svg";
 import classes from "../css/NavbarMinimal.module.css";
 import axios from "../api/axios";
 
