@@ -143,7 +143,7 @@ function Inventory() {
               {/* Info Section */}
               <div style={{ flexGrow: 1, marginTop: 12 }}>
                 <Text weight={500} lineClamp={1}>
-                  {item.name}
+                  {item.name} {item.code && <Text span c="dimmed">({item.code})</Text>}
                 </Text>
 
                 <Text size="sm" mt="xs">
