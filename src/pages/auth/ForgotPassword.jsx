@@ -120,6 +120,7 @@ function ForgotPassword() {
                 styles={{
                   input: {
                     borderColor: "#c5a47e",
+                    color: "#c5a47e"
                   },
                   label: {
                     color: "#0b0c3f",

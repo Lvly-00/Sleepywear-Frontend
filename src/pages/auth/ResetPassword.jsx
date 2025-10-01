@@ -1,13 +1,19 @@
 import React, { useState } from "react";
 import {
-  TextInput,
-  Button,
-  Title,
-  Notification,
   PasswordInput,
+  Button,
+  Paper,
+  Title,
+  Text,
+  Stack,
+  Center,
+  Notification,
 } from "@mantine/core";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import api from "../../api/axios";
+import { Icons } from "../../components/Icons"
+import WhiteLogo from "../../assets/WhiteLogo.svg";
+import SubmitButton from "../../components/SubmitButton"; // if you want the same reusable button
 
 function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -19,13 +25,15 @@ function ResetPassword() {
   const query = new URLSearchParams(useLocation().search);
   const email = query.get("email");
 
-  const handleResetPassword = async () => {
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+
     if (!password || !confirmPassword) {
-      setMessage("Please fill in all fields.");
+      setMessage({ text: "Please fill in all fields.", type: "error" });
       return;
     }
     if (password !== confirmPassword) {
-      setMessage("Passwords do not match.");
+      setMessage({ text: "Passwords do not match.", type: "error" });
       return;
     }
 
@@ -43,14 +51,23 @@ function ResetPassword() {
       await api.get("/sanctum/csrf-cookie");
       await api.post("/api/reset-password", payload);
 
-      setMessage("Password reset successful. Redirecting to login...");
+      setMessage({
+        text: "Password reset successful. Redirecting to login...",
+        type: "success",
+      });
       setTimeout(() => navigate("/"), 2000);
     } catch (err) {
       if (err.response?.status === 422) {
         const errors = err.response.data.errors;
-        setMessage(Object.values(errors).flat().join(" "));
+        setMessage({
+          text: Object.values(errors).flat().join(" "),
+          type: "error",
+        });
       } else {
-        setMessage("Failed to reset password. Please try again.");
+        setMessage({
+          text: "Failed to reset password. Please try again.",
+          type: "error",
+        });
       }
     } finally {
       setLoading(false);
@@ -58,47 +75,133 @@ function ResetPassword() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "50px auto", textAlign: "center" }}>
-      <Title order={2} mb="md">
-        Reset Password
-      </Title>
-
-      <PasswordInput
-        label="New Password"
-        placeholder="Enter new password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        mt="md"
-        required
-      />
-
-      <PasswordInput
-        label="Confirm Password"
-        placeholder="Confirm your password"
-        value={confirmPassword}
-        onChange={(e) => setConfirmPassword(e.target.value)}
-        mt="sm"
-        required
-      />
-
-      {message && (
-        <Notification
-          mt="sm"
-          color={message.includes("Failed") ? "red" : "green"}
-        >
-          {message}
-        </Notification>
-      )}
-
-      <Button
-        fullWidth
-        mt="md"
-        loading={loading}
-        onClick={handleResetPassword}
-        disabled={loading}
+    <div style={{ display: "flex", height: "100vh", fontFamily: "Poppins, sans-serif" }}>
+      {/* Left Section with Logo */}
+      <div
+        style={{
+          flex: 1,
+          backgroundColor: "#0b0c3f",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          flexDirection: "column",
+        }}
       >
-        Reset Password
-      </Button>
+        <img
+          src={WhiteLogo}
+          alt="Sleepywears Logo"
+          style={{ maxWidth: "70%", height: "auto" }}
+        />
+      </div>
+
+      {/* Right Section with Form */}
+      <Center style={{ flex: 1 }}>
+        <Paper
+          p="md"
+          radius="md"
+          style={{
+            width: 400,
+          }}
+        >
+          <Text
+            order={2}
+            align="center"
+            mb="xl"
+            style={{
+              color: "#0b0c3f",
+              fontSize: 40,
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 500,
+            }}
+          >
+            RESET PASSWORD
+          </Text>
+
+          {message && (
+            <Notification
+              color={message.type === "error" ? "red" : "green"}
+              title={message.type === "error" ? "Error" : "Success"}
+              mb="sm"
+            >
+              {message.text}
+            </Notification>
+          )}
+
+          <form onSubmit={handleResetPassword}>
+            <Stack spacing="md">
+              <PasswordInput
+                label="New Password"
+                placeholder="Enter new password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                radius="md"
+                size="lg"
+                visibilityToggleIcon={({ reveal }) =>
+                  reveal ? (
+                    <Icons.Eye />
+                  ) : (
+                    <Icons.EyeOff />
+                  )
+                } styles={{
+                  input: {
+                    borderColor: "#c5a47e",
+                    color: "#c5a47e"
+                  },
+                  label: {
+                    color: "#0b0c3f",
+                    fontWeight: 400,
+                    fontSize: 16,
+                    marginBottom: 4,
+                  },
+                }}
+              />
+
+              <PasswordInput
+                label="Confirm Password"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                radius="md"
+                size="lg"
+                visibilityToggleIcon={({ reveal }) =>
+                  reveal ? (
+                    <Icons.Eye />
+                  ) : (
+                    <Icons.EyeOff />
+                  )
+                } styles={{
+                  input: {
+                    borderColor: "#c5a47e",
+                    color: "#c5a47e"
+                  },
+                  label: {
+                    color: "#0b0c3f",
+                    fontWeight: 400,
+                    fontSize: 16,
+                    marginBottom: 4,
+                  },
+                }}
+              />
+
+              <SubmitButton
+                type="submit"
+                fullWidth
+                loading={loading}
+                radius="md"
+                size="lg"
+                style={{
+                  backgroundColor: "#0D0F66",
+                  color: "#fff",
+                  fontWeight: 500,
+                  marginTop: "10px",
+                }}
+              >
+                Reset Password
+              </SubmitButton>
+            </Stack>
+          </form>
+        </Paper>
+      </Center>
     </div>
   );
 }

@@ -87,7 +87,7 @@ function Login() {
             <Stack spacing="md">
               <TextInput
                 label="Email"
-                leftSection={<Icons.Envelope/>}
+                leftSection={<Icons.Envelope />}
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -97,6 +97,8 @@ function Login() {
                 styles={{
                   input: {
                     borderColor: "#c5a47e",
+                    color: "#c5a47e"
+
                   },
                   label: {
                     color: "#0b0c3f",
@@ -129,6 +131,8 @@ function Login() {
                 styles={{
                   input: {
                     borderColor: "#c5a47e",
+                    color: "#c5a47e"
+
                   },
                   label: {
                     color: "#0b0c3f",
