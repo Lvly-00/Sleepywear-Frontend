@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Text, TextInput, Button, Select, Group, Table, Title } from "@mantine/core";
+import {
+  Text,
+  TextInput,
+  Button,
+  Select,
+  Group,
+  Table,
+} from "@mantine/core";
 import api from "../../api/axios";
 import { useNavigate } from "react-router-dom";
 import InvoicePreview from "../../components/InvoicePreview";
+import PageHeader from "../../components/PageHeader"; // ✅ import your custom header
 
 const AddOrder = () => {
   const [collections, setCollections] = useState([]);
@@ -89,40 +97,32 @@ const AddOrder = () => {
   const handlePlaceOrder = async () => {
     const newErrors = {};
 
-    // Check if order items exist
     if (orderItems.length === 0) {
       newErrors.orderItems = "Please add at least one item";
     }
 
-    // Check all fields for empty values
-    [
-      "first_name",
-      "last_name",
-      "address",
-      "contact_number",
-      "social_handle",
-    ].forEach((field) => {
-      const value = form[field];
-      if (!form[field]) {
-        newErrors[field] = `${field
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase())} is required`;
-      }
+    ["first_name", "last_name", "address", "contact_number", "social_handle"].forEach(
+      (field) => {
+        const value = form[field];
+        if (!form[field]) {
+          newErrors[field] = `${field
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase())} is required`;
+        }
 
-      if (field === "social_handle" && !/^https?:\/\/.+/.test(value)) {
-        newErrors[field] =
-          "Social handle must be a valid URL starting with http or https";
+        if (field === "social_handle" && !/^https?:\/\/.+/.test(value)) {
+          newErrors[field] =
+            "Social handle must be a valid URL starting with http or https";
+        }
       }
-    });
+    );
 
-    // Stop if errors exist
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     try {
-      // If customer exists, update; else create new
       const customerPayload = { ...form };
       let customerId = selectedCustomer;
       if (selectedCustomer) {
@@ -155,10 +155,8 @@ const AddOrder = () => {
       };
 
       await api.post("/api/orders", payload);
+      await fetchCollections();
 
-      await fetchCollections(); // refresh items
-
-      // Prepare invoice data
       const invoice = {
         customer_name: `${form.first_name} ${form.last_name}`,
         address: form.address,
@@ -181,12 +179,12 @@ const AddOrder = () => {
   };
 
   const availableItems =
-    collections.find((c) => c.id.toString() === selectedCollection)?.items ||
-    [];
+    collections.find((c) => c.id.toString() === selectedCollection)?.items || [];
 
   return (
     <div style={{ padding: 20 }}>
-      <Title order={2}>Add Order</Title>
+      {/* ✅ Page Header */}
+      <PageHeader title="Add Order" showBack  />
 
       {/* Optional Customer Search */}
       <Select
@@ -200,6 +198,7 @@ const AddOrder = () => {
         mt="md"
       />
 
+      {/* Item Select */}
       <Group mt="md">
         <Select
           placeholder="Select Collection"
@@ -227,12 +226,14 @@ const AddOrder = () => {
           Add
         </Button>
       </Group>
+
       {errors.orderItems && (
         <Text color="red" size="sm" mt="xs">
           {errors.orderItems}
         </Text>
       )}
 
+      {/* Items Table */}
       <Table withBorder mt="md">
         <tbody>
           {orderItems.map((item) => (
@@ -252,49 +253,38 @@ const AddOrder = () => {
         </tbody>
       </Table>
 
-      {[
-        "first_name",
-        "last_name",
-        "address",
-        "contact_number",
-        "social_handle",
-      ].map((field) => (
-        <TextInput
-          key={field}
-          label={field
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (char) => char.toUpperCase())}
-          required
-          value={form[field]}
-          onChange={(e) => {
-            let value = e.target.value;
+      {/* Customer Form */}
+      {["first_name", "last_name", "address", "contact_number", "social_handle"].map(
+        (field) => (
+          <TextInput
+            key={field}
+            label={field
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (char) => char.toUpperCase())}
+            required
+            value={form[field]}
+            onChange={(e) => {
+              let value = e.target.value;
 
-            // Validation for contact_number: only digits, max 11 chars
-            if (field === "contact_number") {
-              value = value.replace(/\D/g, ""); // Remove non-numeric
-              if (value.length > 11) return; // Limit to 11 digits
-            }
+              if (field === "contact_number") {
+                value = value.replace(/\D/g, "");
+                if (value.length > 11) return;
+              }
 
-            // Validation for social_handle: must start with http or https
-            if (
-              field === "social_handle" &&
-              value &&
-              !/^https?:\/\//.test(value)
-            ) {
-              // Do nothing or show error; optional
-            }
+              setForm({ ...form, [field]: value });
+            }}
+            mt="sm"
+            error={errors[field]}
+          />
+        )
+      )}
 
-            setForm({ ...form, [field]: value });
-          }}
-          mt="sm"
-          error={errors[field]}
-        />
-      ))}
-
+      {/* Place Order Button */}
       <Button fullWidth mt="md" onClick={handlePlaceOrder}>
         Place Order
       </Button>
 
+      {/* Invoice Modal */}
       <InvoicePreview
         opened={invoiceModal}
         onClose={() => {

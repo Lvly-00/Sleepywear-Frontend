@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../api/axios";
 import {
-  Container,
+  Stack,
   Card,
   Text,
   Badge,
@@ -19,6 +19,7 @@ import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
 
 function Inventory() {
   const { id } = useParams();
+  const [collection, setCollection] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addModal, setAddModal] = useState(false);
@@ -26,21 +27,28 @@ function Inventory() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
-    api
-      .get(`/api/items?collection_id=${id}`)
-      .then((res) => {
-        const sorted = res.data.sort((a, b) => {
+    const fetchData = async () => {
+      try {
+        // Fetch collection details
+        const colRes = await api.get(`/api/collections/${id}`);
+        setCollection(colRes.data);
+
+        // Fetch items in this collection
+        const itemsRes = await api.get(`/api/items?collection_id=${id}`);
+        const sorted = itemsRes.data.sort((a, b) => {
           if (a.status === "available" && b.status !== "available") return -1;
           if (a.status !== "available" && b.status === "available") return 1;
           return 0;
         });
         setItems(sorted);
-        setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error(err.response?.data || err.message);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchData();
   }, [id]);
 
   const handleItemAdded = (newItem) => {
@@ -74,9 +82,11 @@ function Inventory() {
   if (loading) return <SleepyLoader />;
 
   return (
-    <Container>
+    <Stack p="lg" spacing="lg">
+      {/* ✅ Collection name as title with back button */}
       <PageHeader
-        title="Items"
+        title={collection ? collection.name : "Collection"}
+        showBack
         showSearch={false}
         addLabel="Add Item"
         onAdd={() => setAddModal(true)}
@@ -143,7 +153,8 @@ function Inventory() {
               {/* Info Section */}
               <div style={{ flexGrow: 1, marginTop: 12 }}>
                 <Text weight={500} lineClamp={1}>
-                  {item.name} {item.code && <Text span c="dimmed">({item.code})</Text>}
+                  {item.name}{" "}
+                  {item.code && <Text span c="dimmed">({item.code})</Text>}
                 </Text>
 
                 <Text size="sm" mt="xs">
@@ -162,7 +173,7 @@ function Inventory() {
                 </Text>
               </div>
 
-              {/* Action Buttons - Bottom Left */}
+              {/* Action Buttons */}
               <Group mt="md" spacing="xs" position="left">
                 <Button
                   size="xs"
@@ -203,7 +214,7 @@ function Inventory() {
           onItemUpdated={handleItemUpdated}
         />
       )}
-    </Container>
+    </Stack>
   );
 }
 

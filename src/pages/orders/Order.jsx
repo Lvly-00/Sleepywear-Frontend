@@ -91,7 +91,7 @@ const Order = () => {
         showSearch
         search={search}
         setSearch={setSearch}
-        addLabel="Add Order"
+        addLabel="New Order"
         addLink="/add-order"
       />
 

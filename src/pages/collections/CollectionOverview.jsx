@@ -95,7 +95,7 @@ export default function CollectionOverview() {
         showSearch
         search={search}
         setSearch={setSearch}
-        addLabel="Add Collection"
+        addLabel="New Collection"
         onAdd={() => setOpenedNew(true)}
       />
 

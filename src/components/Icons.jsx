@@ -19,6 +19,11 @@ import EnvelopeIcon from "../assets/icons/envelope.svg";
 import EyeIcon from "../assets/icons/eye.svg";
 import EyeOffIcon from "../assets/icons/eye-slash.svg";
 
+import SearchIcon from "../assets/icons/search.svg";
+
+import Back from "../assets/icons/back.svg";
+
+
 const IconWrapper = ({ src, alt, size = 24 }) => (
     <img
         src={src}
@@ -47,4 +52,8 @@ export const Icons = {
     Settings: (props) => <IconWrapper src={Settings} alt="settings" {...props} />,
     Logout: (props) => <IconWrapper src={Logout} alt="logout" {...props} />,
     User: (props) => <IconWrapper src={User} alt="user" {...props} />,
+    Search: (props) => <IconWrapper src={SearchIcon} alt="user" {...props} />,
+    Back: (props) => <IconWrapper src={Back} alt="user" {...props} />,
+
+
 };
