@@ -33,7 +33,7 @@
   border-radius: 8px;
   color: #c7c7c7;
   text-decoration: none;
-  font-size: 15px;
+  font-size: 20px;
   font-weight: 500;
   transition: background-color 0.2s, color 0.2s;
 }
@@ -54,7 +54,7 @@
 .linkLabel {
   margin-left: 5px;
   color: inherit;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 /* Bottom links like account & logout */
@@ -66,15 +66,17 @@
 }
 
 .dropdown {
-  background-color: #f5db9fcc !important;
+  background-color: #1e2235 !important;
   border: none !important;
-  padding: 4px 0;
+  margin-left: 90px;
+  padding: 6px 0;
   border-radius: 6px;
 }
 
 .dropdownItem {
-  color: #1e2235 !important;
-  font-size: 14px;
+  color: #c7c7c7 !important;
+  font-size: 16px;
+  font-weight: 600;
   border-radius: 4px;
   transition: background-color 0.2s;
 }

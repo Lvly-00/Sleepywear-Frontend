@@ -1,27 +1,50 @@
+// src/components/Icons.jsx
+import ContactBook from "../assets/icons/contact-book.svg";
+import ContactBookActive from "../assets/icons/contact-book 1.svg";
+
+import Dashboard from "../assets/icons/dashboard.svg";
+import DashboardActive from "../assets/icons/dashboard 1.svg";
+
+import ShoppingBag from "../assets/icons/shopping-bag.svg";
+import ShoppingBagActive from "../assets/icons/shopping-bag 1.svg";
+
+import Store from "../assets/icons/store.svg";
+import StoreActive from "../assets/icons/store 1.svg";
+
+import Logout from "../assets/icons/logout.svg";
+import Settings from "../assets/icons/settings.svg";
+import User from "../assets/icons/user 1.svg";
+
 import EnvelopeIcon from "../assets/icons/envelope.svg";
 import EyeIcon from "../assets/icons/eye.svg";
 import EyeOffIcon from "../assets/icons/eye-slash.svg";
 
+const IconWrapper = ({ src, alt, size = 24 }) => (
+    <img
+        src={src}
+        alt={alt}
+        style={{ width: size, height: size, objectFit: "contain" }}
+    />
+);
 
 export const Icons = {
-    Envelope: () => (
-        <img
-            src={EnvelopeIcon}
-            alt="envelope"
-            style={{ width: "30px", height: "30px" }}
-        />),
-    Eye: () => (
-        <img
-            src={EyeIcon}
-            alt="envelope"
-            style={{ width: "30px", height: "30px" }}
-        />),
+    Envelope: (props) => <IconWrapper src={EnvelopeIcon} alt="envelope" {...props} />,
+    Eye: (props) => <IconWrapper src={EyeIcon} alt="show password" {...props} />,
+    EyeOff: (props) => <IconWrapper src={EyeOffIcon} alt="hide password" {...props} />,
 
-    EyeOff: () => (
-        <img
-            src={EyeOffIcon}
-            alt="envelope"
-            style={{ width: "30px", height: "30px" }}
-        />),
+    ContactBook: ({ active, ...props }) => (
+        <IconWrapper src={active ? ContactBookActive : ContactBook} alt="contact book" {...props} />
+    ),
+    Dashboard: ({ active, ...props }) => (
+        <IconWrapper src={active ? DashboardActive : Dashboard} alt="dashboard" {...props} />
+    ),
+    ShoppingBag: ({ active, ...props }) => (
+        <IconWrapper src={active ? ShoppingBagActive : ShoppingBag} alt="shopping bag" {...props} />
+    ),
+    Store: ({ active, ...props }) => (
+        <IconWrapper src={active ? StoreActive : Store} alt="store" {...props} />
+    ),
+    Settings: (props) => <IconWrapper src={Settings} alt="settings" {...props} />,
+    Logout: (props) => <IconWrapper src={Logout} alt="logout" {...props} />,
+    User: (props) => <IconWrapper src={User} alt="user" {...props} />,
 };
-
