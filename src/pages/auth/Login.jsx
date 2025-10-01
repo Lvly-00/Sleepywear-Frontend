@@ -9,11 +9,13 @@ import {
   Stack,
   Center,
 } from "@mantine/core";
-import { IconMail, IconEye, IconEyeOff } from "@tabler/icons-react";
+import { Icons } from "../../components/Icons"
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import WhiteLogo from "../../assets/WhiteLogo.svg";
-import axios from "../../api/axios";
+import api from "../../api/axios";
+import SubmitButton from "../../components/SubmitButton";
+import { Icon } from "@mui/material";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -31,8 +33,8 @@ function Login() {
     setLoading(true);
 
     try {
-      await axios.get("/sanctum/csrf-cookie");
-      await axios.post("/api/login", { email, password });
+      await api.get("/sanctum/csrf-cookie");
+      await api.post("/api/login", { email, password });
       navigate("/dashboard");
     } catch (e) {
       if (e.response?.status === 422) {
@@ -46,7 +48,7 @@ function Login() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif" }}>
+    <div style={{ display: "flex", height: "100vh", fontFamily: 'Poppins, sans-serif', }}>
       {/* Left Section with Logo */}
       <div
         style={{
@@ -68,7 +70,7 @@ function Login() {
       {/* Right Section with Form */}
       <Center style={{ flex: 1 }}>
         <Paper
-          p="xl"
+          p="md"
           radius="md"
           style={{
             width: 400,
@@ -84,12 +86,11 @@ function Login() {
               {serverError.general}
             </Text>
           )}
-
           <form onSubmit={handleLogin}>
             <Stack spacing="md">
               <TextInput
                 label="Email"
-                icon={<IconMail size={16} color="#c5a47e" />}
+                leftSection={<Icons.Envelope/>}
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -99,17 +100,16 @@ function Login() {
                 styles={{
                   input: {
                     borderColor: "#c5a47e",
-                    paddingLeft: 40,
-                    backgroundColor: "#fff",
                   },
                   label: {
                     color: "#0b0c3f",
-                    fontWeight: 300,
+                    fontWeight: 400,
                     fontSize: 16,
-                    majrginBottom: 4,
+                    marginBottom: 4,
                   },
+
                 }}
-                required
+
               />
 
               <PasswordInput
@@ -124,25 +124,24 @@ function Login() {
                 onVisibilityChange={setVisible}
                 visibilityToggleIcon={({ reveal }) =>
                   reveal ? (
-                    <IconEyeOff size={16} color="#c5a47e" />
+                    <Icons.Eye />
                   ) : (
-                    <IconEye size={16} color="#c5a47e" />
+                    <Icons.EyeOff />
                   )
                 }
                 styles={{
                   input: {
                     borderColor: "#c5a47e",
-                    backgroundColor: "#fff",
                   },
                   label: {
                     color: "#0b0c3f",
-                    fontWeight: 300,
+                    fontWeight: 400,
                     fontSize: 16,
 
                     marginBottom: 4,
                   },
                 }}
-                required
+
               />
 
               <Text align="right" size="xs">
@@ -151,6 +150,7 @@ function Login() {
                   style={{
                     color: "#1D72D4",
                     fontSize: "12px",
+                    fontWeight: 300,
                     textDecoration: "none",
                   }}
                 >
@@ -158,21 +158,21 @@ function Login() {
                 </Link>
               </Text>
 
-              <Button
+              <SubmitButton
                 type="submit"
-                fullWidth
                 loading={loading}
+                fullWidth
                 radius="md"
-                size="md"
+                size="lg"
                 style={{
-                  backgroundColor: "#0b0c3f",
+                  backgroundColor: "#0D0F66",
                   color: "#fff",
                   fontWeight: 500,
                   marginTop: "10px",
                 }}
               >
                 Login
-              </Button>
+              </SubmitButton>
             </Stack>
           </form>
         </Paper>
