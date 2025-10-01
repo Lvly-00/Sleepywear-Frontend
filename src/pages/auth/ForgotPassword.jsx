@@ -81,6 +81,8 @@ function ForgotPassword() {
           radius="md"
           style={{
             width: 400,
+            backgroundColor: " #F1F0ED"
+
           }}
         >
           <Text

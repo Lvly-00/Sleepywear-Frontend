@@ -4,7 +4,7 @@ import {
   Card,
   TextInput,
   PasswordInput,
-  Button,
+  Group,
   Title,
   Stack,
   Text,
@@ -14,6 +14,8 @@ import { showNotification } from "@mantine/notifications";
 import { IconCheck, IconX } from "@tabler/icons-react";
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
+import SubmitButton from "../../components/SubmitButton";
+import { Icons } from "../../components/Icons"
 
 const Settings = () => {
   const [profile, setProfile] = useState({ business_name: "", email: "" });
@@ -92,30 +94,45 @@ const Settings = () => {
   if (initialLoading) return <SleepyLoader />;
 
   return (
-    <div style={{ padding: 20, position: "relative" }}>
+    <div style={{
+      padding: 20, position: "relative", fontFamily: "'League Spartan', sans-serif",
+    }}>
       {loading && <SleepyLoader />}
 
       <PageHeader title="Account Settings" />
 
       {/* Profile Section */}
       <Grid gutter="xl" align="flex-start" mb="xl">
-        <Grid.Col span={4}>
-          <Title order={3}>Profile Information</Title>
-          <Text size="sm" color="dimmed" mt="sm">
+        <Grid.Col span={5} style={{ marginLeft: 40, marginTop: 30 }}>
+          <Title order={2} style={{ color: "#02034C", fontWeight: 500, marginBottom: 2 }}>Profile Information</Title>
+          <Text size="md" color="#02034c6e" >
             Update your account’s Business Name and Email
           </Text>
         </Grid.Col>
-        <Grid.Col span={8}>
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+        <Grid.Col span={5}>
+          <Card
+            shadow="md" // slightly larger shadow for depth
+            padding="xl"
+            radius="xl" // more rounded corners like the design
+            style={{ border: "1px solid #E0E0E0", backgroundColor: "#FFFFFF" }}
+          >
             <form onSubmit={updateProfile}>
-              <Stack spacing="sm">
+              <Stack spacing="md">
                 <TextInput
                   label="Business Name"
                   value={profile.business_name}
                   onChange={(e) =>
                     setProfile({ ...profile, business_name: e.target.value })
                   }
-                  required
+                  radius="md" // rounded input edges
+                  size="md"
+                  styles={{
+                    label: { color: "#232D80" },
+                    input: {
+                      borderColor: "#232D80",
+                      color: "#232c808f",
+                    },
+                  }}
                 />
                 <TextInput
                   label="Email"
@@ -123,65 +140,129 @@ const Settings = () => {
                   onChange={(e) =>
                     setProfile({ ...profile, email: e.target.value })
                   }
-                  required
+                  radius="md"
+                  size="md"
+                  styles={{
+                    label: { color: "#232D80" },
+                    input: {
+                      borderColor: "#232D80",
+                      color: "#232c808f",
+                    },
+                  }}
                 />
-                <Button type="submit" loading={loading} fullWidth mt="md">
-                  Save
-                </Button>
+                <Group justify="flex-end">
+                  <SubmitButton
+                    type="submit"
+                    radius="xl"
+                    style={{ backgroundColor: "#232D80", color: "#fff" }}
+                  >
+                    Update
+                  </SubmitButton>
+                </Group>
+
               </Stack>
             </form>
           </Card>
+
         </Grid.Col>
       </Grid>
 
       {/* Password Section */}
-      <Grid gutter="xl" align="flex-start">
-        <Grid.Col span={4}>
-          <Title order={3}>Update Password</Title>
-          <Text size="sm" color="dimmed" mt="sm">
-            Ensure your Account is using a strong password
-          </Text>
+      <Grid gutter="sm" align="flex-start">
+        <Grid.Col span={5} style={{ marginLeft: 40, marginTop: 30 }}>
+          <Title order={2} style={{ color: "#02034C", fontWeight: 500, marginBottom: 2 }}>Update Password</Title>
+          <Text size="md" color="#02034c6e" >
+            Use a strong combination of letters, numbers,</Text>
+          <Text size="md" color="#02034c6e" >
+            and random symbols (e.g., @, ?, 1, 2) to </Text>
+          <Text size="md" color="#02034c6e" >
+            enhance account security.”</Text>
+
         </Grid.Col>
-        <Grid.Col span={8}>
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+        <Grid.Col span={5}>
+          <Card
+            shadow="md"
+            padding="xl"
+            radius="xl"
+            style={{ border: "1px solid #E0E0E0", backgroundColor: "#FFFFFF" }}
+          >
             <form onSubmit={updatePassword}>
-              <Stack spacing="sm">
+              <Stack spacing="md">
                 <PasswordInput
                   label="Current Password"
                   value={passwords.current_password}
-                  onChange={(e) =>
-                    setPasswords({
-                      ...passwords,
-                      current_password: e.target.value,
-                    })
+                  visibilityToggleIcon={({ reveal }) =>
+                    reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
                   }
-                  required
+                  onChange={(e) =>
+                    setPasswords({ ...passwords, current_password: e.target.value })
+                  }
+                  radius="md"
+                  size="md"
+                  styles={{
+                    label: { color: "#232D80" },
+                    input: {
+                      borderColor: "#232D80",
+                      color: "#232c808f",
+                    },
+                  }}
                 />
                 <PasswordInput
                   label="New Password"
                   value={passwords.new_password}
+                  visibilityToggleIcon={({ reveal }) =>
+                    reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
+                  }
                   onChange={(e) =>
                     setPasswords({ ...passwords, new_password: e.target.value })
                   }
-                  required
+                  radius="md"
+                  size="md"
+                  styles={{
+                    label: { color: "#232D80" },
+                    input: {
+                      borderColor: "#232D80",
+                      color: "#232c808f",
+                    },
+                  }}
                 />
                 <PasswordInput
                   label="Confirm New Password"
                   value={passwords.new_password_confirmation}
+                  visibilityToggleIcon={({ reveal }) =>
+                    reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
+                  }
                   onChange={(e) =>
                     setPasswords({
                       ...passwords,
                       new_password_confirmation: e.target.value,
                     })
+
                   }
-                  required
+                  radius="md"
+                  size="md"
+                  styles={{
+                    label: { color: "#232D80" },
+                    input: {
+                      borderColor: "#232D80",
+                      color: "#232c808f",
+                    },
+                  }}
                 />
-                <Button type="submit" loading={loading} fullWidth mt="md">
-                  Save
-                </Button>
+                <Group justify="flex-end">
+                  <SubmitButton
+                    type="submit"
+                    radius="xl"
+                    style={{ backgroundColor: "#232D80", color: "#fff" }}
+                  >
+                    Update
+                  </SubmitButton>
+                </Group>
+
               </Stack>
             </form>
           </Card>
+
         </Grid.Col>
       </Grid>
     </div>

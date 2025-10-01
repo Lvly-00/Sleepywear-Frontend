@@ -23,6 +23,11 @@ import SearchIcon from "../assets/icons/search.svg";
 
 import Back from "../assets/icons/back.svg";
 
+import BlueEye from "../assets/icons/eye 2.svg";
+import BlueEyeOff from "../assets/icons/eye-slash 2.svg";
+
+
+
 
 const IconWrapper = ({ src, alt, size = 24 }) => (
     <img
@@ -54,6 +59,11 @@ export const Icons = {
     User: (props) => <IconWrapper src={User} alt="user" {...props} />,
     Search: (props) => <IconWrapper src={SearchIcon} alt="user" {...props} />,
     Back: (props) => <IconWrapper src={Back} alt="user" {...props} />,
+
+    BlueEye: (props) => <IconWrapper src={BlueEye} alt="show password" {...props} />,
+    BlueEyeOff: (props) => <IconWrapper src={BlueEyeOff} alt="hide password" {...props} />,
+
+    
 
 
 };

@@ -101,6 +101,8 @@ function ResetPassword() {
           radius="md"
           style={{
             width: 400,
+            backgroundColor: " #F1F0ED"
+
           }}
         >
           <Text
@@ -172,7 +174,7 @@ function ResetPassword() {
                 } styles={{
                   input: {
                     borderColor: "#c5a47e",
-                      color: "#c5a47e"
+                    color: "#c5a47e"
                   },
                   label: {
                     color: "#0b0c3f",

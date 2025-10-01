@@ -62,7 +62,7 @@ function CustomerLogs() {
   return (
     <div style={{ padding: "1rem" }}>
       <PageHeader
-        title="Customers"
+        title="Customers  "
         showSearch
         search={search}
         setSearch={setSearch}
