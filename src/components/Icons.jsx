@@ -1,17 +1,27 @@
+import EnvelopeIcon from "../assets/icons/envelope.svg";
+import EyeIcon from "../assets/icons/eye.svg";
+import EyeOffIcon from "../assets/icons/eye-slash.svg";
+
+
 export const Icons = {
     Envelope: () => (
-        <i class="bx bx-envelope " style={{color:"#AB8363", fontSize: "20px" }}/>
-    ),
+        <img
+            src={EnvelopeIcon}
+            alt="envelope"
+            style={{ width: "30px", height: "30px" }}
+        />),
     Eye: () => (
-        <i
-            className="bx bx-show"
-            style={{ color: "#AB8363", fontSize: "20px" }}
-        />
-    ),
+        <img
+            src={EyeIcon}
+            alt="envelope"
+            style={{ width: "30px", height: "30px" }}
+        />),
+
     EyeOff: () => (
-        <i
-            className="bx bx-hide"
-            style={{ color: "#AB8363", fontSize: "20px" }}
-        />
-    ),
+        <img
+            src={EyeOffIcon}
+            alt="envelope"
+            style={{ width: "30px", height: "30px" }}
+        />),
 };
+

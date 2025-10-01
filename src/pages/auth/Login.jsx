@@ -2,9 +2,7 @@
 import {
   TextInput,
   PasswordInput,
-  Button,
   Paper,
-  Title,
   Text,
   Stack,
   Center,
@@ -15,7 +13,6 @@ import { Link, useNavigate } from "react-router-dom";
 import WhiteLogo from "../../assets/WhiteLogo.svg";
 import api from "../../api/axios";
 import SubmitButton from "../../components/SubmitButton";
-import { Icon } from "@mui/material";
 
 function Login() {
   const [email, setEmail] = useState("");
