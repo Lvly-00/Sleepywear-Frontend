@@ -194,6 +194,7 @@ const Settings = () => {
                   visibilityToggleIcon={({ reveal }) =>
                     reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
                   }
+                
                   onChange={(e) =>
                     setPasswords({ ...passwords, current_password: e.target.value })
                   }

@@ -20,14 +20,12 @@ function CustomerLogs() {
   const [loading, setLoading] = useState(false);
 
   const fetchCustomers = async () => {
-    setLoading(true);
     try {
       const res = await api.get(`/api/customers?search=${search}`);
       setCustomers(res.data);
     } catch (err) {
       console.error("Error fetching customers:", err);
     } finally {
-      setLoading(false);
     }
   };
 
