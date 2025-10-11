@@ -18,6 +18,8 @@ const EditCollection = lazy(() => import("./pages/collections/EditCollection"));
 const Inventory = lazy(() => import("./pages/item/Inventory"));
 const Settings = lazy(() => import("./pages/account/Settings"));
 const CustomerLogs = lazy(() => import("./pages/customer-logs/CustomerLogs"));
+const ConfirmOrder = lazy(() => import("./pages/orders/ConfirmOrder"));
+
 
 function App() {
   return (
@@ -53,6 +55,15 @@ function App() {
               element={
                 <PrivateRoute>
                   <AddOrder />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/confirm-order"
+              element={
+                <PrivateRoute>
+                  <ConfirmOrder />
                 </PrivateRoute>
               }
             />

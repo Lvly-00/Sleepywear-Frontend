@@ -83,7 +83,6 @@ function Inventory() {
 
   return (
     <Stack p="lg" spacing="lg">
-      {/* ✅ Collection name as title with back button */}
       <PageHeader
         title={collection ? collection.name : "Collection"}
         showBack
