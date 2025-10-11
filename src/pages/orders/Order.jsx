@@ -51,7 +51,7 @@ const Order = () => {
     } catch (err) {
       console.error("Error fetching orders:", err);
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -80,9 +80,9 @@ const Order = () => {
     return fullName.includes(search.toLowerCase());
   });
 
-  if (loading) {
-    return <SleepyLoader />;
-  }
+  // if (loading) {
+  //   return <SleepyLoader />;
+  // }
 
   return (
     <Stack p="lg" spacing="lg">

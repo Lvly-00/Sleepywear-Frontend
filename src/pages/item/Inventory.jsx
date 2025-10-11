@@ -44,7 +44,7 @@ function Inventory() {
       } catch (err) {
         console.error(err.response?.data || err.message);
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     };
 
@@ -79,7 +79,7 @@ function Inventory() {
     });
   };
 
-  if (loading) return <SleepyLoader />;
+  // if (loading) return <SleepyLoader />;
 
   return (
     <Stack p="lg" spacing="lg">

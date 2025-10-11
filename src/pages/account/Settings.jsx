@@ -11,7 +11,6 @@ import {
   Grid,
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
-import { IconCheck, IconX } from "@tabler/icons-react";
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
 import SubmitButton from "../../components/SubmitButton";
@@ -68,7 +67,7 @@ const Settings = () => {
         icon: <IconX size={16} />,
       });
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -91,13 +90,12 @@ const Settings = () => {
     });
   };
 
-  if (initialLoading) return <SleepyLoader />;
+  // if (initialLoading) return <SleepyLoader />;
 
   return (
     <div style={{
       padding: 20, position: "relative", fontFamily: "'League Spartan', sans-serif",
     }}>
-      {loading && <SleepyLoader />}
 
       <PageHeader title="Account Settings" />
 

@@ -31,7 +31,7 @@ export default function CollectionOverview() {
 
   useEffect(() => {
     const fetchCollections = async () => {
-      setLoading(true);
+      // setLoading(true);
       try {
         const res = await api.get("api/collections");
         const sorted = res.data.sort((a, b) => {
@@ -44,7 +44,7 @@ export default function CollectionOverview() {
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     };
     fetchCollections();
@@ -86,7 +86,7 @@ export default function CollectionOverview() {
     return <Badge color="gray">{status}</Badge>;
   };
 
-  if (loading) return <SleepyLoader />;
+  // if (loading) return <SleepyLoader />;
 
   return (
     <>

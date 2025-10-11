@@ -24,7 +24,7 @@ const PrivateRoute = ({ children }) => {
   }, []);
 
   // Show loader while auth status is being determined
-  if (isAuthenticated === null) return <SleepyLoader minTime={500} />;
+  if (isAuthenticated === null) return <SleepyLoader minTime={100} />;
 
   return isAuthenticated ? children : <Navigate to="/" />;
 };
