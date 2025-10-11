@@ -7,6 +7,7 @@ import {
   Modal,
   Group,
   Stack,
+  Anchor,
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
@@ -25,7 +26,6 @@ function CustomerLogs() {
       setCustomers(res.data);
     } catch (err) {
       console.error("Error fetching customers:", err);
-    } finally {
     }
   };
 
@@ -39,7 +39,6 @@ function CustomerLogs() {
     fetchCustomers();
   };
 
-  // Updated delete to use DeleteConfirmModal
   const handleDelete = (customer) => {
     openDeleteConfirmModal({
       title: "Delete Customer",
@@ -60,7 +59,7 @@ function CustomerLogs() {
   return (
     <div style={{ padding: "1rem" }}>
       <PageHeader
-        title="Customers  "
+        title="Customers"
         showSearch
         search={search}
         setSearch={setSearch}
@@ -77,16 +76,30 @@ function CustomerLogs() {
             <Table.Th>Actions</Table.Th>
           </Table.Tr>
         </Table.Thead>
+
         <Table.Tbody>
           {customers.map((c) => (
             <Table.Tr key={c.id}>
               <Table.Td>{`${c.first_name} ${c.last_name}`}</Table.Td>
               <Table.Td>{c.contact_number}</Table.Td>
-              <Table.Td>{c.social_handle || "-"}</Table.Td>
+              <Table.Td>
+                {c.social_handle && /^https?:\/\//.test(c.social_handle) ? (
+                  <Anchor
+                    href={c.social_handle}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    underline="hover"
+                  >
+                    {c.social_handle}
+                  </Anchor>
+                ) : (
+                  <span>-</span>
+                )}
+              </Table.Td>
               <Table.Td>{c.address}</Table.Td>
               <Table.Td>{new Date(c.created_at).toLocaleDateString()}</Table.Td>
               <Table.Td>
-                <Group spacing="xs">
+                <Group gap="xs">
                   <Button
                     size="xs"
                     onClick={() => {
@@ -111,11 +124,7 @@ function CustomerLogs() {
       </Table>
 
       {/* Edit Modal */}
-      <Modal
-        opened={opened}
-        onClose={() => setOpened(false)}
-        title="Edit Customer"
-      >
+      <Modal opened={opened} onClose={() => setOpened(false)} title="Edit Customer">
         {selected && (
           <Stack>
             <TextInput
@@ -153,7 +162,7 @@ function CustomerLogs() {
                 setSelected({ ...selected, address: e.target.value })
               }
             />
-            <Group position="right" mt="md">
+            <Group justify="flex-end" mt="md">
               <Button onClick={handleSave}>Save</Button>
             </Group>
           </Stack>
