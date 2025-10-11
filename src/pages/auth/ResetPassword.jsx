@@ -79,8 +79,8 @@ function ResetPassword() {
       {/* Left Section with Logo */}
       <div
         style={{
-          flex: 1,
-          backgroundColor: "#0b0c3f",
+          flex: 2,
+          backgroundColor: "#0A0B32",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -90,7 +90,7 @@ function ResetPassword() {
         <img
           src={WhiteLogo}
           alt="Sleepywears Logo"
-          style={{ maxWidth: "70%", height: "auto" }}
+          style={{ maxWidth: "100%", height: "30%" }}
         />
       </div>
 
