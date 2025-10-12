@@ -1,22 +1,30 @@
 import axios from "axios";
 
+const API_BASE_URL =
+    import.meta.env.VITE_API_URL ||
+    (
+        import.meta.env.DEV ?
+        "http://localhost:8000" // local dev backend
+        :
+        "https://sleepywear-backend.onrender.com"); // deployed backend
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
-  withCredentials: true, // send cookies for Sanctum auth
-  headers: {
-    "X-Requested-With": "XMLHttpRequest",
-  },
+    baseURL: API_BASE_URL,
+    withCredentials: true, // include cookies for Sanctum
+    headers: {
+        "X-Requested-With": "XMLHttpRequest",
+    },
 });
 
-// Always get CSRF cookie before making authenticated requests
-api.interceptors.request.use(async (config) => {
-  if (!window.csrfLoaded) {
-    await axios.get("http://localhost:8000/sanctum/csrf-cookie", {
-      withCredentials: true,
-    });
-    window.csrfLoaded = true;
-  }
-  return config;
+// Automatically get CSRF cookie before any authenticated request
+api.interceptors.request.use(async(config) => {
+    if (!window.csrfLoaded) {
+        await axios.get(`${API_BASE_URL}/sanctum/csrf-cookie`, {
+            withCredentials: true,
+        });
+        window.csrfLoaded = true;
+    }
+    return config;
 });
 
 export default api;
