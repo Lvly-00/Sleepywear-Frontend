@@ -6,7 +6,7 @@ const API_BASE_URL =
         import.meta.env.DEV ?
         "http://localhost:8000" // local dev backend
         :
-        "https://sleepywear-backend.onrender.com"); // deployed backend
+        "https://sleepywears-backend.onrender.com"); // deployed backend
 
 const api = axios.create({
     baseURL: API_BASE_URL,
