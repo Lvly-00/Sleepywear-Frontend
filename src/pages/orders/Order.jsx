@@ -21,6 +21,8 @@ import api from "../../api/axios";
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
 import { useNavigate } from "react-router-dom";
+import { Icons } from "../../components/Icons";
+
 
 const Order = () => {
   const [orders, setOrders] = useState([]);
@@ -31,7 +33,7 @@ const Order = () => {
   const [invoiceData, setInvoiceData] = useState(null);
   const [search, setSearch] = useState("");
   const [activePage, setActivePage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
   const navigate = useNavigate();
 
   const fetchOrders = async () => {
@@ -174,31 +176,40 @@ const Order = () => {
                         </Badge>
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
-                        <Group gap="xs">
+                        <Group gap="{4}" justify="center">
                           {order.payment_status !== "paid" && (
                             <Button
                               size="xs"
+                              color="#276D58"
+                              variant="subtle"
+                              p={3}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedOrder(order);
                                 setAddPaymentOpen(true);
                               }}
+
                             >
-                              Add Payment
+                              <Icons.AddPayment size={24} />
                             </Button>
                           )}
+
                           <Button
                             size="xs"
+                            variant="subtle"
                             color="red"
-                            leftIcon={<IconTrash size={14} />}
+                            p={3}
+
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(order);
                             }}
+
                           >
-                            Delete
+                            <Icons.Trash size={24} />
                           </Button>
                         </Group>
+
                       </Table.Td>
                     </Table.Tr>
                   );

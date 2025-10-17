@@ -26,6 +26,9 @@ import Back from "../assets/icons/back.svg";
 import BlueEye from "../assets/icons/eye 2.svg";
 import BlueEyeOff from "../assets/icons/eye-slash 2.svg";
 
+import AddPayment from "../assets/icons/add-payment.svg";
+
+import Trash from "../assets/icons/trash.svg";
 
 
 
@@ -63,7 +66,11 @@ export const Icons = {
     BlueEye: (props) => <IconWrapper src={BlueEye} alt="show password" {...props} />,
     BlueEyeOff: (props) => <IconWrapper src={BlueEyeOff} alt="hide password" {...props} />,
 
-    
+    AddPayment: (props) => <IconWrapper src={AddPayment} alt="add payment" {...props} />,
+
+    Trash: (props) => <IconWrapper src={Trash} alt="delete" {...props} />,
+
+
 
 
 };
