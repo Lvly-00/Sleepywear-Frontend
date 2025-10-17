@@ -9,10 +9,14 @@ import {
   Stack,
   Anchor,
   Paper,
+  ScrollArea,
+
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
 import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
+import { Icons } from "../../components/Icons";
+
 
 function CustomerLogs() {
   const [customers, setCustomers] = useState([]);
@@ -65,35 +69,51 @@ function CustomerLogs() {
         search={search}
         setSearch={setSearch}
       />
-      <Paper radius="md" p="xl" style={{
-        minHeight: "70vh",
-        marginBottom: "1rem",
-        boxSizing: "border-box",
-        position: "relative" }}>
-          <Table striped highlightOnHover withColumnBorders>
+      <ScrollArea>
+
+        <Paper radius="md" p="xl" style={{
+          minHeight: "70vh",
+          marginBottom: "1rem",
+          boxSizing: "border-box",
+          position: "relative"
+        }}>
+          <Table highlightOnHover
+            styles={{
+              tr: { borderBottom: "1px solid #D8CBB8" },
+            }}>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Contact Number</Table.Th>
-                <Table.Th>Social Handle</Table.Th>
-                <Table.Th>Address</Table.Th>
-                <Table.Th>Created</Table.Th>
-                <Table.Th>Actions</Table.Th>
+                <Table.Th style={{ textAlign: "left" }}>Name</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Contact Number</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Social Handle</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Address</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Created</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
 
             <Table.Tbody>
               {customers.map((c) => (
                 <Table.Tr key={c.id}>
-                  <Table.Td>{`${c.first_name} ${c.last_name}`}</Table.Td>
-                  <Table.Td>{c.contact_number}</Table.Td>
-                  <Table.Td>
+                  <Table.Td style={{ textAlign: "left" }}>{`${c.first_name} ${c.last_name}`}</Table.Td>
+                  <Table.Td style={{ textAlign: "center" }}>{c.contact_number}</Table.Td>
+                  <Table.Td style={{ textAlign: "center", maxWidth: "200px", wordBreak: "break-word" }}>
                     {c.social_handle && /^https?:\/\//.test(c.social_handle) ? (
                       <Anchor
                         href={c.social_handle}
                         target="_blank"
                         rel="noopener noreferrer"
                         underline="hover"
+                        style={{
+                          display: "inline-block",
+                          maxWidth: "100%",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          textAlign: "left",
+                          verticalAlign: "middle",
+                        }}
+                        title={c.social_handle} // shows full link on hover
                       >
                         {c.social_handle}
                       </Anchor>
@@ -101,11 +121,29 @@ function CustomerLogs() {
                       <span>-</span>
                     )}
                   </Table.Td>
-                  <Table.Td>{c.address}</Table.Td>
-                  <Table.Td>{new Date(c.created_at).toLocaleDateString()}</Table.Td>
-                  <Table.Td>
-                    <Group gap="xs">
-                      <Button
+
+                  <Table.Td
+                    style={{
+                      textAlign: "left",
+                      wordWrap: "break-word",
+                      whiteSpace: "normal",
+                      maxWidth: "250px",
+                    }}
+                  >
+                    {c.address || "—"}
+                  </Table.Td>
+                  <Table.Td style={{ textAlign: "center" }}>
+                    {c.created_at
+                      ? new Date(c.created_at).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                      : "—"}
+                  </Table.Td>
+                  <Table.Td style={{ textAlign: "center" }}>
+                    <Group gap="{4}" justify="center">
+                      {/* <Button
                         size="xs"
                         onClick={() => {
                           setSelected(c);
@@ -113,13 +151,15 @@ function CustomerLogs() {
                         }}
                       >
                         Edit
-                      </Button>
+                      </Button> */}
                       <Button
                         size="xs"
+                        variant="subtle"
                         color="red"
+                        p={3}
                         onClick={() => handleDelete(c)}
                       >
-                        Delete
+                        <Icons.Trash size={24} />
                       </Button>
                     </Group>
                   </Table.Td>
@@ -127,53 +167,55 @@ function CustomerLogs() {
               ))}
             </Table.Tbody>
           </Table>
-      </Paper>
+        </Paper>
+      </ScrollArea>
 
-      {/* Edit Modal */ }
-  <Modal opened={opened} onClose={() => setOpened(false)} title="Edit Customer">
-    {selected && (
-      <Stack>
-        <TextInput
-          label="First Name"
-          value={selected.first_name}
-          onChange={(e) =>
-            setSelected({ ...selected, first_name: e.target.value })
-          }
-        />
-        <TextInput
-          label="Last Name"
-          value={selected.last_name}
-          onChange={(e) =>
-            setSelected({ ...selected, last_name: e.target.value })
-          }
-        />
-        <TextInput
-          label="Contact Number"
-          value={selected.contact_number}
-          onChange={(e) =>
-            setSelected({ ...selected, contact_number: e.target.value })
-          }
-        />
-        <TextInput
-          label="Social Handle"
-          value={selected.social_handle || ""}
-          onChange={(e) =>
-            setSelected({ ...selected, social_handle: e.target.value })
-          }
-        />
-        <TextInput
-          label="Address"
-          value={selected.address}
-          onChange={(e) =>
-            setSelected({ ...selected, address: e.target.value })
-          }
-        />
-        <Group justify="flex-end" mt="md">
-          <Button onClick={handleSave}>Save</Button>
-        </Group>
-      </Stack>
-    )}
-  </Modal>
+
+      {/* Edit Modal */}
+      <Modal opened={opened} onClose={() => setOpened(false)} title="Edit Customer">
+        {selected && (
+          <Stack>
+            <TextInput
+              label="First Name"
+              value={selected.first_name}
+              onChange={(e) =>
+                setSelected({ ...selected, first_name: e.target.value })
+              }
+            />
+            <TextInput
+              label="Last Name"
+              value={selected.last_name}
+              onChange={(e) =>
+                setSelected({ ...selected, last_name: e.target.value })
+              }
+            />
+            <TextInput
+              label="Contact Number"
+              value={selected.contact_number}
+              onChange={(e) =>
+                setSelected({ ...selected, contact_number: e.target.value })
+              }
+            />
+            <TextInput
+              label="Social Handle"
+              value={selected.social_handle || ""}
+              onChange={(e) =>
+                setSelected({ ...selected, social_handle: e.target.value })
+              }
+            />
+            <TextInput
+              label="Address"
+              value={selected.address}
+              onChange={(e) =>
+                setSelected({ ...selected, address: e.target.value })
+              }
+            />
+            <Group justify="flex-end" mt="md">
+              <Button onClick={handleSave}>Save</Button>
+            </Group>
+          </Stack>
+        )}
+      </Modal>
     </div >
   );
 }
