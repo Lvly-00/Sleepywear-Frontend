@@ -99,79 +99,90 @@ export default function CollectionOverview() {
         onAdd={() => setOpenedNew(true)}
       />
 
-      <Paper withBorder shadow="sm" p="md" radius="md">
-        {filteredCollections.length === 0 ? (
-          <Center py="lg">
-            <Text>No collections found.</Text>
-          </Center>
-        ) : (
-          <Table striped highlightOnHover withColumnBorders>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>ID</Table.Th>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Release Date</Table.Th>
-                <Table.Th>QTY</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Total Sales</Table.Th>
-                <Table.Th>Stock QTY</Table.Th>
-                <Table.Th>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {filteredCollections.map((col) => (
-                <Table.Tr key={col.id}>
-                  <Table.Td>{col.id}</Table.Td>
-                  <Table.Td>
-                    <Anchor
-                      component="button"
-                      onClick={() => navigate(`/collections/${col.id}/items`)}
+      <Paper radius="md" p="xl" style={{
+        minHeight: "70vh",
+        marginBottom: "1rem",
+        boxSizing: "border-box",
+        position: "relative"
+      }}>        {filteredCollections.length === 0 ? (
+        <Center py="lg">
+          <Text>No collections found.</Text>
+        </Center>
+      ) : (
+        <Table
+          highlightOnHover
+          styles={{
+            tr: {
+              borderBottom: "1px solid #D8CBB8",
+            },
+          }}
+        >
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th style={{ textAlign: "left" }}>Collection Name</Table.Th>
+              <Table.Th style={{ textAlign: "center" }}>Release Date</Table.Th>
+              <Table.Th style={{ textAlign: "center" }}>Qty</Table.Th>
+              <Table.Th style={{ textAlign: "center" }}>Stock QTY</Table.Th>
+              {/* <Table.Th style={{ textAlign: "center" }}>Capital</Table.Th> */}
+              <Table.Th style={{ textAlign: "center" }}>Revenue</Table.Th>
+              <Table.Th style={{ textAlign: "center" }}>Collection Status</Table.Th>
+              <Table.Th style={{ textAlign: "center" }}>Actions</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {filteredCollections.map((col) => (
+              <Table.Tr key={col.id}>
+                <Table.Td >
+                  <Anchor
+                    component="button"
+                    style={{ textAlign: "left" }}
+                    onClick={() => navigate(`/collections/${col.id}/items`)}
+                  >
+                    {col.name}
+                  </Anchor>
+                </Table.Td>
+                <Table.Td style={{ textAlign: "center" }}>{col.release_date}</Table.Td>
+                <Table.Td style={{ textAlign: "center" }}>{col.qty}</Table.Td>
+                <Table.Td style={{ textAlign: "center" }}>{getStatusBadge(col.status)}</Table.Td>
+                <Table.Td style={{ textAlign: "center" }}>
+                  ₱
+                  {col.total_sales
+                    ? new Intl.NumberFormat("en-PH", {
+                      maximumFractionDigits: 0,
+                    }).format(Math.floor(col.total_sales))
+                    : "0"}
+                </Table.Td>
+                <Table.Td style={{ textAlign: "center" }}>{col.stock_qty}</Table.Td>
+                <Table.Td style={{ textAlign: "center" }}>
+                  <Group>
+                    <Button
+                      size="xs"
+                      onClick={() => {
+                        setSelectedCollection(col);
+                        setOpenedEdit(true);
+                      }}
                     >
-                      {col.name}
-                    </Anchor>
-                  </Table.Td>
-                  <Table.Td>{col.release_date}</Table.Td>
-                  <Table.Td>{col.qty}</Table.Td>
-                  <Table.Td>{getStatusBadge(col.status)}</Table.Td>
-                  <Table.Td>
-                    ₱
-                    {col.total_sales
-                      ? new Intl.NumberFormat("en-PH", {
-                          maximumFractionDigits: 0,
-                        }).format(Math.floor(col.total_sales))
-                      : "0"}
-                  </Table.Td>
-                  <Table.Td>{col.stock_qty}</Table.Td>
-                  <Table.Td>
-                    <Group>
-                      <Button
-                        size="xs"
-                        onClick={() => {
-                          setSelectedCollection(col);
-                          setOpenedEdit(true);
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="xs"
-                        color="red"
-                        onClick={() => {
-                          openDeleteConfirmModal({
-                            name: col.name,
-                            onConfirm: async () => handleDelete(col.id),
-                          });
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        )}
+                      Edit
+                    </Button>
+                    <Button
+                      size="xs"
+                      color="red"
+                      onClick={() => {
+                        openDeleteConfirmModal({
+                          name: col.name,
+                          onConfirm: async () => handleDelete(col.id),
+                        });
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      )}
       </Paper>
 
       {/* Add Collection Modal */}

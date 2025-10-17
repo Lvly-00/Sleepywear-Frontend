@@ -119,7 +119,8 @@ const Order = () => {
                 borderBottom: "1px solid #D8CBB8",
               },
             }}
-          >          <Table.Thead>
+          >       
+             <Table.Thead>
               <Table.Tr>
                 <Table.Th style={{ textAlign: "center" }}>Order ID</Table.Th>
                 <Table.Th style={{ textAlign: "left" }}>Customer Name</Table.Th>

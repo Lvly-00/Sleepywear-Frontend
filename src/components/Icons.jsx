@@ -29,6 +29,7 @@ import BlueEyeOff from "../assets/icons/eye-slash 2.svg";
 import AddPayment from "../assets/icons/add-payment.svg";
 
 import Trash from "../assets/icons/trash.svg";
+import Edit from "../assets/icons/edit.svg";
 
 
 
@@ -69,6 +70,7 @@ export const Icons = {
     AddPayment: (props) => <IconWrapper src={AddPayment} alt="add payment" {...props} />,
 
     Trash: (props) => <IconWrapper src={Trash} alt="delete" {...props} />,
+    Edit: (props) => <IconWrapper src={Trash} alt="edit" {...props} />,
 
 
 
