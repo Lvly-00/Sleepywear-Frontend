@@ -70,7 +70,7 @@ export const Icons = {
     AddPayment: (props) => <IconWrapper src={AddPayment} alt="add payment" {...props} />,
 
     Trash: (props) => <IconWrapper src={Trash} alt="delete" {...props} />,
-    Edit: (props) => <IconWrapper src={Trash} alt="edit" {...props} />,
+    Edit: (props) => <IconWrapper src={Edit} alt="edit" {...props} />,
 
 
 

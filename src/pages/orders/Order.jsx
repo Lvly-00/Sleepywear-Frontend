@@ -11,9 +11,7 @@ import {
   ScrollArea,
   TextInput,
   Paper,
-  Pagination,
 } from "@mantine/core";
-import { IconPlus, IconEdit, IconTrash, IconSearch } from "@tabler/icons-react";
 import AddPaymentModal from "../../components/AddPaymentModal";
 import InvoicePreview from "../../components/InvoicePreview";
 import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
@@ -32,8 +30,8 @@ const Order = () => {
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
   const [search, setSearch] = useState("");
-  const [activePage, setActivePage] = useState(1);
-  const itemsPerPage = 10;
+  // const [activePage, setActivePage] = useState(1);
+  // const itemsPerPage = 10;
   const navigate = useNavigate();
 
   const fetchOrders = async () => {
@@ -87,9 +85,9 @@ const Order = () => {
   });
 
   // Pagination
-  const startIndex = (activePage - 1) * itemsPerPage;
-  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  // const startIndex = (activePage - 1) * itemsPerPage;
+  // const filteredOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+  // const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   // if (loading) {
   //   return <SleepyLoader />;
   // }
@@ -107,6 +105,7 @@ const Order = () => {
 
       <ScrollArea>
         <Paper radius="md" p="xl" style={{
+          background:"white",
           minHeight: "70vh",
           marginBottom: "1rem",
           boxSizing: "border-box",
@@ -119,8 +118,8 @@ const Order = () => {
                 borderBottom: "1px solid #D8CBB8",
               },
             }}
-          >       
-             <Table.Thead>
+          >
+            <Table.Thead>
               <Table.Tr>
                 <Table.Th style={{ textAlign: "center" }}>Order ID</Table.Th>
                 <Table.Th style={{ textAlign: "left" }}>Customer Name</Table.Th>
@@ -133,8 +132,8 @@ const Order = () => {
             </Table.Thead>
 
             <Table.Tbody>
-              {paginatedOrders.length > 0 ? (
-                paginatedOrders.map((order) => {
+              {filteredOrders.length > 0 ? (
+                filteredOrders.map((order) => {
                   const fullName = `${order.first_name} ${order.last_name}`;
                   const totalQty =
                     order.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
@@ -152,7 +151,7 @@ const Order = () => {
                         setInvoiceData(order);
                         setInvoiceModal(true);
                       }}
-                      style={{ cursor: "pointer" }} // <-- shows pointer cursor for UX
+                      style={{ cursor: "pointer" }}
                     >
                       <Table.Td style={{ textAlign: "center" }}>{order.id}</Table.Td>
                       <Table.Td style={{ textAlign: "left" }}>{fullName}</Table.Td>
@@ -162,22 +161,28 @@ const Order = () => {
                           year: "numeric",
                           month: "long",
                           day: "numeric",
-                        })}                      </Table.Td>
+                        })}
+                      </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
                         ₱{Math.round(totalPrice)}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
                         <Badge
+                          size="md"
                           variant="filled"
                           style={{
                             backgroundColor:
                               order.payment_status === "paid" ? "#A5BDAE" : "#D9D9D9",
                             color: order.payment_status === "paid" ? "#FFFFFF" : "#7A7A7A",
-                            width: "80px",
+                            width: "100px",
                             textAlign: "center",
                             justifyContent: "center",
                             textTransform: "capitalize",
-                            fontWeight: "700",
+                            fontWeight: "600",
+                            fontSize: "14px",
+                            padding: "13px",
+                            borderRadius: "13px",
+
                           }}
                         >
                           {order.payment_status || "unpaid"}
@@ -233,7 +238,7 @@ const Order = () => {
               )}
             </Table.Tbody>
           </Table>
-          {totalPages > 1 && (
+          {/* {totalPages > 1 && (
             <Group
               justify="center"
               style={{
@@ -242,15 +247,16 @@ const Order = () => {
                 left: "50%",
                 transform: "translateX(-50%)",
               }}
-            >              <Pagination
+            >
+              <Pagination
                 total={totalPages}
                 value={activePage}
                 onChange={setActivePage}
-                color="#232D80" ng
+                color="#232D80"
                 radius="md"
               />
             </Group>
-          )}
+          )} */}
         </Paper>
       </ScrollArea>
 
