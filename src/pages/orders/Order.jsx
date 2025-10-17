@@ -149,10 +149,14 @@ const Order = () => {
                       <Table.Td style={{ textAlign: "left" }}>{fullName}</Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>{totalQty}</Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
-                        {new Date(order.order_date).toLocaleDateString()}
-                      </Table.Td>
+                        {new Date(order.order_date).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}                      </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
-                        ₱{totalPrice.toFixed(2)}</Table.Td>
+                        ₱{Math.round(totalPrice)}
+                      </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
                         <Badge
                           variant="filled"
