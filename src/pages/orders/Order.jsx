@@ -112,8 +112,14 @@ const Order = () => {
           boxSizing: "border-box",
           position: "relative"
         }}>
-          <Table highlightOnHover >
-            <Table.Thead>
+          <Table
+            highlightOnHover
+            styles={{
+              tr: {
+                borderBottom: "1px solid #D8CBB8",
+              },
+            }}
+          >          <Table.Thead>
               <Table.Tr>
                 <Table.Th style={{ textAlign: "center" }}>Order ID</Table.Th>
                 <Table.Th style={{ textAlign: "left" }}>Customer Name</Table.Th>
@@ -169,7 +175,8 @@ const Order = () => {
                             width: "80px",
                             textAlign: "center",
                             justifyContent: "center",
-                            textTransform: "capitalize"
+                            textTransform: "capitalize",
+                            fontWeight: "700",
                           }}
                         >
                           {order.payment_status || "unpaid"}
