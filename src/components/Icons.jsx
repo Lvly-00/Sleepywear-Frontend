@@ -30,6 +30,8 @@ import AddPayment from "../assets/icons/add-payment.svg";
 
 import Trash from "../assets/icons/trash.svg";
 import Edit from "../assets/icons/edit.svg";
+import Download from "../assets/icons/download.svg";
+
 
 
 
@@ -71,6 +73,7 @@ export const Icons = {
 
     Trash: (props) => <IconWrapper src={Trash} alt="delete" {...props} />,
     Edit: (props) => <IconWrapper src={Edit} alt="edit" {...props} />,
+    Download: (props) => <IconWrapper src={Download} alt="download" {...props} />,
 
 
 

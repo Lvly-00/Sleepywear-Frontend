@@ -1,26 +1,64 @@
 import React, { useRef, useEffect, useState } from "react";
-import { Modal, Text, Table, Button, Group } from "@mantine/core";
+import {
+  Modal,
+  Text,
+  Table,
+  Button,
+  Group,
+  Divider,
+  Image,
+  ScrollArea,
+} from "@mantine/core";
 import html2canvas from "html2canvas";
+import BrownLogo from "../assets/BrownLogo.svg";
+import { Icons } from "../components/Icons";
 
 const InvoicePreview = ({ opened, onClose, invoiceData }) => {
   const invoiceRef = useRef();
   const [invoice, setInvoice] = useState(null);
 
-  // Update state when invoiceData changes
   useEffect(() => {
-    if (invoiceData) {
-      setInvoice(invoiceData);
-    }
+    if (invoiceData) setInvoice(invoiceData);
   }, [invoiceData]);
 
   if (!invoice) return null;
 
   const downloadInvoiceImage = async () => {
     if (!invoiceRef.current) return;
-    const canvas = await html2canvas(invoiceRef.current, { scale: 2 });
+
+    const originalStyles = {
+      maxHeight: invoiceRef.current.style.maxHeight,
+      overflow: invoiceRef.current.style.overflow,
+      padding: invoiceRef.current.style.padding,
+    };
+
+    invoiceRef.current.style.maxHeight = "none";
+    invoiceRef.current.style.overflow = "visible";
+    invoiceRef.current.style.padding = "40px";
+
+    const contentWidth = invoiceRef.current.scrollWidth;
+    const contentHeight = invoiceRef.current.scrollHeight;
+    const dynamicScale =
+      contentHeight > 2000
+        ? Math.max(1.5, 2.5 - contentHeight / 4000)
+        : 2;
+
+    const canvas = await html2canvas(invoiceRef.current, {
+      scale: dynamicScale,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: contentWidth,
+      windowHeight: contentHeight,
+    });
+
+    Object.assign(invoiceRef.current.style, originalStyles);
+
+    const image = canvas.toDataURL("image/png");
     const link = document.createElement("a");
-    link.download = `Invoice_${invoice.customer_name}.png`;
-    link.href = canvas.toDataURL("image/png");
+    link.download = `Invoice_${invoice.customer_name || "Customer"}.png`;
+    link.href = image;
     link.click();
   };
 
@@ -28,70 +66,153 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Invoice Preview"
-      size="lg"
       centered
+      size="lg"
+      withCloseButton={false}
+      scrollAreaComponent={ScrollArea.Autosize} 
+      
     >
-      <div
-        ref={invoiceRef}
-        style={{ padding: "1rem", backgroundColor: "#fff" }}
+      {/* Sticky header */}
+      <Modal.Header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          backgroundColor: "#fff",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "0.75rem 1rem",
+          borderBottom: "1px solid #e0d7ce",
+        }}
       >
-        <Text>
-          <b>Customer Name:</b> {`${invoice.first_name} ${invoice.last_name}`}
-        </Text>
+        {/* Left side – Close button */}
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <Modal.CloseButton
+            size={35}
+            style={{
+              color: "#AB8262",
+              width: 44,
+              height: 44,
+            }}
+          />
+        </div>
 
-        <Text>
-          <b>Address:</b> {invoice.address}
-        </Text>
-        <Text>
-          <b>Contact No:</b> {invoice.contact_number}
-        </Text>
-        <Text>
-          <b>Social Media:</b> {invoice.social_handle}
-        </Text>
+        {/* Right side – Download button */}
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <Button
+            size="md"
+            variant="subtle"
+            color="#AB8262"
+            onClick={downloadInvoiceImage}
+            style={{
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "background-color 0.2s ease",
+            }}
+            styles={{
+              root: {
+                "&:hover": { backgroundColor: "#F2E7DA" },
+              },
+            }}
+          >
+            <Icons.Download size={34} />
+          </Button>
+        </div>
+      </Modal.Header>
 
-        <Table withBorder mt="md">
-          <thead>
-            <tr>
-              <th>Item Name</th>
-              <th>Quantity</th>
-              <th>Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoice.items.map((item, idx) => (
-              <tr key={idx}>
-                <td>{item.item_name}</td>
-                <td>{item.quantity}</td>
-                <td>₱{item.price}</td>
-              </tr>
-            ))}
-            <tr>
-              <td>
-                <b>Total</b>
-              </td>
-              <td></td>
-              <td>
-                <b>₱{invoice.total.toFixed(2)}</b>
-              </td>
-            </tr>
-          </tbody>
-        </Table>
+      <Modal.Body
+        style={{
+          padding: "1.25rem",
+          backgroundColor: "#fff",
+          maxHeight: "70vh", // Limits height to show scrollbar
+          overflowY: "auto",
+        }}
+      >
+        <div ref={invoiceRef} style={{ padding: "1rem" }}>
+          <Group justify="center" mb="md">
+            <Image src={BrownLogo} alt="SleepyWears Logo" maw={300} />
+          </Group>
 
-        <Text mt="md" weight={500}>
-          Payment Details:
-        </Text>
-        {invoice.payment_status &&
-        invoice.payment_status.toLowerCase() === "paid" ? (
-          <>
-            <Text>
-              Mode of Payment: {invoice.payment_method || "Not provided"}
-            </Text>
-            <Text>Payment Status: {invoice.payment_status}</Text>
-            <Text>
-              Payment Date:{" "}
-              {invoice.payment_date
-                ? new Date(invoice.payment_date).toLocaleString("en-US", {
+          <Divider mb="xs" />
+          <Text>
+            <b>Name:</b> {`${invoice.first_name} ${invoice.last_name}`}
+          </Text>
+          <Text>
+            <b>Address:</b> {invoice.address}
+          </Text>
+          <Text>
+            <b>Contact No:</b> {invoice.contact_number}
+          </Text>
+          <Text>
+            <b>Social Media:</b> {invoice.social_handle}
+          </Text>
+
+          <Divider my="md" />
+
+          <Text fw={600} fz="lg" mb="xs">
+            Order Items
+          </Text>
+
+          <Table
+            withBorder
+            highlightOnHover
+            striped
+            stickyHeader
+            stickyHeaderOffset={0}
+            fontSize="sm"
+          >
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Item Name</Table.Th>
+                <Table.Th>Quantity</Table.Th>
+                <Table.Th>Price</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+
+            <Table.Tbody>
+              {invoice.items.map((item, idx) => (
+                <Table.Tr key={idx}>
+                  <Table.Td>{item.item_name}</Table.Td>
+                  <Table.Td>{item.quantity}</Table.Td>
+                  <Table.Td>₱{item.price}</Table.Td>
+                </Table.Tr>
+              ))}
+              <Table.Tr>
+                <Table.Td fw={600}>Total</Table.Td>
+                <Table.Td></Table.Td>
+                <Table.Td fw={600}>
+                  ₱
+                  {invoice.total?.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+
+          <Divider my="md" />
+
+          <Text fw={600} fz="lg" mb="xs">
+            Payment Details
+          </Text>
+
+          {invoice.payment_status?.toLowerCase() === "paid" ? (
+            <>
+              <Text>
+                <b>Mode of Payment:</b>{" "}
+                {invoice.payment_method || "Not provided"}
+              </Text>
+              <Text>
+                <b>Status:</b> {invoice.payment_status}
+              </Text>
+              <Text>
+                <b>Date:</b>{" "}
+                {invoice.payment_date
+                  ? new Date(invoice.payment_date).toLocaleString("en-US", {
                     weekday: "long",
                     year: "numeric",
                     month: "long",
@@ -100,21 +221,28 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                     minute: "2-digit",
                     hour12: true,
                   })
-                : "Not provided"}
-            </Text>
-          </>
-        ) : (
-          <>
-            <Text>Gcash: 0932364671</Text>
-            <Text>Checkout Link: https://ph.shp.ee/V6guXb6</Text>
-          </>
-        )}
-      </div>
-
-      <Group mt="md">
-        <Button onClick={downloadInvoiceImage}>Download as PNG</Button>
-        <Button onClick={onClose}>Close</Button>
-      </Group>
+                  : "Not provided"}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text>
+                <b>GCash:</b> 0932364671
+              </Text>
+              <Text>
+                <b>Checkout Link:</b>{" "}
+                <a
+                  href="https://ph.shp.ee/V6guXb6"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  https://ph.shp.ee/V6guXb6
+                </a>
+              </Text>
+            </>
+          )}
+        </div>
+      </Modal.Body>
     </Modal>
   );
 };
