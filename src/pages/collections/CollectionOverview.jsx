@@ -17,7 +17,7 @@ import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
 import AddCollectionModal from "../../components/AddCollectionModal";
 import EditCollectionModal from "../../components/EditCollectionModal";
-import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
+import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 import { Icons } from "../../components/Icons";
 
 
@@ -29,6 +29,7 @@ export default function CollectionOverview() {
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  
   // const [activePage, setActivePage] = useState(1);
   // const itemsPerPage = 10;
 
@@ -217,7 +218,7 @@ export default function CollectionOverview() {
                     </Table.Td>
                     <Table.Td
                       style={{ textAlign: "center" }}
-                      onClick={(e) => e.stopPropagation()} 
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <Group gap={4} justify="center">
                         <Button
@@ -237,11 +238,9 @@ export default function CollectionOverview() {
                           variant="subtle"
                           color="red"
                           p={3}
-                          onClick={() => {
-                            openDeleteConfirmModal({
-                              name: col.name,
-                              onConfirm: async () => handleDelete(col.id),
-                            });
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(order); // sets state to open modal
                           }}
                         >
                           <Icons.Trash size={24} />
@@ -259,6 +258,21 @@ export default function CollectionOverview() {
 
 
       {/* Add Collection Modal */}
+      <DeleteConfirmModal
+        opened={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        name={orderToDelete ? `Order #${orderToDelete.id}` : ""}
+        onConfirm={async () => {
+          if (!orderToDelete) return;
+          try {
+            await api.delete(`/api/orders/${orderToDelete.id}`);
+            fetchOrders();
+            setDeleteModalOpen(false);
+          } catch (err) {
+            console.error("Error deleting order:", err);
+          }
+        }}
+      />
       <Modal
         opened={openedNew}
         onClose={() => setOpenedNew(false)}
