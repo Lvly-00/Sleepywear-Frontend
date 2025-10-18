@@ -15,7 +15,9 @@ import PageHeader from "../../components/PageHeader";
 import AddItemModal from "../../components/AddItemModal";
 import EditItemModal from "../../components/EditItemModal";
 import SleepyLoader from "../../components/SleepyLoader";
-import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
+import DeleteConfirmModal from "../../components/DeleteConfirmModal";
+import { Icons } from "../../components/Icons";
+
 
 function Inventory() {
   const { id } = useParams();
@@ -25,6 +27,9 @@ function Inventory() {
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -176,25 +181,54 @@ function Inventory() {
               <Group mt="md" spacing="xs" position="left">
                 <Button
                   size="xs"
-                  onClick={() => {
+                  color="#276D58"
+                  variant="subtle"
+                  p={3} onClick={() => {
                     setSelectedItem(item);
                     setEditModal(true);
                   }}
                 >
-                  Edit
+                  <Icons.Edit size={24} />
                 </Button>
                 <Button
                   size="xs"
-                  color="red"
-                  onClick={() => handleDelete(item.id, item.name)}
+                  color="#276D58"
+                  variant="subtle"
+                  p={3}
+                  onClick={() => {
+                    setItemToDelete(item);
+                    setDeleteModalOpen(true);
+                  }}
                 >
-                  Delete
+                  <Icons.Trash size={24} />
                 </Button>
+
               </Group>
             </Card>
           ))}
         </SimpleGrid>
       )}
+
+      {/* Delete Item Modal */}
+      <DeleteConfirmModal
+        opened={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+        name={itemToDelete ? itemToDelete.name : ""}
+        onConfirm={async () => {
+          if (!itemToDelete) return;
+          try {
+            await api.delete('/api/items/${itemToDelete.id}');
+            setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
+            setDeleteModalOpen(false);
+            setItemToDelete(null);
+          } catch (err) {
+            console.error("Error deleting item:", err.response?.data || err.message);
+          }
+        }}
+      />
 
       {/* Add Item Modal */}
       <AddItemModal
