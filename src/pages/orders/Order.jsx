@@ -103,14 +103,26 @@ const Order = () => {
         addLink="/add-order"
       />
 
-      <ScrollArea>
-        <Paper radius="md" p="xl" style={{
-          background:"white",
-          minHeight: "70vh",
-          marginBottom: "1rem",
-          boxSizing: "border-box",
-          position: "relative"
-        }}>
+      <Paper radius="md" p="xl" style={{
+        background: "white",
+        minHeight: "70vh",
+        marginBottom: "1rem",
+        boxSizing: "border-box",
+        position: "relative",
+        overflow: "hidden",
+
+      }}>
+        <ScrollArea
+          scrollbars="x"
+          style={{
+            background: "white",
+            minHeight: "70vh",
+            marginBottom: ".5rem",
+            boxSizing: "border-box",
+            position: "relative",
+            overflow: "hidden",
+          }}>
+
           <Table
             highlightOnHover
             styles={{
@@ -238,7 +250,9 @@ const Order = () => {
               )}
             </Table.Tbody>
           </Table>
-          {/* {totalPages > 1 && (
+
+        </ScrollArea>
+        {/* {totalPages > 1 && (
             <Group
               justify="center"
               style={{
@@ -257,8 +271,7 @@ const Order = () => {
               />
             </Group>
           )} */}
-        </Paper>
-      </ScrollArea>
+      </Paper>
 
       {/* Add Payment Modal */}
       <Modal
@@ -281,7 +294,7 @@ const Order = () => {
         onClose={() => setInvoiceModal(false)}
         invoiceData={invoiceData}
       />
-    </Stack>
+    </Stack >
   );
 };
 

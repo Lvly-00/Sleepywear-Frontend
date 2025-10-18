@@ -97,7 +97,7 @@ export default function CollectionOverview() {
   // const totalPages = Math.ceil(filteredCollections.length / itemsPerPage);
 
   // if (loading) return <SleepyLoader />;
-  // console.log(totalPages)
+  // console.log(capital)
 
   return (
     <div style={{ padding: "1rem" }}>
@@ -109,41 +109,57 @@ export default function CollectionOverview() {
         addLabel="New Collection"
         onAdd={() => setOpenedNew(true)}
       />
-      <ScrollArea>
 
-        <Paper radius="md" p="xl" style={{
+      <Paper
+        radius="md"
+        p="xl"
+        style={{
           minHeight: "70vh",
           marginBottom: "1rem",
           boxSizing: "border-box",
-          position: "relative"
-        }}>
-          {filteredCollections.length === 0 ? (
-            <Center py="lg">
-              <Text>No collections found.</Text>
-            </Center>
-          ) : (
-            <Table
-              highlightOnHover
-              styles={{
-                tr: { borderBottom: "1px solid #D8CBB8" },
-              }}
-            >
-              <Table.Thead>
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <ScrollArea scrollbars="x"
+          style={{
+            background: "white",
+            minHeight: "70vh",
+            marginBottom: ".5rem",
+            boxSizing: "border-box",
+            position: "relative",
+            overflow: "hidden",
+          }}>
+          <Table
+            highlightOnHover
+            styles={{
+              tr: { borderBottom: "1px solid #D8CBB8" },
+            }}
+          >
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th style={{ textAlign: "left" }}>Collection Name</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Release Date</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Qty</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Stock QTY</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Capital</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Revenue</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Collection Status</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Actions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+
+            <Table.Tbody>
+              {filteredCollections.length === 0 ? (
                 <Table.Tr>
-                  <Table.Th style={{ textAlign: "left" }}>Collection Name</Table.Th>
-                  <Table.Th style={{ textAlign: "center" }}>Release Date</Table.Th>
-                  <Table.Th style={{ textAlign: "center" }}>Qty</Table.Th>
-                  <Table.Th style={{ textAlign: "center" }}>Stock QTY</Table.Th>
-                  {/* <Table.Th style={{ textAlign: "center" }}>Capital</Table.Th> */}
-                  <Table.Th style={{ textAlign: "center" }}>Revenue</Table.Th>
-                  <Table.Th style={{ textAlign: "center" }}>Collection Status</Table.Th>
-                  <Table.Th style={{ textAlign: "center" }}>Actions</Table.Th>
+                  <Table.Td colSpan={8} style={{ textAlign: "center", padding: "2rem" }}>
+                    <Text c="dimmed">No collection found</Text>
+                  </Table.Td>
                 </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {filteredCollections.map((col) => (
+              ) : (
+                filteredCollections.map((col) => (
                   <Table.Tr key={col.id}>
-                    <Table.Td >
+                    <Table.Td>
                       <Anchor
                         component="button"
                         style={{ textAlign: "left" }}
@@ -166,19 +182,31 @@ export default function CollectionOverview() {
 
                     <Table.Td style={{ textAlign: "center" }}>
                       ₱
+                      {col.capital
+                        ? new Intl.NumberFormat("en-PH", {
+                          maximumFractionDigits: 0,
+                        }).format(Math.floor(col.capital))
+                        : "0"}
+                    </Table.Td>
+
+                    <Table.Td style={{ textAlign: "center" }}>
+                      ₱
                       {col.total_sales
                         ? new Intl.NumberFormat("en-PH", {
                           maximumFractionDigits: 0,
                         }).format(Math.floor(col.total_sales))
                         : "0"}
                     </Table.Td>
+
                     <Table.Td style={{ textAlign: "center" }}>
                       <Badge
                         size="md"
                         variant="filled"
                         style={{
-                          backgroundColor: col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
-                          color: col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
+                          backgroundColor:
+                            col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
+                          color:
+                            col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
                           width: "100px",
                           padding: "13px",
                           textAlign: "center",
@@ -193,9 +221,8 @@ export default function CollectionOverview() {
                       </Badge>
                     </Table.Td>
 
-
                     <Table.Td style={{ textAlign: "center" }}>
-                      <Group gap="{4}" justify="center">
+                      <Group gap={4} justify="center">
                         <Button
                           size="xs"
                           color="#276D58"
@@ -225,14 +252,12 @@ export default function CollectionOverview() {
                       </Group>
                     </Table.Td>
                   </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-
-          )}
-
-        </Paper>
-      </ScrollArea>
+                ))
+              )}
+            </Table.Tbody>
+          </Table>
+        </ScrollArea>
+      </Paper>
 
 
       {/* Add Collection Modal */}
@@ -256,20 +281,22 @@ export default function CollectionOverview() {
       </Modal>
 
       {/* Edit Collection Modal */}
-      {selectedCollection && (
-        <Modal
-          opened={openedEdit}
-          onClose={() => setOpenedEdit(false)}
-          title="Edit Collection"
-          size="sm"
-        >
-          <EditCollectionModal
-            collection={selectedCollection}
-            onCollectionUpdated={handleCollectionUpdated}
+      {
+        selectedCollection && (
+          <Modal
+            opened={openedEdit}
             onClose={() => setOpenedEdit(false)}
-          />
-        </Modal>
-      )}
-    </div>
+            title="Edit Collection"
+            size="sm"
+          >
+            <EditCollectionModal
+              collection={selectedCollection}
+              onCollectionUpdated={handleCollectionUpdated}
+              onClose={() => setOpenedEdit(false)}
+            />
+          </Modal>
+        )
+      }
+    </div >
   );
 }
