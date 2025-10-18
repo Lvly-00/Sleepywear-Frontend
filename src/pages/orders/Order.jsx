@@ -293,19 +293,15 @@ const Order = () => {
         }}
       />
 
-      <Modal
-        opened={addPaymentOpen}
-        onClose={() => setAddPaymentOpen(false)}
-        title="Add Payment Details"
-        size="md"
-        centered
-      >
+      {addPaymentOpen && selectedOrder && (
         <AddPaymentModal
-          order={selectedOrder}
+          opened={addPaymentOpen}
           onClose={() => setAddPaymentOpen(false)}
+          order={selectedOrder}
           refreshOrders={fetchOrders}
         />
-      </Modal>
+      )}
+
 
       {/* Invoice Modal */}
       <InvoicePreview
