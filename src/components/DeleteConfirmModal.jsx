@@ -16,7 +16,7 @@ function DeleteConfirmModal({ opened, onClose, name, onConfirm }) {
         }}
       >
         <Modal.Header>
-          <Modal.Title>Confirm Delete</Modal.Title>
+          <Modal.Title>Delete Confirmation</Modal.Title>
           <Modal.CloseButton />
         </Modal.Header>
 

@@ -29,7 +29,10 @@ export default function CollectionOverview() {
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [collectionToDelete, setCollectionToDelete] = useState(null);
+
+
   // const [activePage, setActivePage] = useState(1);
   // const itemsPerPage = 10;
 
@@ -240,11 +243,13 @@ export default function CollectionOverview() {
                           p={3}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDelete(order); // sets state to open modal
+                            setCollectionToDelete(col);
+                            setDeleteModalOpen(true);
                           }}
                         >
                           <Icons.Trash size={24} />
                         </Button>
+
                       </Group>
                     </Table.Td>
                   </Table.Tr>
@@ -261,18 +266,22 @@ export default function CollectionOverview() {
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        name={orderToDelete ? `Order #${orderToDelete.id}` : ""}
+        name={collectionToDelete ? collectionToDelete.name : ""}
         onConfirm={async () => {
-          if (!orderToDelete) return;
+          if (!collectionToDelete) return;
           try {
-            await api.delete(`/api/orders/${orderToDelete.id}`);
-            fetchOrders();
+            await api.delete(`api/collections/${collectionToDelete.id}`);
+            const updated = collections.filter(c => c.id !== collectionToDelete.id);
+            setCollections(updated);
+            setFilteredCollections(updated);
             setDeleteModalOpen(false);
+            setCollectionToDelete(null);
           } catch (err) {
-            console.error("Error deleting order:", err);
+            console.error("Error deleting collection:", err);
           }
         }}
       />
+
       <Modal
         opened={openedNew}
         onClose={() => setOpenedNew(false)}
