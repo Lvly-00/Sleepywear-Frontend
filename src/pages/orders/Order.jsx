@@ -14,7 +14,7 @@ import {
 } from "@mantine/core";
 import AddPaymentModal from "../../components/AddPaymentModal";
 import InvoicePreview from "../../components/InvoicePreview";
-import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
+import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 import api from "../../api/axios";
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
@@ -30,6 +30,9 @@ const Order = () => {
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
   const [search, setSearch] = useState("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState(null);
+
   // const [activePage, setActivePage] = useState(1);
   // const itemsPerPage = 10;
   const navigate = useNavigate();
@@ -64,7 +67,9 @@ const Order = () => {
   }, []);
 
   const handleDelete = (order) => {
-    openDeleteConfirmModal({
+    setOrderToDelete(order);
+    setDeleteModalOpen(true);
+    DeleteConfirmModal({
       title: "Delete Order",
       name: `Order #${order.id}`,
       onConfirm: async () => {
@@ -77,6 +82,7 @@ const Order = () => {
       },
     });
   };
+
 
   // Filter orders based on search term
   const filteredOrders = orders.filter((order) => {
@@ -117,7 +123,6 @@ const Order = () => {
           style={{
             background: "white",
             minHeight: "70vh",
-            marginBottom: ".5rem",
             boxSizing: "border-box",
             position: "relative",
             overflow: "hidden",
@@ -218,21 +223,19 @@ const Order = () => {
                               <Icons.AddPayment size={24} />
                             </Button>
                           )}
-
                           <Button
                             size="xs"
                             variant="subtle"
                             color="red"
                             p={3}
-
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(order);
+                              handleDelete(order); // sets state to open modal
                             }}
-
                           >
                             <Icons.Trash size={24} />
                           </Button>
+
                         </Group>
 
                       </Table.Td>
@@ -274,6 +277,22 @@ const Order = () => {
       </Paper>
 
       {/* Add Payment Modal */}
+      <DeleteConfirmModal
+        opened={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        name={orderToDelete ? `Order #${orderToDelete.id}` : ""}
+        onConfirm={async () => {
+          if (!orderToDelete) return;
+          try {
+            await api.delete(`/api/orders/${orderToDelete.id}`);
+            fetchOrders();
+            setDeleteModalOpen(false);
+          } catch (err) {
+            console.error("Error deleting order:", err);
+          }
+        }}
+      />
+
       <Modal
         opened={addPaymentOpen}
         onClose={() => setAddPaymentOpen(false)}

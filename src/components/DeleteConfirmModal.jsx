@@ -1,22 +1,46 @@
 // src/components/DeleteConfirmModal.jsx
-import { modals } from "@mantine/modals";
-import { Text } from "@mantine/core";
+import { Modal, Button, Group, Text } from "@mantine/core";
 
-export function openDeleteConfirmModal({ title, name, onConfirm }) {
-  modals.openConfirmModal({
-    title: title || "Confirm Delete",
-    centered: true,
-    children: (
-      <Text size="sm">
-        Are you sure you want to delete{" "}
-        <Text span fw={700}>
-          {name || "this item"}
-        </Text>
-        ? This action cannot be undone.
-      </Text>
-    ),
-    labels: { confirm: "Delete", cancel: "Cancel" },
-    confirmProps: { color: "red" },
-    onConfirm,
-  });
+function DeleteConfirmModal({ opened, onClose, name, onConfirm }) {
+  return (
+    <Modal.Root
+      opened={opened}
+      onClose={onClose}
+      centered
+    >
+      <Modal.Overlay />
+      <Modal.Content
+        style={{
+          borderRadius: "26px",
+          overflow: "hidden",
+        }}
+      >
+        <Modal.Header>
+          <Modal.Title>Confirm Delete</Modal.Title>
+          <Modal.CloseButton />
+        </Modal.Header>
+
+        <Modal.Body>
+          <Text size="sm">
+            Are you sure you want to delete{" "}
+            <Text span fw={700}>
+              {name || "this item"}
+            </Text>
+            ? This action cannot be undone.
+          </Text>
+
+          <Group justify="flex-end" mt="md">
+            <Button variant="default" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button color="red" onClick={onConfirm}>
+              Delete
+            </Button>
+          </Group>
+        </Modal.Body>
+      </Modal.Content>
+    </Modal.Root>
+  );
 }
+
+export default DeleteConfirmModal;

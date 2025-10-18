@@ -125,7 +125,6 @@ export default function CollectionOverview() {
           style={{
             background: "white",
             minHeight: "70vh",
-            marginBottom: ".5rem",
             boxSizing: "border-box",
             position: "relative",
             overflow: "hidden",
@@ -158,16 +157,17 @@ export default function CollectionOverview() {
                 </Table.Tr>
               ) : (
                 filteredCollections.map((col) => (
-                  <Table.Tr key={col.id}>
-                    <Table.Td>
-                      <Anchor
-                        component="button"
-                        style={{ textAlign: "left" }}
-                        onClick={() => navigate(`/collections/${col.id}/items`)}
-                      >
-                        {col.name}
-                      </Anchor>
-                    </Table.Td>
+                  <Table.Tr
+                    key={col.id}
+                    onClick={() => navigate(`/collections/${col.id}/items`)}
+                    style={{
+                      cursor: "pointer",
+                      transition: "background-color 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                  >
+                    <Table.Td style={{ textAlign: "left" }}>{col.name}</Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
                       {col.release_date
                         ? new Date(col.release_date).toLocaleDateString("en-US", {
@@ -179,7 +179,6 @@ export default function CollectionOverview() {
                     </Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>{col.qty}</Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>{col.stock_qty}</Table.Td>
-
                     <Table.Td style={{ textAlign: "center" }}>
                       ₱
                       {col.capital
@@ -188,7 +187,6 @@ export default function CollectionOverview() {
                         }).format(Math.floor(col.capital))
                         : "0"}
                     </Table.Td>
-
                     <Table.Td style={{ textAlign: "center" }}>
                       ₱
                       {col.total_sales
@@ -197,16 +195,13 @@ export default function CollectionOverview() {
                         }).format(Math.floor(col.total_sales))
                         : "0"}
                     </Table.Td>
-
                     <Table.Td style={{ textAlign: "center" }}>
                       <Badge
                         size="md"
                         variant="filled"
                         style={{
-                          backgroundColor:
-                            col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
-                          color:
-                            col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
+                          backgroundColor: col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
+                          color: col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
                           width: "100px",
                           padding: "13px",
                           textAlign: "center",
@@ -220,8 +215,10 @@ export default function CollectionOverview() {
                         {col.status === "Active" ? "Active" : "Sold Out"}
                       </Badge>
                     </Table.Td>
-
-                    <Table.Td style={{ textAlign: "center" }}>
+                    <Table.Td
+                      style={{ textAlign: "center" }}
+                      onClick={(e) => e.stopPropagation()} 
+                    >
                       <Group gap={4} justify="center">
                         <Button
                           size="xs"
@@ -252,6 +249,7 @@ export default function CollectionOverview() {
                       </Group>
                     </Table.Td>
                   </Table.Tr>
+
                 ))
               )}
             </Table.Tbody>
