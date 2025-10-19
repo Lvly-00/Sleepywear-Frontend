@@ -125,6 +125,7 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
               accept="image/*"
               onChange={(file) => setPayment({ ...payment, image: file })}
             /> */}
+            
 
             <Group mt="lg"
               style={{
