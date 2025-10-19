@@ -14,15 +14,15 @@ import {
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
-import { openDeleteConfirmModal } from "../../components/DeleteConfirmModal";
+import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 import { Icons } from "../../components/Icons";
-
 
 function CustomerLogs() {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const [opened, setOpened] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ opened: false, customer: null });
   const [loading, setLoading] = useState(false);
 
   const fetchCustomers = async () => {
@@ -44,19 +44,14 @@ function CustomerLogs() {
     fetchCustomers();
   };
 
-  const handleDelete = (customer) => {
-    openDeleteConfirmModal({
-      title: "Delete Customer",
-      name: `${customer.first_name} ${customer.last_name}`,
-      onConfirm: async () => {
-        try {
-          await api.delete(`/api/customers/${customer.id}`);
-          fetchCustomers();
-        } catch (err) {
-          console.error("Error deleting customer:", err);
-        }
-      },
-    });
+  const handleDelete = async (customer) => {
+    try {
+      await api.delete(`/api/customers/${customer.id}`);
+      setDeleteModal({ opened: false, customer: null });
+      fetchCustomers();
+    } catch (err) {
+      console.error("Error deleting customer:", err);
+    }
   };
 
   if (loading) return <SleepyLoader />;
@@ -121,7 +116,7 @@ function CustomerLogs() {
                     </Table.Td>
                     <Table.Td
                       style={{
-                        textAlign: "left",
+                        textAlign: "center",
                         wordWrap: "break-word",
                         whiteSpace: "normal",
                         maxWidth: "250px",
@@ -162,7 +157,6 @@ function CustomerLogs() {
                       )}
                     </Table.Td>
 
-
                     <Table.Td style={{ textAlign: "center" }}>
                       {c.created_at
                         ? new Date(c.created_at).toLocaleDateString("en-US", {
@@ -180,7 +174,7 @@ function CustomerLogs() {
                           variant="subtle"
                           color="red"
                           p={3}
-                          onClick={() => handleDelete(c)}
+                          onClick={() => setDeleteModal({ opened: true, customer: c })}
                         >
                           <Icons.Trash size={24} />
                         </Button>
@@ -196,53 +190,14 @@ function CustomerLogs() {
 
 
 
-
-      {/* Edit Modal */}
-      <Modal opened={opened} onClose={() => setOpened(false)} title="Edit Customer">
-        {selected && (
-          <Stack>
-            <TextInput
-              label="First Name"
-              value={selected.first_name}
-              onChange={(e) =>
-                setSelected({ ...selected, first_name: e.target.value })
-              }
-            />
-            <TextInput
-              label="Last Name"
-              value={selected.last_name}
-              onChange={(e) =>
-                setSelected({ ...selected, last_name: e.target.value })
-              }
-            />
-            <TextInput
-              label="Contact Number"
-              value={selected.contact_number}
-              onChange={(e) =>
-                setSelected({ ...selected, contact_number: e.target.value })
-              }
-            />
-            <TextInput
-              label="Social Handle"
-              value={selected.social_handle || ""}
-              onChange={(e) =>
-                setSelected({ ...selected, social_handle: e.target.value })
-              }
-            />
-            <TextInput
-              label="Address"
-              value={selected.address}
-              onChange={(e) =>
-                setSelected({ ...selected, address: e.target.value })
-              }
-            />
-            <Group justify="flex-end" mt="md">
-              <Button onClick={handleSave}>Save</Button>
-            </Group>
-          </Stack>
-        )}
-      </Modal>
-    </div >
+      {/* Delete Modal */}
+      <DeleteConfirmModal
+        opened={deleteModal.opened}
+        onClose={() => setDeleteModal({ opened: false, customer: null })}
+        name={deleteModal.customer ? `${deleteModal.customer.first_name} ${deleteModal.customer.last_name}` : ""}
+        onConfirm={() => handleDelete(deleteModal.customer)}
+      />
+    </div>
   );
 }
 

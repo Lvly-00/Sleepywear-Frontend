@@ -13,21 +13,40 @@ import html2canvas from "html2canvas";
 import BrownLogo from "../assets/BrownLogo.svg";
 import { Icons } from "../components/Icons";
 
+// Import Fredoka font
+import "@fontsource/fredoka/400.css";
+import "@fontsource/fredoka/500.css";
+import "@fontsource/fredoka/600.css";
+import "@fontsource/fredoka/700.css";
+
 const InvoicePreview = ({ opened, onClose, invoiceData }) => {
   const invoiceRef = useRef();
   const [invoice, setInvoice] = useState(null);
 
-  // ✅ Normalize invoice data once received
   useEffect(() => {
-    if (invoiceData) {
-      setInvoice({
-        ...invoiceData,
-        display_name:
-          invoiceData.customer_name ||
-          `${invoiceData.first_name || ""} ${invoiceData.last_name || ""}`.trim(),
-      });
-    }
+    if (!invoiceData) return;
+
+    const items = invoiceData.items?.length
+      ? invoiceData.items
+      : (invoiceData.orders || []).flatMap(order =>
+        (order.items || []).map(orderItem => ({
+          ...orderItem,
+          item: orderItem.item || null,
+        }))
+      );
+
+    const normalizedInvoice = {
+      ...invoiceData,
+      display_name:
+        invoiceData.customer_name ||
+        `${invoiceData.first_name || ""} ${invoiceData.last_name || ""}`.trim(),
+      items,
+    };
+
+    setInvoice(normalizedInvoice);
+    console.log("Invoice state set:", normalizedInvoice);
   }, [invoiceData]);
+
 
   if (!invoice) return null;
 
@@ -70,6 +89,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
     link.click();
   };
 
+
   return (
     <Modal
       opened={opened}
@@ -82,6 +102,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
         content: {
           borderRadius: "26px",
           overflow: "hidden",
+          fontFamily: "Fredoka, sans-serif",
         },
       }}
     >
@@ -96,7 +117,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "0.75rem 1rem",
-          borderBottom: "1px solid #e0d7ce",
+          fontFamily: "Fredoka, sans-serif",
         }}
       >
         {/* Close button */}
@@ -124,6 +145,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
               alignItems: "center",
               justifyContent: "center",
               transition: "background-color 0.2s ease",
+              fontFamily: "Fredoka, sans-serif",
             }}
             styles={{
               root: {
@@ -138,143 +160,214 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
 
       <Modal.Body
         style={{
-          padding: "1.25rem",
           backgroundColor: "#fff",
           maxHeight: "70vh",
           overflowY: "auto",
+          fontFamily: "Fredoka, sans-serif",
         }}
       >
-        <div ref={invoiceRef} style={{ padding: "1rem" }}>
-          <Group justify="center" mb="md">
+        <div ref={invoiceRef} style={{ padding: "1rem", fontFamily: "Fredoka, sans-serif" }}>
+          <Group justify="center" mb="xs">
             <Image src={BrownLogo} alt="SleepyWears Logo" maw={300} />
           </Group>
 
-          <Divider mb="xs" />
-          <Text>
-            <b>Name:</b> {invoice.display_name}
-          </Text>
-          <Text>
-            <b>Address:</b> {invoice.address || "Not provided"}
-          </Text>
-          <Text>
-            <b>Contact No:</b> {invoice.contact_number || "Not provided"}
-          </Text>
-          <Text>
-            <b>Social Media:</b> {invoice.social_handle || "Not provided"}
-          </Text>
+          <Divider mb="xs" color="#C1A287" />
 
-          <Divider my="md" />
-
-          <Text fw={600} fz="lg" mb="xs">
-            Order Items
-          </Text>
-
-          <Table
-            withBorder
-            highlightOnHover
-            striped
-            stickyHeader
-            stickyHeaderOffset={0}
-            fontSize="sm"
+          <Text
+            fw={500}
+            mt="md"
+            mb="xs"
+            color="#AB8262"
+            style={{
+              fontSize: "20px",
+            }}
           >
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Item Name</Table.Th>
-                <Table.Th>Quantity</Table.Th>
-                <Table.Th>Price</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
+            Billed To :
+          </Text>
 
-            <Table.Tbody>
-              {invoice.items.map((item, idx) => (
-                <Table.Tr key={idx}>
-                  <Table.Td>{item.item_name}</Table.Td>
-                  <Table.Td>{item.quantity}</Table.Td>
-                  <Table.Td>₱{item.price}</Table.Td>
-                </Table.Tr>
-              ))}
+          <div
+            style={{
+              paddingLeft: "1.5rem",
+              display: "grid",
+              gridTemplateColumns: "200px 1fr",
+              rowGap: "4px",
+              fontFamily: "Fredoka, sans-serif",
+            }}
+          >
+            <Text fw={500}>Customer Name:</Text>
+            <Text>{invoice.display_name}</Text>
 
-              {/* ✅ Compute additional fee based on total_paid - total */}
-              {Number(invoice.total_paid) > Number(invoice.total) && (
-                <Table.Tr>
-                  <Table.Td fw={500}>Additional Fee</Table.Td>
-                  <Table.Td></Table.Td>
-                  <Table.Td fw={500}>
-                    ₱
-                    {(
-                      Number(invoice.total_paid) - Number(invoice.total)
-                    ).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+            <Text fw={500}>Address:</Text>
+            <Text>{invoice.address || "Not provided"}</Text>
+
+            <Text fw={500}>Contact No:</Text>
+            <Text>{invoice.contact_number || "Not provided"}</Text>
+
+            <Text fw={500}>Social Media:</Text>
+            <Text>{invoice.social_handle || "Not provided"}</Text>
+          </div>
+
+          <Divider mb="md" mt="md" color="#C1A287" />
+
+
+          <Text
+            fw={500}
+            mt="md"
+            mb="xs"
+            color="#AB8262"
+            style={{
+              fontSize: "20px",
+            }}
+          >
+            Clothes :
+          </Text>
+          <div style={{ paddingLeft: "1.5rem", marginRight: "1.5rem", marginTop: ".5rem" }}>
+
+            <Table
+              stickyHeader
+              stickyHeaderOffset={0}
+              style={{
+                fontFamily: "Fredoka, sans-serif",
+                borderCollapse: "separate",
+                borderSpacing: "0 8px", // vertical gap between rows
+                width: "100%",
+              }}
+              highlightOnHover={false}
+            >
+              <Table.Tbody>
+                {/* Item rows */}
+                {invoice.items.map((item, idx) => (
+                  <Table.Tr key={idx} style={{ border: "none" }}>
+                    <Table.Td colSpan={3} style={{ border: "none", padding: 0 }}>
+                      <div
+                        style={{
+                          backgroundColor: "#FAF8F3",
+                          borderRadius: "12px",
+                          padding: "8px 12px",
+                          display: "grid",
+                          gridTemplateColumns: "1fr 2fr 1fr",
+                          alignItems: "center", // vertical center
+                        }}
+                      >
+                        {/* Item code (left aligned) */}
+                        <span style={{ textAlign: "left" }}>{item.item?.code || "-"}</span>
+
+                        {/* Item name (left aligned) */}
+                        <span style={{ textAlign: "left" }}>{item.item_name}</span>
+
+                        {/* Price (right aligned) */}
+                        <span style={{ textAlign: "right", display: "block" }}>
+                          ₱ {Math.round(Number(item.price)).toLocaleString()}
+                        </span>
+                      </div>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+
+                {/* Additional Fee row with background */}
+                {Number(invoice.total_paid) > Number(invoice.total) && (
+                  <Table.Tr style={{ border: "none" }}>
+                    <Table.Td colSpan={3} style={{ border: "none", padding: 0 }}>
+                      <div
+                        style={{
+                          backgroundColor: "#FAF8F3",
+                          borderRadius: "12px",
+                          padding: "8px 12px",
+                          display: "grid",
+                          gridTemplateColumns: "1fr 2fr 1fr",
+                          alignItems: "center",
+                        }}
+                      >
+                        <span style={{ textAlign: "left" }}>Additional Fee</span>
+                        <span></span>
+                        <span style={{ textAlign: "right" }}>
+                          ₱ {(Number(invoice.total_paid) - Number(invoice.total)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </span>
+
+
+                      </div>
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+
+                {/* Total row (no background) */}
+                <Table.Tr style={{ border: "none" }}>
+                  <Table.Td
+                    style={{ border: "none", padding: "8px 12px", fontSize: "23px", color: "#9B521C" }}
+                    fw={500}
+                  >
+                    TOTAL :
+                  </Table.Td>
+                  <Table.Td style={{ border: "none", padding: "8px 12px" }}></Table.Td>
+                  <Table.Td
+                    style={{ border: "none", padding: "8px 12px", fontSize: "23px", textAlign: "right" }}
+                    fw={600}
+                  >
+                    ₱ {Number(invoice.total_paid || invoice.total).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </Table.Td>
                 </Table.Tr>
-              )}
+              </Table.Tbody>
+            </Table>
 
-              {/* ✅ Final Total */}
-              <Table.Tr>
-                <Table.Td fw={600}>Total</Table.Td>
-                <Table.Td></Table.Td>
-                <Table.Td fw={600}>
-                  ₱
-                  {Number(invoice.total_paid || invoice.total).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </Table.Td>
-              </Table.Tr>
-            </Table.Tbody>
 
-          </Table>
+          </div>
+
 
           <Divider my="md" />
 
-          <Text fw={600} fz="lg" mb="xs">
-            Payment Details
+          <Text
+            fw={500}
+            mt="md"
+            mb="xs"
+            color="#AB8262"
+            style={{ fontSize: "20px" }}
+          >
+            Payment Details:
           </Text>
 
-          {invoice.payment_status?.toLowerCase() === "paid" ? (
-            <>
-              <Text>
-                <b>Mode of Payment:</b>{" "}
-                {invoice.payment_method || "Not provided"}
-              </Text>
-              <Text>
-                <b>Status:</b> {invoice.payment_status}
-              </Text>
-              <Text>
-                <b>Date:</b>{" "}
-                {invoice.payment_date
-                  ? new Date(invoice.payment_date).toLocaleString("en-US", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                  })
-                  : "Not provided"}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text>
-                <b>GCash:</b> 0932364671
-              </Text>
-              <Text>
-                <b>Checkout Link:</b>{" "}
-                <a
-                  href="https://ph.shp.ee/V6guXb6"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  https://ph.shp.ee/V6guXb6
-                </a>
-              </Text>
-            </>
-          )}
+          <div
+            style={{
+              paddingLeft: "1.5rem",
+              display: "grid",
+              gridTemplateColumns: "200px 1fr",
+              rowGap: "4px",
+              fontFamily: "Fredoka, sans-serif",
+              marginTop: ".5rem",
+            }}
+          >
+            {invoice.payment_status?.toLowerCase() === "paid" ? (
+              <>
+                <Text fw={500}>Mode of Payment:</Text>
+                <Text>{invoice.payment_method || "Not provided"}</Text>
+
+                <Text fw={500}>Status:</Text>
+                <Text>{invoice.payment_status}</Text>
+
+                <Text fw={500}>Date:</Text>
+                <Text>
+                  {invoice.payment_date
+                    ? new Date(invoice.payment_date).toLocaleString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                    : "Not provided"}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text fw={500}>Gcash Number:</Text>
+                <Text>09457409766 - Alyanna Marie Angeles</Text>
+
+                <Text fw={500}>Shopee Checkout :</Text>
+                <Text>
+                  https://ph.shp.ee/V6guXb
+                </Text>
+              </>
+            )}
+          </div>
         </div>
+
       </Modal.Body>
     </Modal>
   );
