@@ -32,6 +32,12 @@ import Trash from "../assets/icons/trash.svg";
 import Edit from "../assets/icons/edit.svg";
 import Download from "../assets/icons/download.svg";
 
+import Coin from "../assets/icons/coin.svg";
+import Coins from "../assets/icons/coins.svg";
+import Tag from "../assets/icons/tag.svg";
+import Invoice from "../assets/icons/clipboard.svg";
+
+
 
 
 
@@ -74,6 +80,12 @@ export const Icons = {
     Trash: (props) => <IconWrapper src={Trash} alt="delete" {...props} />,
     Edit: (props) => <IconWrapper src={Edit} alt="edit" {...props} />,
     Download: (props) => <IconWrapper src={Download} alt="download" {...props} />,
+
+    Coin: (props) => <IconWrapper src={Coin} alt="gross income" {...props} />,
+    Coins: (props) => <IconWrapper src={Coins} alt="net income" {...props} />,
+    Tag: (props) => <IconWrapper src={Tag} alt="Items Sold" {...props} />,
+    Invoice: (props) => <IconWrapper src={Invoice} alt="invoice" {...props} />,
+
 
 
 
