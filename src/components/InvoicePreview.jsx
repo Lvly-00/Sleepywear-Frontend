@@ -203,8 +203,22 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
             <Text fw={500}>Contact No:</Text>
             <Text>{invoice.contact_number || "Not provided"}</Text>
 
+
             <Text fw={500}>Social Media:</Text>
-            <Text>{invoice.social_handle || "Not provided"}</Text>
+            <Text
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap", // or remove for wrapping
+                wordBreak: "break-word", // allows wrapping if needed
+                maxWidth: "100%", // ensures it respects grid cell width
+              }}
+              title={invoice.social_handle} // shows full text on hover
+            >
+              {invoice.social_handle || "Not provided"}
+            </Text>
+
+
           </div>
 
           <Divider mb="md" mt="md" color="#C1A287" />
