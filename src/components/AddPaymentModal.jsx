@@ -1,14 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Stack, Select, NumberInput, FileInput, Button, Modal, Text, Group } from "@mantine/core";
 import api from "../api/axios";
 
 const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
   const [payment, setPayment] = useState({
     method: "",
-    image: null,
-    total: order?.total || 0,
+    additionalFee: 0,
+
   });
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (opened) {
+      setPayment({
+        method: "",
+        additionalFee: 0,
+      });
+      setErrors({});
+    }
+  }, [opened, order]);
+
 
   const savePayment = async () => {
     const newErrors = {};
@@ -23,10 +34,13 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
     }
 
     try {
+      const totalAmount = Number(order?.total || 0) + Number(payment.additionalFee || 0);
+
       const formData = new FormData();
       formData.append("payment_method", payment.method);
-      formData.append("total_paid", payment.total);
+      formData.append("total_paid", totalAmount);
       formData.append("payment_status", "paid");
+      formData.append("additional_fee", payment.additionalFee || 0);
 
       if (payment.image) formData.append("payment_image", payment.image);
 
@@ -96,7 +110,7 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
                 fontSize: "46px",
                 fontWeight: "600"
               }}>
-              ₱{Math.floor(payment.total).toLocaleString("en-PH")}
+              ₱{Math.floor(order?.total || 0).toLocaleString("en-PH")}
             </Text>
 
             <Select
@@ -112,20 +126,16 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
 
 
             <NumberInput
-              label="Total Amount Paid"
-              // value={payment.total}
-              onChange={(value) => setPayment({ ...payment, total: value || 0 })}
+              label="Additional Fee (optional)"
+              placeholder="Enter amount"
+              value={payment.additionalFee}
+              onChange={(value) =>
+                setPayment({ ...payment, additionalFee: value || 0 })
+              }
               min={0}
-            // readOnly
+              error={errors.additionalFee}
             />
 
-            {/* <FileInput
-              label="Payment Proof (Upload Image)"
-              placeholder="Choose file"
-              accept="image/*"
-              onChange={(file) => setPayment({ ...payment, image: file })}
-            /> */}
-            
 
             <Group mt="lg"
               style={{

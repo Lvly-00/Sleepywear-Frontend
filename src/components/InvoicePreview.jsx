@@ -17,8 +17,16 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
   const invoiceRef = useRef();
   const [invoice, setInvoice] = useState(null);
 
+  // ✅ Normalize invoice data once received
   useEffect(() => {
-    if (invoiceData) setInvoice(invoiceData);
+    if (invoiceData) {
+      setInvoice({
+        ...invoiceData,
+        display_name:
+          invoiceData.customer_name ||
+          `${invoiceData.first_name || ""} ${invoiceData.last_name || ""}`.trim(),
+      });
+    }
   }, [invoiceData]);
 
   if (!invoice) return null;
@@ -57,7 +65,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
 
     const image = canvas.toDataURL("image/png");
     const link = document.createElement("a");
-    link.download = `Invoice_${invoice.customer_name || "Customer"}.png`;
+    link.download = `Invoice_${invoice.display_name || "Customer"}.png`;
     link.href = image;
     link.click();
   };
@@ -69,8 +77,13 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
       centered
       size="lg"
       withCloseButton={false}
-      scrollAreaComponent={ScrollArea.Autosize} 
-      
+      scrollAreaComponent={ScrollArea.Autosize}
+      styles={{
+        content: {
+          borderRadius: "26px",
+          overflow: "hidden",
+        },
+      }}
     >
       {/* Sticky header */}
       <Modal.Header
@@ -86,7 +99,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
           borderBottom: "1px solid #e0d7ce",
         }}
       >
-        {/* Left side – Close button */}
+        {/* Close button */}
         <div style={{ display: "flex", alignItems: "center" }}>
           <Modal.CloseButton
             size={35}
@@ -98,7 +111,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
           />
         </div>
 
-        {/* Right side – Download button */}
+        {/* Download button */}
         <div style={{ display: "flex", alignItems: "center" }}>
           <Button
             size="md"
@@ -127,7 +140,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
         style={{
           padding: "1.25rem",
           backgroundColor: "#fff",
-          maxHeight: "70vh", // Limits height to show scrollbar
+          maxHeight: "70vh",
           overflowY: "auto",
         }}
       >
@@ -138,16 +151,16 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
 
           <Divider mb="xs" />
           <Text>
-            <b>Name:</b> {`${invoice.first_name} ${invoice.last_name}`}
+            <b>Name:</b> {invoice.display_name}
           </Text>
           <Text>
-            <b>Address:</b> {invoice.address}
+            <b>Address:</b> {invoice.address || "Not provided"}
           </Text>
           <Text>
-            <b>Contact No:</b> {invoice.contact_number}
+            <b>Contact No:</b> {invoice.contact_number || "Not provided"}
           </Text>
           <Text>
-            <b>Social Media:</b> {invoice.social_handle}
+            <b>Social Media:</b> {invoice.social_handle || "Not provided"}
           </Text>
 
           <Divider my="md" />
@@ -180,18 +193,38 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                   <Table.Td>₱{item.price}</Table.Td>
                 </Table.Tr>
               ))}
+
+              {/* ✅ Compute additional fee based on total_paid - total */}
+              {Number(invoice.total_paid) > Number(invoice.total) && (
+                <Table.Tr>
+                  <Table.Td fw={500}>Additional Fee</Table.Td>
+                  <Table.Td></Table.Td>
+                  <Table.Td fw={500}>
+                    ₱
+                    {(
+                      Number(invoice.total_paid) - Number(invoice.total)
+                    ).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </Table.Td>
+                </Table.Tr>
+              )}
+
+              {/* ✅ Final Total */}
               <Table.Tr>
                 <Table.Td fw={600}>Total</Table.Td>
                 <Table.Td></Table.Td>
                 <Table.Td fw={600}>
                   ₱
-                  {invoice.total?.toLocaleString(undefined, {
+                  {Number(invoice.total_paid || invoice.total).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
                 </Table.Td>
               </Table.Tr>
             </Table.Tbody>
+
           </Table>
 
           <Divider my="md" />
