@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import {
   Table,
@@ -7,19 +7,15 @@ import {
   Group,
   Modal,
   Text,
-  Anchor,
   Badge,
   Paper,
-  Center,
   ScrollArea,
 } from "@mantine/core";
 import PageHeader from "../../components/PageHeader";
-import SleepyLoader from "../../components/SleepyLoader";
 import AddCollectionModal from "../../components/AddCollectionModal";
 import EditCollectionModal from "../../components/EditCollectionModal";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 import { Icons } from "../../components/Icons";
-
 
 export default function CollectionOverview() {
   const [collections, setCollections] = useState([]);
@@ -28,19 +24,14 @@ export default function CollectionOverview() {
   const [openedEdit, setOpenedEdit] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [collectionToDelete, setCollectionToDelete] = useState(null);
-
-
-  // const [activePage, setActivePage] = useState(1);
-  // const itemsPerPage = 10;
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCollections = async () => {
-      // setLoading(true);
       try {
         const res = await api.get("api/collections");
         const sorted = res.data.sort((a, b) => {
@@ -51,9 +42,7 @@ export default function CollectionOverview() {
         setCollections(sorted);
         setFilteredCollections(sorted);
       } catch (err) {
-        console.error(err);
-      } finally {
-        // setLoading(false);
+        console.error("Error fetching collections:", err);
       }
     };
     fetchCollections();
@@ -69,16 +58,19 @@ export default function CollectionOverview() {
     }
   }, [search, collections]);
 
-  const handleDelete = async (id) => {
+
+  const fetchCollections = async () => {
     try {
-      await api.delete(`api/collections/${id}`);
-      const updated = collections.filter((c) => c.id !== id);
-      setCollections(updated);
-      setFilteredCollections(updated);
-    } catch (err) {
-      console.error(err);
+      const response = await api.get("/api/collections");
+      setCollections(response.data);
+    } catch (error) {
+      console.error("Error fetching collections:", error);
     }
   };
+
+  // Example button
+  <Button onClick={() => setAddModalOpen(true)}>Add Collection</Button>;
+
 
   const handleCollectionUpdated = (updatedCollection) => {
     setCollections((prev) =>
@@ -89,19 +81,21 @@ export default function CollectionOverview() {
     );
   };
 
-  const getStatusBadge = (status) => {
-    if (status === "Active") return <Badge color="green">Active</Badge>;
-    if (status === "Sold Out") return <Badge color="red">Sold Out</Badge>;
-    return <Badge color="gray">{status}</Badge>;
+  const handleDelete = async () => {
+    if (!collectionToDelete) return;
+    try {
+      await api.delete(`api/collections/${collectionToDelete.id}`);
+      const updated = collections.filter(
+        (c) => c.id !== collectionToDelete.id
+      );
+      setCollections(updated);
+      setFilteredCollections(updated);
+      setDeleteModalOpen(false);
+      setCollectionToDelete(null);
+    } catch (err) {
+      console.error("Error deleting collection:", err);
+    }
   };
-
-  // Pagination
-  // const startIndex = (activePage - 1) * itemsPerPage;
-  // const filteredCollections = filteredCollections.slice(startIndex, startIndex + itemsPerPage);
-  // const totalPages = Math.ceil(filteredCollections.length / itemsPerPage);
-
-  // if (loading) return <SleepyLoader />;
-  // console.log(capital)
 
   return (
     <div style={{ padding: "1rem" }}>
@@ -111,7 +105,7 @@ export default function CollectionOverview() {
         search={search}
         setSearch={setSearch}
         addLabel="New Collection"
-        onAdd={() => setOpenedNew(true)}
+        onAdd={() => setAddModalOpen(true)}
       />
 
       <Paper
@@ -125,16 +119,10 @@ export default function CollectionOverview() {
           overflow: "hidden",
         }}
       >
-        <ScrollArea scrollbars="x"
-          style={{
-            background: "white",
-            minHeight: "70vh",
-            boxSizing: "border-box",
-            position: "relative",
-            overflow: "hidden",
-          }}>
+        <ScrollArea scrollbarSize={8}>
           <Table
             highlightOnHover
+            withTableBorder={false}
             styles={{
               tr: { borderBottom: "1px solid #D8CBB8" },
             }}
@@ -147,7 +135,7 @@ export default function CollectionOverview() {
                 <Table.Th style={{ textAlign: "center" }}>Stock QTY</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Capital</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Revenue</Table.Th>
-                <Table.Th style={{ textAlign: "center" }}>Collection Status</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Status</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
@@ -156,7 +144,7 @@ export default function CollectionOverview() {
               {filteredCollections.length === 0 ? (
                 <Table.Tr>
                   <Table.Td colSpan={8} style={{ textAlign: "center", padding: "2rem" }}>
-                    <Text c="dimmed">No collection found</Text>
+                    <Text c="dimmed">No collections found</Text>
                   </Table.Td>
                 </Table.Tr>
               ) : (
@@ -168,10 +156,14 @@ export default function CollectionOverview() {
                       cursor: "pointer",
                       transition: "background-color 0.2s ease",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
-                    <Table.Td style={{ textAlign: "left" }}>{col.name}</Table.Td>
+                    <Table.Td>{col.name}</Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
                       {col.release_date
                         ? new Date(col.release_date).toLocaleDateString("en-US", {
@@ -204,7 +196,8 @@ export default function CollectionOverview() {
                         size="md"
                         variant="filled"
                         style={{
-                          backgroundColor: col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
+                          backgroundColor:
+                            col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
                           color: col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
                           width: "100px",
                           padding: "13px",
@@ -249,11 +242,9 @@ export default function CollectionOverview() {
                         >
                           <Icons.Trash size={24} />
                         </Button>
-
                       </Group>
                     </Table.Td>
                   </Table.Tr>
-
                 ))
               )}
             </Table.Tbody>
@@ -261,63 +252,38 @@ export default function CollectionOverview() {
         </ScrollArea>
       </Paper>
 
-
-      {/* Add Collection Modal */}
+      {/* Delete Modal */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        name={collectionToDelete ? collectionToDelete.name : ""}
-        onConfirm={async () => {
-          if (!collectionToDelete) return;
-          try {
-            await api.delete(`api/collections/${collectionToDelete.id}`);
-            const updated = collections.filter(c => c.id !== collectionToDelete.id);
-            setCollections(updated);
-            setFilteredCollections(updated);
-            setDeleteModalOpen(false);
-            setCollectionToDelete(null);
-          } catch (err) {
-            console.error("Error deleting collection:", err);
-          }
-        }}
+        name={collectionToDelete?.name || ""}
+        onConfirm={handleDelete}
       />
 
-      <Modal
-        opened={openedNew}
-        onClose={() => setOpenedNew(false)}
-        title="Add New Collection"
-        size="sm"
-      >
-        <AddCollectionModal
-          onClose={() => setOpenedNew(false)}
-          onCollectionAdded={(newCollection) => {
-            setCollections((prev) => {
-              const updated = [newCollection, ...prev];
-              setFilteredCollections(updated);
-              return updated;
-            });
-            setOpenedNew(false);
-          }}
-        />
-      </Modal>
+      {/* Add New Collection Modal */}
+      <AddCollectionModal
+        opened={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSuccess={fetchCollections}
+      />
+
 
       {/* Edit Collection Modal */}
-      {
-        selectedCollection && (
-          <Modal
-            opened={openedEdit}
+      {selectedCollection && (
+        <Modal
+          opened={openedEdit}
+          onClose={() => setOpenedEdit(false)}
+          title="Edit Collection"
+          size="sm"
+          centered
+        >
+          <EditCollectionModal
+            collection={selectedCollection}
+            onCollectionUpdated={handleCollectionUpdated}
             onClose={() => setOpenedEdit(false)}
-            title="Edit Collection"
-            size="sm"
-          >
-            <EditCollectionModal
-              collection={selectedCollection}
-              onCollectionUpdated={handleCollectionUpdated}
-              onClose={() => setOpenedEdit(false)}
-            />
-          </Modal>
-        )
-      }
-    </div >
+          />
+        </Modal>
+      )}
+    </div>
   );
 }
