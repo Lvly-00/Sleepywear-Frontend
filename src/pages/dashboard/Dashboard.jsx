@@ -17,42 +17,17 @@ import { Icons } from "../../components/Icons";
 function Dashboard() {
   const [summary, setSummary] = useState(null);
 
-  const dummySummary = {
-    grossIncome: 180000,
-    netIncome: 95000,
-    totalItemsSold: 420,
-    totalInvoices: 85,
-    totalCollections: 3,
-    collectionSales: [
-      {
-        collection_name: "Sleepywear Summer 2025",
-        dailySales: Array.from({ length: 31 }, (_, i) => ({
-          date: `2025-10-${String(i + 1).padStart(2, "0")}`,
-          total: 3000 + Math.round(Math.random() * 4000), // random 3000–7000
-        })),
-      },
-      {
-        collection_name: "Autumn Cozy",
-        dailySales: Array.from({ length: 31 }, (_, i) => ({
-          date: `2025-10-${String(i + 1).padStart(2, "0")}`,
-          total: 2500 + Math.round(Math.random() * 3000), // random 2500–5500
-        })),
-      },
-      {
-        collection_name: "Winter Warmth",
-        dailySales: Array.from({ length: 31 }, (_, i) => ({
-          date: `2025-10-${String(i + 1).padStart(2, "0")}`,
-          total: 2000 + Math.round(Math.random() * 2500), // random 2000–4500
-        })),
-      },
-    ],
-  };
-
-
   useEffect(() => {
-    setTimeout(() => {
-      setSummary(dummySummary);
-    }, 1000);
+    const fetchSummary = async () => {
+      try {
+        const response = await api.get("/api/dashboard-summary");
+        setSummary(response.data);
+      } catch (error) {
+        console.error("Failed to fetch dashboard summary:", error);
+      }
+    };
+
+    fetchSummary();
   }, []);
 
   if (!summary) return <SleepyLoader />;
@@ -77,7 +52,8 @@ function Dashboard() {
   const currentYear = new Date().getFullYear();
 
   summary.collectionSales.forEach((collection) => {
-    collection.dailySales.forEach((sale) => {
+    // backend data should include daily sales with date + total
+    (collection.dailySales || []).forEach((sale) => {
       const saleDate = new Date(sale.date);
       if (
         saleDate.getMonth() === currentMonth &&
@@ -115,11 +91,18 @@ function Dashboard() {
         <Grid>
           <Grid.Col span={3}>
             <Card style={cardStyle}>
-              <Icons.Coins size={36} />
-              <Text mt="sm" weight={500}>
+              <Text weight={400}
+                style={{
+                  fontSize: "14 px"
+                }}>
                 Net Income
               </Text>
-              <Text weight={700} size="xl">
+              <Icons.Coins size={46} />
+
+              <Text color="#5D4324" style={{
+                fontSize: "25px",
+                fontWeight: 600
+              }}>
                 ₱{formatNumber(summary.netIncome)}
               </Text>
             </Card>
@@ -127,11 +110,17 @@ function Dashboard() {
 
           <Grid.Col span={3}>
             <Card style={cardStyle}>
-              <Icons.Coin size={36} />
-              <Text mt="sm" weight={500}>
+              <Text weight={400}
+                style={{
+                  fontSize: "14 px"
+                }}>
                 Gross Income
               </Text>
-              <Text weight={700} size="xl">
+              <Icons.Coin size={46} />
+              <Text color="#5D4324" style={{
+                fontSize: "25px",
+                fontWeight: 600
+              }}>
                 ₱{formatNumber(summary.grossIncome)}
               </Text>
             </Card>
@@ -139,11 +128,17 @@ function Dashboard() {
 
           <Grid.Col span={3}>
             <Card style={cardStyle}>
-              <Icons.Tag size={36} />
-              <Text mt="sm" weight={500}>
+              <Text weight={400}
+                style={{
+                  fontSize: "10 px"
+                }}>
                 Total Items Sold
               </Text>
-              <Text weight={700} size="xl">
+              <Icons.Tag size={46} />
+              <Text color="#5D4324" style={{
+                fontSize: "25px",
+                fontWeight: 600
+              }}>
                 {formatNumber(summary.totalItemsSold)}
               </Text>
             </Card>
@@ -151,11 +146,17 @@ function Dashboard() {
 
           <Grid.Col span={3}>
             <Card style={cardStyle}>
-              <Icons.Invoice size={36} />
-              <Text mt="sm" weight={500}>
+              <Text weight={400}
+                style={{
+                  fontSize: "14 px"
+                }}>
                 Total Invoices
               </Text>
-              <Text weight={700} size="xl">
+              <Icons.Invoice size={46} />
+              <Text color="#5D4324" style={{
+                fontSize: "25px",
+                fontWeight: 600
+              }}>
                 {formatNumber(summary.totalInvoices)}
               </Text>
             </Card>
@@ -195,9 +196,9 @@ function Dashboard() {
                 labelFormatter={(label) => {
                   const d = new Date(label);
                   return d.toLocaleDateString("en-US", {
-                    month: "long", // full month name
+                    month: "long",
                     day: "numeric",
-                    year: "numeric", // optional — remove if you want only month+day
+                    year: "numeric",
                   });
                 }}
               />
@@ -213,7 +214,6 @@ function Dashboard() {
               ))}
             </LineChart>
           </ResponsiveContainer>
-
         </Card>
       </Paper>
     </Stack>
