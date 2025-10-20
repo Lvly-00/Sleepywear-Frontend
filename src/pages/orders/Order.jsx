@@ -276,7 +276,6 @@ const Order = () => {
           )} */}
       </Paper>
 
-      {/* Add Payment Modal */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
