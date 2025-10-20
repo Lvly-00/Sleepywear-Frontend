@@ -12,11 +12,11 @@ const api = axios.create({
     },
 });
 
-// Automatically request CSRF cookie once
+// ✅ Automatically request CSRF cookie once using the same instance
 api.interceptors.request.use(async(config) => {
     if (!window.__csrfLoaded) {
         try {
-            await axios.get(`${API_URL}/sanctum/csrf-cookie`, { withCredentials: true });
+            await api.get("/sanctum/csrf-cookie"); // use api, not axios
             window.__csrfLoaded = true;
         } catch (err) {
             console.error("Failed to load CSRF cookie:", err);
