@@ -20,7 +20,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const response = await api.get("/api/dashboard-summary");
+        const response = await api.get("/dashboard-summary");
         setSummary(response.data);
       } catch (error) {
         console.error("Failed to fetch dashboard summary:", error);

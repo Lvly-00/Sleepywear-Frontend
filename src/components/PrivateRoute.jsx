@@ -7,7 +7,7 @@ const PrivateRoute = ({ children }) => {
   if (token === null) return <Navigate to="/" />; 
   if (!token) return <SleepyLoader minTime={100} />; 
 
-  return children; 
+  return children;
 };
 
 export default PrivateRoute;

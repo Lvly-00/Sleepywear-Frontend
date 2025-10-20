@@ -29,7 +29,7 @@ function ForgotPassword() {
     }
 
     setLoading(true);
-    setMessage(null);
+    setMessage(null); 
 
     try {
       await api.post("/api/forgot-password", { email });

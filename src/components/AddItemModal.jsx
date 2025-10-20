@@ -56,7 +56,7 @@ export default function AddItemModal({
       data.append("notes", form.notes);
       data.append("image", file);
 
-      const res = await api.post("/api/items", data, {
+      const res = await api.post("/items", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

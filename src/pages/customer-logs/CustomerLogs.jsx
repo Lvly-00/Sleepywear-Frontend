@@ -27,7 +27,7 @@ function CustomerLogs() {
 
   const fetchCustomers = async () => {
     try {
-      const res = await api.get(`/api/customers?search=${search}`);
+      const res = await api.get(`/customers?search=${search}`);
       setCustomers(res.data);
     } catch (err) {
       console.error("Error fetching customers:", err);
@@ -39,14 +39,14 @@ function CustomerLogs() {
   }, [search]);
 
   const handleSave = async () => {
-    await api.put(`/api/customers/${selected.id}`, selected);
+    await api.put(`/customers/${selected.id}`, selected);
     setOpened(false);
     fetchCustomers();
   };
 
   const handleDelete = async (customer) => {
     try {
-      await api.delete(`/api/customers/${customer.id}`);
+      await api.delete(`/customers/${customer.id}`);
       setDeleteModal({ opened: false, customer: null });
       fetchCustomers();
     } catch (err) {

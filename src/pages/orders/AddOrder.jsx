@@ -16,7 +16,7 @@ const AddOrder = () => {
 
   const fetchCollections = async () => {
     try {
-      const res = await api.get("/api/collections");
+      const res = await api.get("/collections");
       const activeCollections = res.data
         .filter((c) => c.status === "Active")
         .map((c) => ({

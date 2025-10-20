@@ -33,7 +33,7 @@ export default function CollectionOverview() {
   useEffect(() => {
     const fetchCollections = async () => {
       try {
-        const res = await api.get("api/collections");
+        const res = await api.get("/collections");
         const sorted = res.data.sort((a, b) => {
           if (a.status === "Active" && b.status !== "Active") return -1;
           if (a.status !== "Active" && b.status === "Active") return 1;
@@ -61,7 +61,7 @@ export default function CollectionOverview() {
 
   const fetchCollections = async () => {
     try {
-      const response = await api.get("/api/collections");
+      const response = await api.get("/collections");
       setCollections(response.data);
     } catch (error) {
       console.error("Error fetching collections:", error);
@@ -84,7 +84,7 @@ export default function CollectionOverview() {
   const handleDelete = async () => {
     if (!collectionToDelete) return;
     try {
-      await api.delete(`api/collections/${collectionToDelete.id}`);
+      await api.delete(`/collections/${collectionToDelete.id}`);
       const updated = collections.filter(
         (c) => c.id !== collectionToDelete.id
       );

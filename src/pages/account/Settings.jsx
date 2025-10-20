@@ -14,7 +14,7 @@ import { showNotification } from "@mantine/notifications";
 import PageHeader from "../../components/PageHeader";
 import SleepyLoader from "../../components/SleepyLoader";
 import SubmitButton from "../../components/SubmitButton";
-import { Icons } from "../../components/Icons"
+import { Icons } from "../../components/Icons";
 
 const Settings = () => {
   const [profile, setProfile] = useState({ business_name: "", email: "" });
@@ -24,26 +24,30 @@ const Settings = () => {
     new_password_confirmation: "",
   });
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true); // For initial fetch
+  const [initialLoading, setInitialLoading] = useState(true);
 
+  // Fetch user settings on mount
   useEffect(() => {
-    api
-      .get("/api/user/settings")
-      .then((res) => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get("/user/settings");
         setProfile({
           business_name: res.data.business_name || "",
           email: res.data.email || "",
         });
-      })
-      .catch(() => {
+      } catch (err) {
         showNotification({
           title: "Error",
           message: "Failed to load user settings",
           color: "red",
-          icon: <IconX size={16} />,
+          icon: <Icons.IconX size={16} />,
         });
-      })
-      .finally(() => setInitialLoading(false));
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
   const handleUpdate = async (data, url, successMessage) => {
@@ -54,7 +58,7 @@ const Settings = () => {
         title: "Success",
         message: res.data.message || successMessage,
         color: "green",
-        icon: <IconCheck size={16} />,
+        icon: <Icons.IconCheck size={16} />,
       });
     } catch (err) {
       const errors = err.response?.data?.errors;
@@ -62,25 +66,25 @@ const Settings = () => {
         title: errors ? "Validation Error" : "Error",
         message: errors
           ? Object.values(errors).flat().join(" ")
-          : "Something went wrong",
+          : err.response?.data?.message || "Something went wrong",
         color: "red",
-        icon: <IconX size={16} />,
+        icon: <Icons.IconX size={16} />,
       });
     } finally {
-      // setLoading(false);
+      setLoading(false);
     }
   };
 
   const updateProfile = (e) => {
     e.preventDefault();
-    handleUpdate(profile, "/api/user/settings", "Profile updated successfully");
+    handleUpdate(profile, "/user/settings", "Profile updated successfully");
   };
 
   const updatePassword = (e) => {
     e.preventDefault();
     handleUpdate(
       passwords,
-      "/api/user/settings/password",
+      "/user/settings/password",
       "Password updated successfully"
     );
     setPasswords({
@@ -90,28 +94,34 @@ const Settings = () => {
     });
   };
 
-  // if (initialLoading) return <SleepyLoader />;
+  if (initialLoading) return <SleepyLoader minTime={200} />;
 
   return (
-    <div style={{
-      padding: 20, position: "relative", fontFamily: "'League Spartan', sans-serif",
-    }}>
-
+    <div
+      style={{
+        padding: 20,
+        position: "relative",
+        fontFamily: "'League Spartan', sans-serif",
+      }}
+    >
       <PageHeader title="Account Settings" />
 
       {/* Profile Section */}
       <Grid gutter="xl" align="flex-start" mb="xl">
         <Grid.Col span={5} style={{ marginLeft: 40, marginTop: 30 }}>
-          <Title order={2} style={{ color: "#02034C", fontWeight: 500, marginBottom: 2 }}>Profile Information</Title>
-          <Text size="md" color="#02034c6e" >
+          <Title order={2} style={{ color: "#02034C", fontWeight: 500 }}>
+            Profile Information
+          </Title>
+          <Text size="md" color="#02034c6e">
             Update your account’s Business Name and Email
           </Text>
         </Grid.Col>
+
         <Grid.Col span={5}>
           <Card
-            shadow="md" // slightly larger shadow for depth
+            shadow="md"
             padding="xl"
-            radius="xl" // more rounded corners like the design
+            radius="xl"
             style={{ border: "1px solid #E0E0E0", backgroundColor: "#FFFFFF" }}
           >
             <form onSubmit={updateProfile}>
@@ -122,14 +132,11 @@ const Settings = () => {
                   onChange={(e) =>
                     setProfile({ ...profile, business_name: e.target.value })
                   }
-                  radius="md" // rounded input edges
+                  radius="md"
                   size="md"
                   styles={{
                     label: { color: "#232D80" },
-                    input: {
-                      borderColor: "#232D80",
-                      color: "#232c808f",
-                    },
+                    input: { borderColor: "#232D80", color: "#232c808f" },
                   }}
                 />
                 <TextInput
@@ -142,10 +149,7 @@ const Settings = () => {
                   size="md"
                   styles={{
                     label: { color: "#232D80" },
-                    input: {
-                      borderColor: "#232D80",
-                      color: "#232c808f",
-                    },
+                    input: { borderColor: "#232D80", color: "#232c808f" },
                   }}
                 />
                 <Group justify="flex-end">
@@ -153,30 +157,28 @@ const Settings = () => {
                     type="submit"
                     radius="xl"
                     style={{ backgroundColor: "#232D80", color: "#fff" }}
+                    loading={loading}
                   >
                     Update
                   </SubmitButton>
                 </Group>
-
               </Stack>
             </form>
           </Card>
-
         </Grid.Col>
       </Grid>
 
       {/* Password Section */}
       <Grid gutter="sm" align="flex-start">
         <Grid.Col span={5} style={{ marginLeft: 40, marginTop: 30 }}>
-          <Title order={2} style={{ color: "#02034C", fontWeight: 500, marginBottom: 2 }}>Update Password</Title>
-          <Text size="md" color="#02034c6e" >
-            Use a strong combination of letters, numbers,</Text>
-          <Text size="md" color="#02034c6e" >
-            and random symbols (e.g., @, ?, 1, 2) to </Text>
-          <Text size="md" color="#02034c6e" >
-            enhance account security.”</Text>
-
+          <Title order={2} style={{ color: "#02034C", fontWeight: 500 }}>
+            Update Password
+          </Title>
+          <Text size="md" color="#02034c6e">
+            Use a strong combination of letters, numbers, and symbols (e.g., @, ?, 1, 2)
+          </Text>
         </Grid.Col>
+
         <Grid.Col span={5}>
           <Card
             shadow="md"
@@ -192,7 +194,6 @@ const Settings = () => {
                   visibilityToggleIcon={({ reveal }) =>
                     reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
                   }
-                
                   onChange={(e) =>
                     setPasswords({ ...passwords, current_password: e.target.value })
                   }
@@ -200,10 +201,7 @@ const Settings = () => {
                   size="md"
                   styles={{
                     label: { color: "#232D80" },
-                    input: {
-                      borderColor: "#232D80",
-                      color: "#232c808f",
-                    },
+                    input: { borderColor: "#232D80", color: "#232c808f" },
                   }}
                 />
                 <PasswordInput
@@ -219,10 +217,7 @@ const Settings = () => {
                   size="md"
                   styles={{
                     label: { color: "#232D80" },
-                    input: {
-                      borderColor: "#232D80",
-                      color: "#232c808f",
-                    },
+                    input: { borderColor: "#232D80", color: "#232c808f" },
                   }}
                 />
                 <PasswordInput
@@ -236,16 +231,12 @@ const Settings = () => {
                       ...passwords,
                       new_password_confirmation: e.target.value,
                     })
-
                   }
                   radius="md"
                   size="md"
                   styles={{
                     label: { color: "#232D80" },
-                    input: {
-                      borderColor: "#232D80",
-                      color: "#232c808f",
-                    },
+                    input: { borderColor: "#232D80", color: "#232c808f" },
                   }}
                 />
                 <Group justify="flex-end">
@@ -253,15 +244,14 @@ const Settings = () => {
                     type="submit"
                     radius="xl"
                     style={{ backgroundColor: "#232D80", color: "#fff" }}
+                    loading={loading}
                   >
                     Update
                   </SubmitButton>
                 </Group>
-
               </Stack>
             </form>
           </Card>
-
         </Grid.Col>
       </Grid>
     </div>

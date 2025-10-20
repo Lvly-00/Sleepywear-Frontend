@@ -21,7 +21,7 @@ function EditCollection() {
   useEffect(() => {
     const fetchCollection = async () => {
       try {
-        const res = await api.get(`/api/collections/${id}`);
+        const res = await api.get(`/collections/${id}`);
         // Ensure status is lowercase
         setForm({
           ...res.data,
@@ -37,7 +37,7 @@ function EditCollection() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/api/collections/${id}`, form);
+      await api.put(`/collections/${id}`, form);
       navigate("/collections");
     } catch (error) {
       console.error("Failed to update collection:", error.response?.data || error.message);

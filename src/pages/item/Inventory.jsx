@@ -35,11 +35,11 @@ function Inventory() {
     const fetchData = async () => {
       try {
         // Fetch collection details
-        const colRes = await api.get(`/api/collections/${id}`);
+        const colRes = await api.get(`/collections/${id}`);
         setCollection(colRes.data);
 
         // Fetch items in this collection
-        const itemsRes = await api.get(`/api/items?collection_id=${id}`);
+        const itemsRes = await api.get(`/items?collection_id=${id}`);
         const sorted = itemsRes.data.sort((a, b) => {
           if (a.status === "available" && b.status !== "available") return -1;
           if (a.status !== "available" && b.status === "available") return 1;
@@ -67,12 +67,12 @@ function Inventory() {
   };
 
   const handleDelete = (itemId, itemName) => {
-    openDeleteConfirmModal({
+    DeleteConfirmModal({
       title: "Delete Item",
       name: itemName,
       onConfirm: async () => {
         try {
-          await api.delete(`/api/items/${itemId}`);
+          await api.delete(`/items/${itemId}`);
           setItems((prev) => prev.filter((item) => item.id !== itemId));
         } catch (error) {
           console.error(
@@ -220,15 +220,19 @@ function Inventory() {
         onConfirm={async () => {
           if (!itemToDelete) return;
           try {
-            await api.delete('/api/items/${itemToDelete.id}');
+            await api.delete(`/items/${itemToDelete.id}`); // <-- use backticks!
             setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
             setDeleteModalOpen(false);
             setItemToDelete(null);
           } catch (err) {
-            console.error("Error deleting item:", err.response?.data || err.message);
+            console.error(
+              "Error deleting item:",
+              err.response?.data || err.message
+            );
           }
         }}
       />
+
 
       {/* Add Item Modal */}
       <AddItemModal

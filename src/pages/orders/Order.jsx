@@ -40,7 +40,7 @@ const Order = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/orders");
+      const res = await api.get("/orders");
       let ordersArray = [];
       if (Array.isArray(res.data)) ordersArray = res.data;
       else if (Array.isArray(res.data.orders)) ordersArray = res.data.orders;
@@ -74,7 +74,7 @@ const Order = () => {
       name: `Order #${order.id}`,
       onConfirm: async () => {
         try {
-          await api.delete(`/api/orders/${order.id}`);
+          await api.delete(`/orders/${order.id}`);
           fetchOrders();
         } catch (err) {
           console.error("Error deleting order:", err);
@@ -283,7 +283,7 @@ const Order = () => {
         onConfirm={async () => {
           if (!orderToDelete) return;
           try {
-            await api.delete(`/api/orders/${orderToDelete.id}`);
+            await api.delete(`/orders/${orderToDelete.id}`);
             fetchOrders();
             setDeleteModalOpen(false);
           } catch (err) {

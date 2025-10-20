@@ -22,15 +22,13 @@ const ConfirmOrder = () => {
   const [invoiceData, setInvoiceData] = useState(null);
   const [errors, setErrors] = useState({});
 
-  // ✅ Items passed from ConfirmOrder page
   const orderItems = state?.items || [];
   const total = orderItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
 
-  // ✅ Fetch customers
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const res = await api.get("/api/customers");
+        const res = await api.get("/customers");
         setCustomers(res.data);
       } catch (err) {
         console.error("Error fetching customers:", err);
@@ -87,9 +85,9 @@ const ConfirmOrder = () => {
       let customerId = selectedCustomer;
 
       if (selectedCustomer) {
-        await api.put(`/api/customers/${selectedCustomer}`, customerPayload);
+        await api.put(`/customers/${selectedCustomer}`, customerPayload);
       } else {
-        const res = await api.post("/api/customers", customerPayload);
+        const res = await api.post("/customers", customerPayload);
         customerId = res.data.id;
       }
 
@@ -111,7 +109,7 @@ const ConfirmOrder = () => {
         ],
       };
 
-      await api.post("/api/orders", payload);
+      await api.post("/orders", payload);
 
       const invoice = {
         customer_name: `${form.first_name} ${form.last_name}`,

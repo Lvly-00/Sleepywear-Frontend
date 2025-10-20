@@ -46,7 +46,7 @@ export default function EditCollectionModal({ opened, onClose, collection, onCol
     }
 
     try {
-      const res = await api.put(`/api/collections/${collection.id}`, form);
+      const res = await api.put(`/collections/${collection.id}`, form);
       if (onCollectionUpdated) onCollectionUpdated(res.data);
       if (onClose) onClose();
     } catch (error) {

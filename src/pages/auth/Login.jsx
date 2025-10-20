@@ -6,7 +6,7 @@ import {
   Stack,
   Center,
 } from "@mantine/core";
-import { Icons } from "../../components/Icons"
+import { Icons } from "../../components/Icons";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import WhiteLogo from "../../assets/WhiteLogo.svg";
@@ -19,36 +19,44 @@ function Login() {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [serverError, setServerError] = useState({});
+  const [serverError, setServerError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrors({});
-    setServerError({});
+    setServerError("");
     setLoading(true);
 
     try {
-      const response = await api.post("/api/login", { email, password });
+      const response = await api.post("/login", { email, password });
 
       // Save token in localStorage
       localStorage.setItem("access_token", response.data.access_token);
 
+      // Navigate to dashboard
       navigate("/dashboard");
-    } catch (e) {
-      if (e.response?.status === 422) {
-        setErrors(e.response.data.errors || {});
+    } catch (err) {
+      if (err.response?.status === 422) {
+        setErrors(err.response.data.errors || {});
+      } else if (err.response?.data?.message) {
+        setServerError(err.response.data.message);
       } else {
-        setServerError({ general: "An unexpected error occurred." });
+        setServerError("An unexpected error occurred.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: 'Poppins, sans-serif', }}>
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        fontFamily: "Poppins, sans-serif",
+      }}
+    >
       {/* Left Section with Logo */}
       <div
         style={{
@@ -74,19 +82,29 @@ function Login() {
           radius="md"
           style={{
             width: 400,
-            backgroundColor: " #F1F0ED"
-
+            backgroundColor: "#F1F0ED",
           }}
         >
-          <Text order={2} align="center" mb="xl" style={{ color: "#0b0c3f", fontSize: 40, fontFamily: 'Poppins, sans-serif', fontWeight: 500 }}>
+          <Text
+            order={2}
+            align="center"
+            mb="xl"
+            style={{
+              color: "#0b0c3f",
+              fontSize: 40,
+              fontWeight: 500,
+              fontFamily: "Poppins, sans-serif",
+            }}
+          >
             LOGIN
           </Text>
 
-          {serverError.general && (
+          {serverError && (
             <Text color="red" align="center" size="sm" mb="sm">
-              {serverError.general}
+              {serverError}
             </Text>
           )}
+
           <form onSubmit={handleLogin}>
             <Stack spacing="md">
               <TextInput
@@ -101,8 +119,7 @@ function Login() {
                 styles={{
                   input: {
                     borderColor: "#c5a47e",
-                    color: "#c5a47e"
-
+                    color: "#c5a47e",
                   },
                   label: {
                     color: "#0b0c3f",
@@ -110,9 +127,7 @@ function Login() {
                     fontSize: 16,
                     marginBottom: 4,
                   },
-
                 }}
-
               />
 
               <PasswordInput
@@ -126,27 +141,20 @@ function Login() {
                 visible={visible}
                 onVisibilityChange={setVisible}
                 visibilityToggleIcon={({ reveal }) =>
-                  reveal ? (
-                    <Icons.Eye />
-                  ) : (
-                    <Icons.EyeOff />
-                  )
+                  reveal ? <Icons.Eye /> : <Icons.EyeOff />
                 }
                 styles={{
                   input: {
                     borderColor: "#c5a47e",
-                    color: "#c5a47e"
-
+                    color: "#c5a47e",
                   },
                   label: {
                     color: "#0b0c3f",
                     fontWeight: 400,
                     fontSize: 16,
-
                     marginBottom: 4,
                   },
                 }}
-
               />
 
               <Text align="right" size="xs">
