@@ -5,24 +5,34 @@ const API_URL =
 
 const api = axios.create({
     baseURL: API_URL,
-    withCredentials: true,
     headers: {
         Accept: "application/json",
         "X-Requested-With": "XMLHttpRequest",
     },
 });
 
-// ✅ Automatically request CSRF cookie once using the same instance
-api.interceptors.request.use(async(config) => {
-    if (!window.__csrfLoaded) {
-        try {
-            await api.get("/sanctum/csrf-cookie"); // use api, not axios
-            window.__csrfLoaded = true;
-        } catch (err) {
-            console.error("Failed to load CSRF cookie:", err);
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem("access_token");
+        if (token) {
+            config.headers.Authorization = "Bearer " + token;
         }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // Use safe check without optional chaining
+        if (error.response && error.response.status === 401) {
+            console.warn("Unauthorized - redirecting to login");
+            localStorage.removeItem("access_token");
+            window.location.href = "/";
+        }
+        return Promise.reject(error);
     }
-    return config;
-});
+);
 
 export default api;

@@ -29,8 +29,11 @@ function Login() {
     setLoading(true);
 
     try {
-      await api.get("/sanctum/csrf-cookie");
-      await api.post("/api/login", { email, password });
+      const response = await api.post("/api/login", { email, password });
+
+      // Save token in localStorage
+      localStorage.setItem("access_token", response.data.access_token);
+
       navigate("/dashboard");
     } catch (e) {
       if (e.response?.status === 422) {
@@ -42,6 +45,7 @@ function Login() {
       setLoading(false);
     }
   };
+
 
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: 'Poppins, sans-serif', }}>
@@ -70,7 +74,7 @@ function Login() {
           radius="md"
           style={{
             width: 400,
-            backgroundColor:" #F1F0ED"
+            backgroundColor: " #F1F0ED"
 
           }}
         >
