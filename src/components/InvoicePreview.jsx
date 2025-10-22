@@ -209,12 +209,11 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
               sx={{
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                whiteSpace: "nowrap", // or remove for wrapping
-                wordBreak: "break-word", // allows wrapping if needed
-                maxWidth: "100%", // ensures it respects grid cell width
+                whiteSpace: "nowrap", 
+                wordBreak: "break-word", 
+                maxWidth: "100%", 
               }}
-              title={invoice.social_handle} // shows full text on hover
-            >
+              title={invoice.social_handle} >
               {invoice.social_handle || "Not provided"}
             </Text>
 

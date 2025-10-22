@@ -36,7 +36,7 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
     if (file) data.append("image", file);
 
     try {
-      const res = await api.post(`/api/items/${item.id}?_method=PUT`, data, {
+      const res = await api.post(`/items/${item.id}?_method=PUT`, data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       onItemUpdated(res.data); // update item in inventory

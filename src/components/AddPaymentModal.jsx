@@ -44,7 +44,7 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
 
       if (payment.image) formData.append("payment_image", payment.image);
 
-      await api.post(`/api/orders/${order.id}/payment`, formData, {
+      await api.post(`/orders/${order.id}/payment`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
