@@ -74,7 +74,7 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
     }
 
     try {
-      const res = await api.post("/api/collections", form);
+      const res = await api.post("/collections", form);
       if (onCollectionAdded) onCollectionAdded(res.data);
       onClose();
     } catch (error) {
