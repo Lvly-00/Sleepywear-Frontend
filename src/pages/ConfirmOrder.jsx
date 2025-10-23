@@ -1,15 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { Text, TextInput, Button, Table, Select, Card } from "@mantine/core";
+import {
+  Text,
+  TextInput,
+  Button,
+  Table,
+  Select,
+  Card,
+  Paper,
+  Grid,
+  Group,
+  Divider,
+  ScrollArea,
+  Box,
+} from "@mantine/core";
 import api from "../api/axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import InvoicePreview from "../components/InvoicePreview";
 import PageHeader from "../components/PageHeader";
-import { orderStore } from "../store/orderStore"; // 🟢 import your store
+import { orderStore } from "../store/orderStore";
 
 const ConfirmOrder = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { fetchOrders } = orderStore(); // 🟢 use fetchOrders here
+  const { fetchOrders } = orderStore();
 
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -134,90 +147,285 @@ const ConfirmOrder = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <PageHeader title="Add Order" showBack />
+      <PageHeader title="Confirm Order" showBack />
 
-      <Select
-        placeholder="Search Customer (optional)"
-        data={customers.map((c) => ({
-          value: c.id.toString(),
-          label: `${c.first_name} ${c.last_name}`,
-        }))}
-        onChange={handleCustomerSelect}
-        clearable
-        mt="md"
-      />
-
-      {["first_name", "last_name", "address", "contact_number", "social_handle"].map(
-        (field) => (
-          <TextInput
-            key={field}
-            label={field
-              .replace(/_/g, " ")
-              .replace(/\b\w/g, (char) => char.toUpperCase())}
-            required
-            value={form[field]}
-            onChange={(e) => {
-              let value = e.target.value;
-              if (field === "contact_number") {
-                value = value.replace(/\D/g, "");
-                if (value.length > 11) return;
-              }
-              setForm({ ...form, [field]: value });
+      <Grid gutter="xl" align="flex-start" mt="md">
+        {/* LEFT SIDE - Summary Order */}
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card
+            shadow="sm"
+            padding="xl"
+            radius="lg"
+            withBorder
+            style={{
+              height: "580px",
+              display: "flex",
+              flexDirection: "column",
+              backgroundColor: "#FFFFFF",
             }}
-            mt="sm"
-            error={errors[field]}
-          />
-        )
-      )}
+          >
+            <Group justify="space-between" mb="sm">
+              <Text fw={500} color="#0D0F66"
+                style={{
+                  fontSize: "30px"
+                }}>
+                Summary Order
+              </Text>
 
-      <Card shadow="sm" padding="lg" radius="md" mt="lg" withBorder>
-        <Text fw={700} size="lg" mb="sm">
-          Order Summary
-        </Text>
+              <Button
+                variant="filled"
+                size="md"
+                style={{
+                  backgroundColor: "#B59276",
+                  borderRadius: "10px",
+                  color: "white",
+                  fontWeight: 600,
+                  width: "80px",
+                  height: "28px",
+                }}
+                onClick={() => navigate("/add-order")}
+              >
+                Edit
+              </Button>
+            </Group>
 
-        {orderItems.length === 0 ? (
-          <Text color="dimmed">No items in this order.</Text>
-        ) : (
-          <Table withColumnBorders highlightOnHover striped>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Item</Table.Th>
-                <Table.Th>Price (₱)</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
+            <Divider mb="sm" color="#C1A287" />
 
-            <Table.Tbody>
-              {orderItems.map((item) => (
-                <Table.Tr key={item.id}>
-                  <Table.Td>{item.name}</Table.Td>
-                  <Table.Td>₱{item.price}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
+            {/* Scrollable table area */}
+            <ScrollArea style={{ flexGrow: 1 }} scrollbarSize={6}>
+              {orderItems.length === 0 ? (
+                <Text color="dimmed">No items in this order.</Text>
+              ) : (
+                <Table
+                  highlightOnHover={false}
+                  style={{
+                    borderCollapse: "separate",
+                    borderSpacing: "0 8px",
+                    width: "100%",
+                  }}
+                >
+                  <Table.Tbody>
+                    {orderItems.map((item) => (
+                      <Table.Tr
+                        key={item.id}
+                        style={{
+                          backgroundColor: "#FAF8F3",
+                          borderRadius: "12px",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Table.Td
+                          style={{
+                            padding: "10px 14px",
+                            border: "none",
+                            borderTopLeftRadius: "12px",
+                            borderBottomLeftRadius: "12px",
+                          }}
+                        >
+                          <Text fw={400}>
+                            {item.code && (
+                              <span style={{ fontWeight: 400 }}>{item.code}</span>
+                            )}
+                            <span style={{ marginLeft: "25px" }}>{item.name}</span>
+                          </Text>
 
-            <Table.Tfoot>
-              <Table.Tr>
-                <Table.Th>Total</Table.Th>
-                <Table.Th>₱{total.toFixed(2)}</Table.Th>
-              </Table.Tr>
-            </Table.Tfoot>
-          </Table>
-        )}
-      </Card>
+                        </Table.Td>
+                        <Table.Td
+                          style={{
+                            textAlign: "right",
+                            border: "none",
+                            borderTopRightRadius: "12px",
+                            borderBottomRightRadius: "12px",
+                            padding: "10px 14px",
+                          }}
+                        >
+                          ₱{Number(item.price).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              )}
+            </ScrollArea>
 
-      <Button fullWidth mt="md" onClick={handlePlaceOrder}>
-        Place Order
-      </Button>
 
-      <InvoicePreview
-        opened={invoiceModal}
-        onClose={() => {
-          setInvoiceModal(false);
-          fetchOrders(true); // 🟢 Force refresh store orders
-          navigate("/orders");
-        }}
-        invoiceData={invoiceData}
-      />
+            {/* Fixed total */}
+            <Divider mt="sm" mb="xs" color="#C1A287" />
+            <Group justify="space-between">
+              <Text fw={600} style={{ fontSize: "24px" }}>Total:</Text>
+              <Text fw={700} style={{ fontSize: "24px" }}>
+                ₱{total.toFixed(2)}
+              </Text>
+            </Group>
+          </Card>
+        </Grid.Col>
+
+        {/* RIGHT SIDE - Customer Info */}
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Paper
+            shadow="sm"
+            p="xl"
+            radius="md"
+            withBorder
+            style={{
+              height: "580px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              backgroundColor: "#FFFFFF",
+            }}
+          >
+            <div>
+              <Text fw={500} mb="md" color="#0D0F66"
+                style={{
+                  fontSize: "30px"
+                }}>
+                Customer Information
+              </Text>
+
+              <Select
+                placeholder="Search Customer"
+                data={customers.map((c) => ({
+                  value: c.id.toString(),
+                  label: `${c.first_name} ${c.last_name}`,
+                }))}
+                onChange={handleCustomerSelect}
+                clearable
+                rightSectionPointerEvents="none"
+                mb="md"
+                styles={{
+                  input: {
+                    height: 42,
+                    borderRadius: 8,
+                  },
+                }}
+              />
+
+              <Grid pb={20}>
+                <Grid.Col span={6}>
+                  <TextInput
+                    label={<span style={{
+                      fontWeight: "400"
+                    }}>
+
+                      First Name
+                    </span>}
+                    required
+                    value={form.first_name}
+                    size="md"
+                    onChange={(e) =>
+                      setForm({ ...form, first_name: e.target.value })
+                    }
+                    error={errors.first_name}
+
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <TextInput
+                    label={<span style={{
+                      fontWeight: "400"
+                    }}>
+
+                      Last Name
+                    </span>}
+                    required
+                    value={form.last_name}
+                    size="md"
+                    onChange={(e) =>
+                      setForm({ ...form, last_name: e.target.value })
+                    }
+                    error={errors.last_name}
+                  />
+                </Grid.Col>
+              </Grid>
+
+              <TextInput pb={20}
+                label={<span style={{
+                  fontWeight: "400"
+                }}>
+                  Address
+                </span>}
+                required
+                mt="sm"
+                size="md"
+
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                error={errors.address}
+              />
+
+              <Grid mt="sm">
+                <Grid.Col span={6}>
+                  <TextInput
+                    label={<span style={{
+                      fontWeight: "400"
+                    }}>
+                      Contact Number
+                    </span>}
+                    required
+                    value={form.contact_number}
+                    size="md"
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, "");
+                      if (value.length <= 11) {
+                        setForm({ ...form, contact_number: value });
+                      }
+                    }}
+                    error={errors.contact_number}
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <TextInput
+                    label={<span style={{
+                      fontWeight: "400"
+                    }}>
+
+                      Social Media Link
+                    </span>}
+                    required
+                    value={form.social_handle}
+                    size="md"
+                    onChange={(e) =>
+                      setForm({ ...form, social_handle: e.target.value })
+                    }
+                    error={errors.social_handle}
+                  />
+                </Grid.Col>
+              </Grid>
+            </div>
+
+            <Group justify="flex-end" mt="md">
+              <Button
+                style={{
+                  backgroundColor: "#B59276",
+                  borderRadius: "10px",
+                  color: "white",
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  height: "42px",
+                  width: "120px",
+                }}
+                onClick={handlePlaceOrder}
+              >
+                Generate
+              </Button>
+            </Group>
+
+
+            <InvoicePreview
+              opened={invoiceModal}
+              onClose={() => {
+                setInvoiceModal(false);
+                fetchOrders(true);
+                navigate("/orders");
+              }}
+              invoiceData={invoiceData}
+            />
+          </Paper>
+        </Grid.Col>
+      </Grid>
     </div>
   );
 };

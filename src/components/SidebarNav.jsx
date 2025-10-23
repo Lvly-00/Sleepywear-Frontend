@@ -14,26 +14,20 @@ const links = [
 
 function SidebarNav() {
   const navigate = useNavigate();
-  const location = useLocation(); // detects active route
+  const location = useLocation(); 
 
   const handleLogout = async () => {
-    if (!window.confirm("Are you sure you want to logout?")) return;
-
     try {
-      // Directly call the logout API
       await axios.post("/logout");
 
-      // Clear local storage or any auth state
       localStorage.removeItem("user");
 
-      // Redirect to login or home page
       navigate("/");
     } catch (err) {
       console.error("Logout failed:", err);
       alert("Failed to logout. Please try again.");
     }
   };
-
 
   return (
     <nav className={classes.navbar}>
@@ -101,7 +95,6 @@ function SidebarNav() {
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
-
       </div>
     </nav>
   );
