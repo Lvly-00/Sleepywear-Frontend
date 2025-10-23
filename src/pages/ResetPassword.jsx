@@ -10,10 +10,10 @@ import {
   Notification,
 } from "@mantine/core";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import api from "../../api/axios";
-import { Icons } from "../../components/Icons"
+import api from "../api/axios";
+import { Icons } from "../components/Icons"
 import WhiteLogo from "../../assets/WhiteLogo.svg";
-import SubmitButton from "../../components/SubmitButton"; // if you want the same reusable button
+import SubmitButton from "../components/SubmitButton"; // if you want the same reusable button
 
 function ResetPassword() {
   const [password, setPassword] = useState("");

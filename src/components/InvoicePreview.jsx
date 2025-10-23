@@ -242,7 +242,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
               style={{
                 fontFamily: "Fredoka, sans-serif",
                 borderCollapse: "separate",
-                borderSpacing: "0 8px", // vertical gap between rows
+                borderSpacing: "0 8px", 
                 width: "100%",
               }}
               highlightOnHover={false}
@@ -259,16 +259,14 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                           padding: "8px 12px",
                           display: "grid",
                           gridTemplateColumns: "1fr 2fr 1fr",
-                          alignItems: "center", // vertical center
+                          alignItems: "center", 
                         }}
                       >
-                        {/* Item code (left aligned) */}
+                        
                         <span style={{ textAlign: "left" }}>{item.item?.code || "-"}</span>
 
-                        {/* Item name (left aligned) */}
                         <span style={{ textAlign: "left" }}>{item.item_name}</span>
 
-                        {/* Price (right aligned) */}
                         <span style={{ textAlign: "right", display: "block" }}>
                           ₱ {Math.round(Number(item.price)).toLocaleString()}
                         </span>

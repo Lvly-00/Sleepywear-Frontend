@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import api from "../../api/axios";
+import api from "../api/axios";
 import {
   Stack,
   Card,
@@ -11,12 +11,12 @@ import {
   Center,
   SimpleGrid,
 } from "@mantine/core";
-import PageHeader from "../../components/PageHeader";
-import AddItemModal from "../../components/AddItemModal";
-import EditItemModal from "../../components/EditItemModal";
-import SleepyLoader from "../../components/SleepyLoader";
-import DeleteConfirmModal from "../../components/DeleteConfirmModal";
-import { Icons } from "../../components/Icons";
+import PageHeader from "../components/PageHeader";
+import AddItemModal from "../components/AddItemModal";
+import EditItemModal from "../components/EditItemModal";
+import SleepyLoader from "../components/SleepyLoader";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import { Icons } from "../components/Icons";
 
 
 function Inventory() {
@@ -84,6 +84,7 @@ function Inventory() {
     });
   };
 
+
   // if (loading) return <SleepyLoader />;
 
   return (
@@ -125,6 +126,7 @@ function Inventory() {
             >
               {/* Image Section */}
               <Card.Section>
+                {console.log(item.image_url)}
                 <div
                   style={{
                     height: 250,

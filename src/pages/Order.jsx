@@ -12,14 +12,14 @@ import {
   TextInput,
   Paper,
 } from "@mantine/core";
-import AddPaymentModal from "../../components/AddPaymentModal";
-import InvoicePreview from "../../components/InvoicePreview";
-import DeleteConfirmModal from "../../components/DeleteConfirmModal";
-import api from "../../api/axios";
-import PageHeader from "../../components/PageHeader";
-import SleepyLoader from "../../components/SleepyLoader";
+import AddPaymentModal from "../components/AddPaymentModal";
+import InvoicePreview from "../components/InvoicePreview";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import api from "../api/axios";
+import PageHeader from "../components/PageHeader";
+import SleepyLoader from "../components/SleepyLoader";
 import { useNavigate } from "react-router-dom";
-import { Icons } from "../../components/Icons";
+import { Icons } from "../components/Icons";
 
 
 const Order = () => {

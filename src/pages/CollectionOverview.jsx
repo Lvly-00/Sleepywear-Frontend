@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api/axios";
+import api from "../api/axios";
 import {
   Table,
   Button,
@@ -11,11 +11,11 @@ import {
   Paper,
   ScrollArea,
 } from "@mantine/core";
-import PageHeader from "../../components/PageHeader";
-import AddCollectionModal from "../../components/AddCollectionModal";
-import EditCollectionModal from "../../components/EditCollectionModal";
-import DeleteConfirmModal from "../../components/DeleteConfirmModal";
-import { Icons } from "../../components/Icons";
+import PageHeader from "../components/PageHeader";
+import AddCollectionModal from "../components/AddCollectionModal";
+import EditCollectionModal from "../components/EditCollectionModal";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import { Icons } from "../components/Icons";
 
 export default function CollectionOverview() {
   const [collections, setCollections] = useState([]);

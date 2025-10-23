@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, TextInput, Stack, Container, Paper, Title, Divider, Select } from "@mantine/core";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../../api/axios";
+import api from "../api/axios";
 
 function EditCollection() {
   const { id } = useParams();

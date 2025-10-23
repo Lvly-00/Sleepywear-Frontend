@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../../api/axios";
+import api from "../api/axios";
 import {
   Table,
   TextInput,
@@ -12,10 +12,10 @@ import {
   ScrollArea,
   Text,
 } from "@mantine/core";
-import PageHeader from "../../components/PageHeader";
-import SleepyLoader from "../../components/SleepyLoader";
-import DeleteConfirmModal from "../../components/DeleteConfirmModal";
-import { Icons } from "../../components/Icons";
+import PageHeader from "../components/PageHeader";
+import SleepyLoader from "../components/SleepyLoader";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import { Icons } from "../components/Icons";
 
 function CustomerLogs() {
   const [customers, setCustomers] = useState([]);

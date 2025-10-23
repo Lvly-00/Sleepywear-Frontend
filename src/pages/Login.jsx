@@ -6,12 +6,12 @@ import {
   Stack,
   Center,
 } from "@mantine/core";
-import { Icons } from "../../components/Icons";
+import { Icons } from "../components/Icons";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import WhiteLogo from "../../assets/WhiteLogo.svg";
-import api from "../../api/axios";
-import SubmitButton from "../../components/SubmitButton";
+import api from "../api/axios";
+import SubmitButton from "../components/SubmitButton";
 
 function Login() {
   const [email, setEmail] = useState("");

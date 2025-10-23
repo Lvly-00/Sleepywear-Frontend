@@ -9,6 +9,7 @@ import {
   Group,
 } from "@mantine/core";
 import api from "../api/axios";
+import { DateInput } from "@mantine/dates";
 
 function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
   const [form, setForm] = useState({
@@ -161,18 +162,21 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
                 required
               />
 
-              <TextInput
-                label={
-                  <span>
-                    Release Date
-                  </span>
-                }
+              <DateInput
+                label="Release Date"
+                placeholder="mm/dd/yyyy"
                 name="release_date"
-                type="date"
-                value={form.release_date}
-                onChange={handleChange}
+                value={form.release_date ? new Date(form.release_date) : null}
+                onChange={(value) =>
+                  handleChange({
+                    target: { name: "release_date", value },
+                  })
+                }
                 error={errors.release_date}
                 required
+                valueFormat="MM/DD/YYYY"
+
+
               />
 
               {/* Save button aligned to right */}

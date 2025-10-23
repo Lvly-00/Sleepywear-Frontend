@@ -2,23 +2,24 @@ import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import "boxicons/css/boxicons.min.css";
+
 import MainLayout from "./layouts/Layout";
 import PrivateRoute from "./components/PrivateRoute";
 import SleepyLoader from "./components/SleepyLoader";
 
 // Lazy load pages
-const Login = lazy(() => import("./pages/auth/Login"));
-const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
-const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
-const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
-const Orders = lazy(() => import("./pages/orders/Order"));
-const AddOrder = lazy(() => import("./pages/orders/AddOrder"));
-const CollectionOverview = lazy(() => import("./pages/collections/CollectionOverview"));
-const EditCollection = lazy(() => import("./pages/collections/EditCollection"));
-const Inventory = lazy(() => import("./pages/item/Inventory"));
-const Settings = lazy(() => import("./pages/account/Settings"));
-const CustomerLogs = lazy(() => import("./pages/customer-logs/CustomerLogs"));
-const ConfirmOrder = lazy(() => import("./pages/orders/ConfirmOrder"));
+const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Orders = lazy(() => import("./pages/Order"));
+const AddOrder = lazy(() => import("./pages/AddOrder"));
+const CollectionOverview = lazy(() => import("./pages/CollectionOverview"));
+const EditCollection = lazy(() => import("./pages/EditCollection"));
+const Inventory = lazy(() => import("./pages/Inventory"));
+const Settings = lazy(() => import("./pages/Settings"));
+const CustomerLogs = lazy(() => import("./pages/CustomerLogs"));
+const ConfirmOrder = lazy(() => import("./pages/ConfirmOrder"));
 
 
 function App() {

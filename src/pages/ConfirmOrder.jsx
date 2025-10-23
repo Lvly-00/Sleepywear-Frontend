@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Text, TextInput, Button, Table, Select, Card } from "@mantine/core";
-import api from "../../api/axios";
+import api from "../api/axios";
 import { useNavigate, useLocation } from "react-router-dom";
-import InvoicePreview from "../../components/InvoicePreview";
-import PageHeader from "../../components/PageHeader";
+import InvoicePreview from "../components/InvoicePreview";
+import PageHeader from "../components/PageHeader";
 
 const ConfirmOrder = () => {
   const navigate = useNavigate();

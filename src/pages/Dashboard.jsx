@@ -9,10 +9,10 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import api from "../../api/axios";
-import PageHeader from "../../components/PageHeader";
-import SleepyLoader from "../../components/SleepyLoader";
-import { Icons } from "../../components/Icons";
+import api from "../api/axios";
+import PageHeader from "../components/PageHeader";
+import SleepyLoader from "../components/SleepyLoader";
+import { Icons } from "../components/Icons";
 
 function Dashboard() {
   const [summary, setSummary] = useState(null);

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Select, Card, Image, Text, Button, Grid, Group } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
-import api from "../../api/axios";
-import PageHeader from "../../components/PageHeader";
+import api from "../api/axios";
+import PageHeader from "../components/PageHeader";
 
 const AddOrder = () => {
   const [collections, setCollections] = useState([]);

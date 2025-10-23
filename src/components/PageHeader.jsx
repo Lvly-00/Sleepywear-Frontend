@@ -7,10 +7,10 @@ const PageHeader = ({
   showSearch,
   search,
   setSearch,
-  addLabel,    // <- optional
-  addLink,     // <- optional
-  onAdd,       // <- optional
-  showBack,    // <- NEW optional prop
+  addLabel,    
+  addLink,     
+  onAdd,       
+  showBack,    
 }) => {
   const navigate = useNavigate();
 
