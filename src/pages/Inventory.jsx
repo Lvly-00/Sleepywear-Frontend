@@ -16,82 +16,60 @@ import AddItemModal from "../components/AddItemModal";
 import EditItemModal from "../components/EditItemModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
+import { useItemStore } from "../store/itemStore";
+import { useCollectionStore } from "../store/collectionStore"; // ✅ import Zustand collection store
 
 function Inventory() {
   const { id } = useParams();
-  const [collection, setCollection] = useState(null);
-  const [items, setItems] = useState([]);
+
+  // ✅ Zustand hooks
+  const { collections, fetchCollections, updateCollection } = useCollectionStore();
+  const { items, fetchItems, addItem, updateItem, removeItem, loading } =
+    useItemStore();
+
+  // ✅ Local UI states
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [loading, setLoading] = useState(true);
 
+  // ✅ Fetch collections if not loaded
   useEffect(() => {
-    // ✅ Skip fetch if data already exists (for instant navigation back)
-    if (collection && items.length > 0) return;
+    fetchCollections();
+  }, [fetchCollections]);
 
-    let isMounted = true;
-    const fetchData = async () => {
-      try {
-        // Temporary title shown instantly
-        if (!collection) setCollection({ name: "Collection" });
+  // ✅ Fetch items for this collection
+  useEffect(() => {
+    fetchItems(id);
+  }, [id, fetchItems]);
 
-        const [colRes, itemsRes] = await Promise.all([
-          api.get(`/collections/${id}`),
-          api.get(`/items?collection_id=${id}`),
-        ]);
+  // ✅ Find current collection from Zustand (auto updates in real-time)
+  const collection = collections.find((c) => String(c.id) === String(id));
 
-        if (!isMounted) return;
+  const collectionItems = items[id] || [];
 
-        setCollection(colRes.data);
-
-        const sorted = itemsRes.data.sort((a, b) => {
-          if (a.status === "available" && b.status !== "available") return -1;
-          if (a.status !== "available" && b.status === "available") return 1;
-          return 0;
-        });
-        setItems(sorted);
-      } catch (err) {
-        console.error(err.response?.data || err.message);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchData();
-    return () => {
-      isMounted = false;
-    };
-  }, [id]);
-
+  // ✅ Handle add success
   const handleItemAdded = (newItem) => {
-    setItems((prev) => [...prev, newItem]);
+    addItem(id, newItem);
   };
 
+  // ✅ Handle update success
   const handleItemUpdated = (updatedItem) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
-    );
+    updateItem(id, updatedItem);
   };
 
-  const handleDelete = (itemId, itemName) => {
-    DeleteConfirmModal({
-      title: "Delete Item",
-      name: itemName,
-      onConfirm: async () => {
-        try {
-          await api.delete(`/items/${itemId}`);
-          setItems((prev) => prev.filter((item) => item.id !== itemId));
-        } catch (error) {
-          console.error(
-            "Error deleting item:",
-            error.response?.data || error.message
-          );
-        }
-      },
-    });
+  // ✅ Handle delete
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await api.delete(`/items/${itemToDelete.id}`);
+      removeItem(id, itemToDelete.id);
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+    } catch (err) {
+      console.error("Error deleting item:", err.response?.data || err.message);
+    }
   };
 
   return (
@@ -99,16 +77,15 @@ function Inventory() {
       <PageHeader
         title={collection ? collection.name : "Collection"}
         showBack
-        showSearch={false}
         addLabel="Add Item"
         onAdd={() => setAddModal(true)}
       />
 
-      {loading && items.length === 0 ? (
+      {loading && collectionItems.length === 0 ? (
         <Center py="lg">
           <Text>Loading items...</Text>
         </Center>
-      ) : items.length === 0 ? (
+      ) : collectionItems.length === 0 ? (
         <Center py="lg">
           <Text>No items found for this collection.</Text>
         </Center>
@@ -121,7 +98,7 @@ function Inventory() {
             { maxWidth: 600, cols: 1 },
           ]}
         >
-          {items.map((item) => (
+          {collectionItems.map((item) => (
             <Card
               key={item.id}
               shadow="sm"
@@ -168,7 +145,7 @@ function Inventory() {
 
               {/* Info Section */}
               <div style={{ flexGrow: 1, marginTop: 12 }}>
-                <Text weight={500} lineClamp={1}>
+                <Text fw={500} lineClamp={1}>
                   {item.name}{" "}
                   {item.code && (
                     <Text span c="dimmed">
@@ -178,7 +155,7 @@ function Inventory() {
                 </Text>
 
                 <Text size="sm" mt="xs">
-                  Price: ${Number(item.price).toFixed(2)}
+                  Price: ₱{Number(item.price).toFixed(2)}
                 </Text>
 
                 <Badge
@@ -193,8 +170,8 @@ function Inventory() {
                 </Text>
               </div>
 
-              {/* Action Buttons */}
-              <Group mt="md" spacing="xs" position="left">
+              {/* Actions */}
+              <Group mt="md" spacing="xs">
                 <Button
                   size="xs"
                   color="#276D58"
@@ -209,7 +186,7 @@ function Inventory() {
                 </Button>
                 <Button
                   size="xs"
-                  color="#276D58"
+                  color="red"
                   variant="subtle"
                   p={3}
                   onClick={() => {
@@ -228,27 +205,9 @@ function Inventory() {
       {/* Delete Item Modal */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
-        onClose={() => {
-          setDeleteModalOpen(false);
-          setItemToDelete(null);
-        }}
-        name={itemToDelete ? itemToDelete.name : ""}
-        onConfirm={async () => {
-          if (!itemToDelete) return;
-          try {
-            await api.delete(`/items/${itemToDelete.id}`);
-            setItems((prev) =>
-              prev.filter((item) => item.id !== itemToDelete.id)
-            );
-            setDeleteModalOpen(false);
-            setItemToDelete(null);
-          } catch (err) {
-            console.error(
-              "Error deleting item:",
-              err.response?.data || err.message
-            );
-          }
-        }}
+        onClose={() => setDeleteModalOpen(false)}
+        name={itemToDelete?.name || ""}
+        onConfirm={handleDelete}
       />
 
       {/* Add Item Modal */}

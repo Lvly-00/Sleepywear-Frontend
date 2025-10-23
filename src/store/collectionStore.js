@@ -1,4 +1,3 @@
-// src/store/collectionStore.js
 import { create } from "zustand";
 import api from "../api/axios";
 
@@ -7,7 +6,6 @@ export const useCollectionStore = create((set, get) => ({
     loading: false,
 
     fetchCollections: async() => {
-        // avoid refetching if already loaded
         if (get().collections.length > 0) return;
         set({ loading: true });
         try {
@@ -30,12 +28,13 @@ export const useCollectionStore = create((set, get) => ({
             collections: [newCollection, ...state.collections],
         })),
 
-    updateCollection: (updatedCollection) =>
+    updateCollection: (updatedCollection) => {
         set((state) => ({
-            collections: state.collections.map((col) =>
-                col.id === updatedCollection.id ? {...updatedCollection } : col
+            collections: state.collections.map((c) =>
+                c.id === updatedCollection.id ? {...c, ...updatedCollection } : c
             ),
-        })),
+        }));
+    },
 
     removeCollection: (id) =>
         set((state) => ({
