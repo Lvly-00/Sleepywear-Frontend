@@ -14,32 +14,39 @@ import {
 import PageHeader from "../components/PageHeader";
 import AddItemModal from "../components/AddItemModal";
 import EditItemModal from "../components/EditItemModal";
-import SleepyLoader from "../components/SleepyLoader";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
-
 
 function Inventory() {
   const { id } = useParams();
   const [collection, setCollection] = useState(null);
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // ✅ Skip fetch if data already exists (for instant navigation back)
+    if (collection && items.length > 0) return;
+
+    let isMounted = true;
     const fetchData = async () => {
       try {
-        // Fetch collection details
-        const colRes = await api.get(`/collections/${id}`);
+        // Temporary title shown instantly
+        if (!collection) setCollection({ name: "Collection" });
+
+        const [colRes, itemsRes] = await Promise.all([
+          api.get(`/collections/${id}`),
+          api.get(`/items?collection_id=${id}`),
+        ]);
+
+        if (!isMounted) return;
+
         setCollection(colRes.data);
 
-        // Fetch items in this collection
-        const itemsRes = await api.get(`/items?collection_id=${id}`);
         const sorted = itemsRes.data.sort((a, b) => {
           if (a.status === "available" && b.status !== "available") return -1;
           if (a.status !== "available" && b.status === "available") return 1;
@@ -49,11 +56,14 @@ function Inventory() {
       } catch (err) {
         console.error(err.response?.data || err.message);
       } finally {
-        // setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchData();
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const handleItemAdded = (newItem) => {
@@ -84,9 +94,6 @@ function Inventory() {
     });
   };
 
-
-  // if (loading) return <SleepyLoader />;
-
   return (
     <Stack p="lg" spacing="lg">
       <PageHeader
@@ -97,7 +104,11 @@ function Inventory() {
         onAdd={() => setAddModal(true)}
       />
 
-      {items.length === 0 ? (
+      {loading && items.length === 0 ? (
+        <Center py="lg">
+          <Text>Loading items...</Text>
+        </Center>
+      ) : items.length === 0 ? (
         <Center py="lg">
           <Text>No items found for this collection.</Text>
         </Center>
@@ -126,7 +137,6 @@ function Inventory() {
             >
               {/* Image Section */}
               <Card.Section>
-                {console.log(item.image_url)}
                 <div
                   style={{
                     height: 250,
@@ -160,7 +170,11 @@ function Inventory() {
               <div style={{ flexGrow: 1, marginTop: 12 }}>
                 <Text weight={500} lineClamp={1}>
                   {item.name}{" "}
-                  {item.code && <Text span c="dimmed">({item.code})</Text>}
+                  {item.code && (
+                    <Text span c="dimmed">
+                      ({item.code})
+                    </Text>
+                  )}
                 </Text>
 
                 <Text size="sm" mt="xs">
@@ -185,7 +199,8 @@ function Inventory() {
                   size="xs"
                   color="#276D58"
                   variant="subtle"
-                  p={3} onClick={() => {
+                  p={3}
+                  onClick={() => {
                     setSelectedItem(item);
                     setEditModal(true);
                   }}
@@ -204,7 +219,6 @@ function Inventory() {
                 >
                   <Icons.Trash size={24} />
                 </Button>
-
               </Group>
             </Card>
           ))}
@@ -222,8 +236,10 @@ function Inventory() {
         onConfirm={async () => {
           if (!itemToDelete) return;
           try {
-            await api.delete(`/items/${itemToDelete.id}`); // <-- use backticks!
-            setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
+            await api.delete(`/items/${itemToDelete.id}`);
+            setItems((prev) =>
+              prev.filter((item) => item.id !== itemToDelete.id)
+            );
             setDeleteModalOpen(false);
             setItemToDelete(null);
           } catch (err) {
@@ -234,7 +250,6 @@ function Inventory() {
           }
         }}
       />
-
 
       {/* Add Item Modal */}
       <AddItemModal

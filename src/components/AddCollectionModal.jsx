@@ -8,10 +8,11 @@ import {
   Text,
   Group,
 } from "@mantine/core";
-import api from "../api/axios";
 import { DateInput } from "@mantine/dates";
+import api from "../api/axios";
+import { useCollectionStore } from "../store/collectionStore";
 
-function AddCollectionModal({ opened, onClose, onSuccess }) {
+function AddCollectionModal({ opened, onClose }) {
   const [form, setForm] = useState({
     name: "",
     release_date: "",
@@ -23,6 +24,8 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
     release_date: "",
     capital: "",
   });
+
+  const { addCollection } = useCollectionStore();
 
   useEffect(() => {
     if (opened) {
@@ -45,8 +48,8 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    let valid = true;
     const newErrors = { name: "", release_date: "", capital: "" };
+    let valid = true;
 
     if (!form.name.trim()) {
       newErrors.name = "Collection number is required";
@@ -57,7 +60,7 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
       valid = false;
     }
     if (form.capital === null || form.capital < 0) {
-      newErrors.capital = "Capital must be a non-negative number";
+      newErrors.capital = "Capital must be non-negative";
       valid = false;
     }
 
@@ -68,7 +71,7 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
 
     try {
       const res = await api.post("/collections", form);
-      if (onSuccess) await onSuccess(); // ✅ Trigger refresh from parent
+      addCollection(res.data); // ✅ instantly update Zustand
       onClose();
     } catch (error) {
       console.error(error.response?.data || error.message);
@@ -94,11 +97,7 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
             <Text
               align="center"
               color="black"
-              style={{
-                width: "100%",
-                fontSize: "26px",
-                fontWeight: "700",
-              }}
+              style={{ width: "100%", fontSize: "26px", fontWeight: "700" }}
             >
               New Collection
             </Text>
@@ -110,7 +109,7 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
           <form onSubmit={handleSubmit}>
             <Stack spacing="sm">
               <TextInput
-                label={<span style={{ fontWeight: 400 }}>Collection Number</span>}
+                label="Collection Number"
                 name="name"
                 value={form.name}
                 onChange={handleChange}
@@ -120,7 +119,7 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
               />
 
               <NumberInput
-                label={<span style={{ fontWeight: 400 }}>Capital</span>}
+                label="Capital"
                 placeholder="Enter capital"
                 value={form.capital}
                 onChange={handleCapitalChange}
@@ -136,7 +135,7 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
               />
 
               <DateInput
-                label={<span style={{ fontWeight: 400 }}>Release Date</span>}
+                label="Release Date"
                 placeholder="mm/dd/yyyy"
                 name="release_date"
                 value={form.release_date ? new Date(form.release_date) : null}

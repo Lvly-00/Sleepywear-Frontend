@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios";
 import {
   Table,
   Button,
@@ -15,63 +14,74 @@ import AddCollectionModal from "../components/AddCollectionModal";
 import EditCollectionModal from "../components/EditCollectionModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
+import api from "../api/axios";
+import { useCollectionStore } from "../store/collectionStore";
 
 export default function CollectionOverview() {
-  const [collections, setCollections] = useState([]);
+  const navigate = useNavigate();
+
+  const {
+    collections,
+    fetchCollections,
+    addCollection,
+    updateCollection,
+    removeCollection,
+    loading,
+  } = useCollectionStore();
+
   const [filteredCollections, setFilteredCollections] = useState([]);
+  const [search, setSearch] = useState("");
   const [openedEdit, setOpenedEdit] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState(null);
-  const [search, setSearch] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [collectionToDelete, setCollectionToDelete] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
-  const navigate = useNavigate();
-
-  const fetchCollections = async () => {
-    try {
-      const res = await api.get("/collections");
-      const sorted = res.data.sort((a, b) => {
-        if (a.status === "Active" && b.status !== "Active") return -1;
-        if (a.status !== "Active" && b.status === "Active") return 1;
-        return 0;
-      });
-      setCollections(sorted);
-      setFilteredCollections(sorted);
-    } catch (err) {
-      console.error("Error fetching collections:", err);
-    }
-  };
-
+  // ✅ Fetch collections only once (and keep them cached)
   useEffect(() => {
-    fetchCollections();
-  }, []);
+    if (collections.length === 0) fetchCollections();
+  }, [collections.length, fetchCollections]);
 
+  // ✅ Real-time filter when typing or store updates
   useEffect(() => {
-    if (!search.trim()) setFilteredCollections(collections);
-    else {
+    if (!search.trim()) {
+      setFilteredCollections(collections);
+    } else {
       const lower = search.toLowerCase();
       setFilteredCollections(
-        collections.filter((col) => col.name.toLowerCase().includes(lower))
+        collections.filter((col) => col?.name?.toLowerCase().includes(lower))
       );
     }
   }, [search, collections]);
 
-
+  // ✅ Handle delete
   const handleDelete = async () => {
     if (!collectionToDelete) return;
     try {
       await api.delete(`/collections/${collectionToDelete.id}`);
-      const updated = collections.filter(
-        (c) => c.id !== collectionToDelete.id
-      );
-      setCollections(updated);
-      setFilteredCollections(updated);
+      removeCollection(collectionToDelete.id);
       setDeleteModalOpen(false);
       setCollectionToDelete(null);
     } catch (err) {
       console.error("Error deleting collection:", err);
     }
+  };
+
+  // ✅ Handle add success — instantly update store
+  const handleAddSuccess = (newCollection) => {
+    if (newCollection?.id) {
+      addCollection(newCollection);
+    }
+    setAddModalOpen(false);
+  };
+
+  // ✅ Handle edit success — instantly update store
+  const handleEditSuccess = (updatedCollection) => {
+    if (updatedCollection?.id) {
+      updateCollection(updatedCollection);
+    }
+    setOpenedEdit(false);
+    setSelectedCollection(null);
   };
 
   return (
@@ -102,7 +112,13 @@ export default function CollectionOverview() {
             </Table.Thead>
 
             <Table.Tbody>
-              {filteredCollections.length === 0 ? (
+              {loading ? (
+                <Table.Tr>
+                  <Table.Td colSpan={8} style={{ textAlign: "center", padding: "2rem" }}>
+                    <Text c="dimmed">Loading...</Text>
+                  </Table.Td>
+                </Table.Tr>
+              ) : filteredCollections.length === 0 ? (
                 <Table.Tr>
                   <Table.Td colSpan={8} style={{ textAlign: "center", padding: "2rem" }}>
                     <Text c="dimmed">No collections found</Text>
@@ -121,18 +137,18 @@ export default function CollectionOverview() {
                       (e.currentTarget.style.backgroundColor = "transparent")
                     }
                   >
-                    <Table.Td>{col.name}</Table.Td>
+                    <Table.Td>{col.name || "—"}</Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
                       {col.release_date
                         ? new Date(col.release_date).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
                         : "—"}
                     </Table.Td>
-                    <Table.Td style={{ textAlign: "center" }}>{col.qty}</Table.Td>
-                    <Table.Td style={{ textAlign: "center" }}>{col.stock_qty}</Table.Td>
+                    <Table.Td style={{ textAlign: "center" }}>{col.qty ?? 0}</Table.Td>
+                    <Table.Td style={{ textAlign: "center" }}>{col.stock_qty ?? 0}</Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
                       ₱
                       {col.capital
@@ -206,20 +222,20 @@ export default function CollectionOverview() {
         onConfirm={handleDelete}
       />
 
-      {/* Add New Collection Modal */}
+      {/* Add Modal */}
       <AddCollectionModal
         opened={addModalOpen}
         onClose={() => setAddModalOpen(false)}
-        onSuccess={fetchCollections}
+        onSuccess={handleAddSuccess}
       />
 
-      {/* Edit Collection Modal */}
+      {/* Edit Modal */}
       {selectedCollection && (
         <EditCollectionModal
           opened={openedEdit}
           onClose={() => setOpenedEdit(false)}
           collection={selectedCollection}
-          onCollectionUpdated={fetchCollections}
+          onCollectionUpdated={handleEditSuccess}
         />
       )}
     </div>
