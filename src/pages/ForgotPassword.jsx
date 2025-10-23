@@ -32,7 +32,7 @@ function ForgotPassword() {
     setMessage(null); 
 
     try {
-      await api.post("/api/forgot-password", { email });
+      await api.post("/forgot-password", { email });
       setMessage({
         text: "Password reset link sent! Check your email.",
         type: "success",

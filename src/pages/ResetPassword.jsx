@@ -1,9 +1,8 @@
+// src/pages/ResetPassword.jsx
 import React, { useState } from "react";
 import {
   PasswordInput,
-  Button,
   Paper,
-  Title,
   Text,
   Stack,
   Center,
@@ -11,9 +10,9 @@ import {
 } from "@mantine/core";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import api from "../api/axios";
-import { Icons } from "../components/Icons"
+import { Icons } from "../components/Icons";
 import WhiteLogo from "../assets/WhiteLogo.svg";
-import SubmitButton from "../components/SubmitButton"; 
+import SubmitButton from "../components/SubmitButton";
 
 function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -32,6 +31,7 @@ function ResetPassword() {
       setMessage({ text: "Please fill in all fields.", type: "error" });
       return;
     }
+
     if (password !== confirmPassword) {
       setMessage({ text: "Passwords do not match.", type: "error" });
       return;
@@ -48,8 +48,7 @@ function ResetPassword() {
     };
 
     try {
-      await api.get("/sanctum/csrf-cookie");
-      await api.post("/api/reset-password", payload);
+      await api.post("/reset-password", payload);
 
       setMessage({
         text: "Password reset successful. Redirecting to login...",
@@ -61,6 +60,11 @@ function ResetPassword() {
         const errors = err.response.data.errors;
         setMessage({
           text: Object.values(errors).flat().join(" "),
+          type: "error",
+        });
+      } else if (err.response?.data?.message) {
+        setMessage({
+          text: err.response.data.message,
           type: "error",
         });
       } else {
@@ -75,7 +79,13 @@ function ResetPassword() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "Poppins, sans-serif" }}>
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        fontFamily: "Poppins, sans-serif",
+      }}
+    >
       {/* Left Section with Logo */}
       <div
         style={{
@@ -101,12 +111,10 @@ function ResetPassword() {
           radius="md"
           style={{
             width: 400,
-            backgroundColor: " #F1F0ED"
-
+            backgroundColor: "#F1F0ED",
           }}
         >
           <Text
-            order={2}
             align="center"
             mb="xl"
             style={{
@@ -139,15 +147,12 @@ function ResetPassword() {
                 radius="md"
                 size="lg"
                 visibilityToggleIcon={({ reveal }) =>
-                  reveal ? (
-                    <Icons.Eye />
-                  ) : (
-                    <Icons.EyeOff />
-                  )
-                } styles={{
+                  reveal ? <Icons.Eye /> : <Icons.EyeOff />
+                }
+                styles={{
                   input: {
                     borderColor: "#c5a47e",
-                    color: "#c5a47e"
+                    color: "#c5a47e",
                   },
                   label: {
                     color: "#0b0c3f",
@@ -166,15 +171,12 @@ function ResetPassword() {
                 radius="md"
                 size="lg"
                 visibilityToggleIcon={({ reveal }) =>
-                  reveal ? (
-                    <Icons.Eye />
-                  ) : (
-                    <Icons.EyeOff />
-                  )
-                } styles={{
+                  reveal ? <Icons.Eye /> : <Icons.EyeOff />
+                }
+                styles={{
                   input: {
                     borderColor: "#c5a47e",
-                    color: "#c5a47e"
+                    color: "#c5a47e",
                   },
                   label: {
                     color: "#0b0c3f",
