@@ -1,25 +1,36 @@
 import React, { useState, useEffect } from "react";
-import { Stack, Select, NumberInput, FileInput, Button, Modal, Text, Group } from "@mantine/core";
+import {
+  Stack,
+  Select,
+  NumberInput,
+  FileInput,
+  Button,
+  Modal,
+  Text,
+  Group,
+} from "@mantine/core";
 import api from "../api/axios";
+import { orderStore } from "../store/orderStore";
 
-const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
+const AddPaymentModal = ({ opened, onClose, order }) => {
   const [payment, setPayment] = useState({
     method: "",
     additionalFee: 0,
-
+    image: null,
   });
   const [errors, setErrors] = useState({});
+  const { updateOrder } = orderStore();
 
   useEffect(() => {
     if (opened) {
       setPayment({
         method: "",
         additionalFee: 0,
+        image: null,
       });
       setErrors({});
     }
   }, [opened, order]);
-
 
   const savePayment = async () => {
     const newErrors = {};
@@ -34,7 +45,8 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
     }
 
     try {
-      const totalAmount = Number(order?.total || 0) + Number(payment.additionalFee || 0);
+      const totalAmount =
+        Number(order?.total || 0) + Number(payment.additionalFee || 0);
 
       const formData = new FormData();
       formData.append("payment_method", payment.method);
@@ -44,11 +56,13 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
 
       if (payment.image) formData.append("payment_image", payment.image);
 
-      await api.post(`/orders/${order.id}/payment`, formData, {
+      const res = await api.post(`/orders/${order.id}/payment`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (refreshOrders) refreshOrders();
+      // 🟢 Update Zustand state instantly
+      updateOrder({ ...order, payment_status: "paid" });
+
       onClose();
     } catch (err) {
       console.error("Error saving payment:", err);
@@ -63,7 +77,6 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
         style={{
           borderRadius: "16px",
           padding: "20px",
-
         }}
       >
         <Modal.Header
@@ -73,7 +86,6 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
             alignItems: "center",
           }}
         >
-
           <Modal.CloseButton
             size={35}
             style={{
@@ -83,7 +95,6 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
             }}
           />
 
-
           <Modal.Title style={{ flex: 1 }}>
             <Text
               align="center"
@@ -91,7 +102,7 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
               style={{
                 width: "100%",
                 fontSize: "26px",
-                fontWeight: "600"
+                fontWeight: "600",
               }}
             >
               Add Payment
@@ -101,29 +112,30 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
           <div style={{ width: 36 }} />
         </Modal.Header>
 
-
         <Modal.Body>
           <Stack spacing="sm">
-            <Text weight={500} align="center" color="#5D4324"
+            <Text
+              weight={500}
+              align="center"
+              color="#5D4324"
               style={{
                 width: "100%",
                 fontSize: "46px",
-                fontWeight: "600"
-              }}>
+                fontWeight: "600",
+              }}
+            >
               ₱{Math.floor(order?.total || 0).toLocaleString("en-PH")}
             </Text>
 
             <Select
               label="Mode of Payment"
-              placeholder="SELECT "
+              placeholder="Select"
               data={["Cash", "GCash", "Paypal", "Bank"]}
               value={payment.method}
               error={errors.paymentMethod}
               onChange={(value) => setPayment({ ...payment, method: value })}
               required
-
             />
-
 
             <NumberInput
               label="Additional Fee (optional)"
@@ -136,32 +148,38 @@ const AddPaymentModal = ({ opened, onClose, order, refreshOrders }) => {
               error={errors.additionalFee}
             />
 
+            {/* <FileInput
+              label="Upload Payment Proof (optional)"
+              placeholder="Upload image"
+              accept="image/*"
+              value={payment.image}
+              onChange={(file) => setPayment({ ...payment, image: file })}
+            /> */}
 
-            <Group mt="lg"
+            <Group
+              mt="lg"
               style={{
                 display: "flex",
                 justifyContent: "flex-end",
                 width: "100%",
-              }}>
+              }}
+            >
               <Button
                 color="#AB8262"
                 style={{
                   borderRadius: "15px",
                   width: "110px",
-                  fontSize: "16px"
+                  fontSize: "16px",
                 }}
-                onClick={savePayment}>
+                onClick={savePayment}
+              >
                 Submit
               </Button>
             </Group>
-
           </Stack>
-
-
-
         </Modal.Body>
       </Modal.Content>
-    </Modal.Root >
+    </Modal.Root>
   );
 };
 

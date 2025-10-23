@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../../api/axios";
+import api from "../api/axios";
 import {
   Card,
   TextInput,
@@ -11,10 +11,10 @@ import {
   Grid,
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
-import PageHeader from "../../components/PageHeader";
-import SleepyLoader from "../../components/SleepyLoader";
-import SubmitButton from "../../components/SubmitButton";
-import { Icons } from "../../components/Icons";
+import PageHeader from "../components/PageHeader";
+import SleepyLoader from "../components/SleepyLoader";
+import SubmitButton from "../components/SubmitButton";
+import { Icons } from "../components/Icons";
 
 const Settings = () => {
   const [profile, setProfile] = useState({ business_name: "", email: "" });

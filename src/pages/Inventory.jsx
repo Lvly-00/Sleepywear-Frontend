@@ -22,44 +22,35 @@ import { useCollectionStore } from "../store/collectionStore"; // ✅ import Zus
 function Inventory() {
   const { id } = useParams();
 
-  // ✅ Zustand hooks
   const { collections, fetchCollections, updateCollection } = useCollectionStore();
   const { items, fetchItems, addItem, updateItem, removeItem, loading } =
     useItemStore();
-
-  // ✅ Local UI states
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
-  // ✅ Fetch collections if not loaded
   useEffect(() => {
     fetchCollections();
   }, [fetchCollections]);
 
-  // ✅ Fetch items for this collection
   useEffect(() => {
     fetchItems(id);
   }, [id, fetchItems]);
 
-  // ✅ Find current collection from Zustand (auto updates in real-time)
   const collection = collections.find((c) => String(c.id) === String(id));
 
   const collectionItems = items[id] || [];
 
-  // ✅ Handle add success
   const handleItemAdded = (newItem) => {
     addItem(id, newItem);
   };
 
-  // ✅ Handle update success
   const handleItemUpdated = (updatedItem) => {
     updateItem(id, updatedItem);
   };
 
-  // ✅ Handle delete
   const handleDelete = async () => {
     if (!itemToDelete) return;
     try {

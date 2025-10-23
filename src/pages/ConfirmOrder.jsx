@@ -4,10 +4,12 @@ import api from "../api/axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import InvoicePreview from "../components/InvoicePreview";
 import PageHeader from "../components/PageHeader";
+import { orderStore } from "../store/orderStore"; // 🟢 import your store
 
 const ConfirmOrder = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const { fetchOrders } = orderStore(); // 🟢 use fetchOrders here
 
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -37,7 +39,6 @@ const ConfirmOrder = () => {
     fetchCustomers();
   }, []);
 
-  // ✅ Autofill form when selecting existing customer
   const handleCustomerSelect = (customerId) => {
     const customer = customers.find((c) => c.id.toString() === customerId);
     if (customer) {
@@ -52,7 +53,6 @@ const ConfirmOrder = () => {
     }
   };
 
-  // ✅ Place Order Handler
   const handlePlaceOrder = async () => {
     const newErrors = {};
 
@@ -136,7 +136,6 @@ const ConfirmOrder = () => {
     <div style={{ padding: 20 }}>
       <PageHeader title="Add Order" showBack />
 
-      {/* ✅ Search Customer Dropdown */}
       <Select
         placeholder="Search Customer (optional)"
         data={customers.map((c) => ({
@@ -148,7 +147,6 @@ const ConfirmOrder = () => {
         mt="md"
       />
 
-      {/* ✅ Customer Info Form */}
       {["first_name", "last_name", "address", "contact_number", "social_handle"].map(
         (field) => (
           <TextInput
@@ -172,7 +170,6 @@ const ConfirmOrder = () => {
         )
       )}
 
-      {/* ✅ Order Summary */}
       <Card shadow="sm" padding="lg" radius="md" mt="lg" withBorder>
         <Text fw={700} size="lg" mb="sm">
           Order Summary
@@ -181,13 +178,7 @@ const ConfirmOrder = () => {
         {orderItems.length === 0 ? (
           <Text color="dimmed">No items in this order.</Text>
         ) : (
-          <Table
-            withColumnBorders
-            highlightOnHover
-            striped
-            stickyHeader
-            stickyHeaderOffset={60}
-          >
+          <Table withColumnBorders highlightOnHover striped>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Item</Table.Th>
@@ -214,16 +205,15 @@ const ConfirmOrder = () => {
         )}
       </Card>
 
-      {/* ✅ Confirm Order Button */}
       <Button fullWidth mt="md" onClick={handlePlaceOrder}>
         Place Order
       </Button>
 
-      {/* ✅ Invoice Preview Modal */}
       <InvoicePreview
         opened={invoiceModal}
         onClose={() => {
           setInvoiceModal(false);
+          fetchOrders(true); // 🟢 Force refresh store orders
           navigate("/orders");
         }}
         invoiceData={invoiceData}
