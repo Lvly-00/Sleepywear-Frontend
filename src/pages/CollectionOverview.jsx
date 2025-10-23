@@ -5,7 +5,6 @@ import {
   Table,
   Button,
   Group,
-  Modal,
   Text,
   Badge,
   Paper,
@@ -20,7 +19,6 @@ import { Icons } from "../components/Icons";
 export default function CollectionOverview() {
   const [collections, setCollections] = useState([]);
   const [filteredCollections, setFilteredCollections] = useState([]);
-  const [openedNew, setOpenedNew] = useState(false);
   const [openedEdit, setOpenedEdit] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [search, setSearch] = useState("");
@@ -30,21 +28,22 @@ export default function CollectionOverview() {
 
   const navigate = useNavigate();
 
+  const fetchCollections = async () => {
+    try {
+      const res = await api.get("/collections");
+      const sorted = res.data.sort((a, b) => {
+        if (a.status === "Active" && b.status !== "Active") return -1;
+        if (a.status !== "Active" && b.status === "Active") return 1;
+        return 0;
+      });
+      setCollections(sorted);
+      setFilteredCollections(sorted);
+    } catch (err) {
+      console.error("Error fetching collections:", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchCollections = async () => {
-      try {
-        const res = await api.get("/collections");
-        const sorted = res.data.sort((a, b) => {
-          if (a.status === "Active" && b.status !== "Active") return -1;
-          if (a.status !== "Active" && b.status === "Active") return 1;
-          return 0;
-        });
-        setCollections(sorted);
-        setFilteredCollections(sorted);
-      } catch (err) {
-        console.error("Error fetching collections:", err);
-      }
-    };
     fetchCollections();
   }, []);
 
@@ -58,28 +57,6 @@ export default function CollectionOverview() {
     }
   }, [search, collections]);
 
-
-  const fetchCollections = async () => {
-    try {
-      const response = await api.get("/collections");
-      setCollections(response.data);
-    } catch (error) {
-      console.error("Error fetching collections:", error);
-    }
-  };
-
-  // Example button
-  <Button onClick={() => setAddModalOpen(true)}>Add Collection</Button>;
-
-
-  const handleCollectionUpdated = (updatedCollection) => {
-    setCollections((prev) =>
-      prev.map((c) => (c.id === updatedCollection.id ? updatedCollection : c))
-    );
-    setFilteredCollections((prev) =>
-      prev.map((c) => (c.id === updatedCollection.id ? updatedCollection : c))
-    );
-  };
 
   const handleDelete = async () => {
     if (!collectionToDelete) return;
@@ -108,28 +85,12 @@ export default function CollectionOverview() {
         onAdd={() => setAddModalOpen(true)}
       />
 
-      <Paper
-        radius="md"
-        p="xl"
-        style={{
-          minHeight: "70vh",
-          marginBottom: "1rem",
-          boxSizing: "border-box",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
+      <Paper radius="md" p="xl" style={{ minHeight: "70vh", marginBottom: "1rem" }}>
         <ScrollArea scrollbarSize={8}>
-          <Table
-            highlightOnHover
-            withTableBorder={false}
-            styles={{
-              tr: { borderBottom: "1px solid #D8CBB8" },
-            }}
-          >
+          <Table highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th style={{ textAlign: "left" }}>Collection Name</Table.Th>
+                <Table.Th>Collection Name</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Release Date</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Qty</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Stock QTY</Table.Th>
@@ -152,10 +113,7 @@ export default function CollectionOverview() {
                   <Table.Tr
                     key={col.id}
                     onClick={() => navigate(`/collections/${col.id}/items`)}
-                    style={{
-                      cursor: "pointer",
-                      transition: "background-color 0.2s ease",
-                    }}
+                    style={{ cursor: "pointer" }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor = "#f8f9fa")
                     }
@@ -178,17 +136,13 @@ export default function CollectionOverview() {
                     <Table.Td style={{ textAlign: "center" }}>
                       ₱
                       {col.capital
-                        ? new Intl.NumberFormat("en-PH", {
-                          maximumFractionDigits: 0,
-                        }).format(Math.floor(col.capital))
+                        ? new Intl.NumberFormat("en-PH").format(Math.floor(col.capital))
                         : "0"}
                     </Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
                       ₱
                       {col.total_sales
-                        ? new Intl.NumberFormat("en-PH", {
-                          maximumFractionDigits: 0,
-                        }).format(Math.floor(col.total_sales))
+                        ? new Intl.NumberFormat("en-PH").format(Math.floor(col.total_sales))
                         : "0"}
                     </Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
@@ -201,21 +155,13 @@ export default function CollectionOverview() {
                           color: col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
                           width: "100px",
                           padding: "13px",
-                          textAlign: "center",
-                          justifyContent: "center",
-                          textTransform: "capitalize",
-                          fontWeight: "600",
-                          fontSize: "14px",
                           borderRadius: "13px",
                         }}
                       >
                         {col.status === "Active" ? "Active" : "Sold Out"}
                       </Badge>
                     </Table.Td>
-                    <Table.Td
-                      style={{ textAlign: "center" }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                    <Table.Td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
                       <Group gap={4} justify="center">
                         <Button
                           size="xs"
@@ -267,22 +213,14 @@ export default function CollectionOverview() {
         onSuccess={fetchCollections}
       />
 
-
       {/* Edit Collection Modal */}
       {selectedCollection && (
-        <Modal
+        <EditCollectionModal
           opened={openedEdit}
           onClose={() => setOpenedEdit(false)}
-          title="Edit Collection"
-          size="sm"
-          centered
-        >
-          <EditCollectionModal
-            collection={selectedCollection}
-            onCollectionUpdated={handleCollectionUpdated}
-            onClose={() => setOpenedEdit(false)}
-          />
-        </Modal>
+          collection={selectedCollection}
+          onCollectionUpdated={fetchCollections}
+        />
       )}
     </div>
   );

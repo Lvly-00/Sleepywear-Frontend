@@ -11,7 +11,7 @@ import {
 import api from "../api/axios";
 import { DateInput } from "@mantine/dates";
 
-function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
+function AddCollectionModal({ opened, onClose, onSuccess }) {
   const [form, setForm] = useState({
     name: "",
     release_date: "",
@@ -26,16 +26,8 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
 
   useEffect(() => {
     if (opened) {
-      setForm({
-        name: "",
-        release_date: "",
-        capital: 0,
-      });
-      setErrors({
-        name: "",
-        release_date: "",
-        capital: "",
-      });
+      setForm({ name: "", release_date: "", capital: 0 });
+      setErrors({ name: "", release_date: "", capital: "" });
     }
   }, [opened]);
 
@@ -76,7 +68,7 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
 
     try {
       const res = await api.post("/collections", form);
-      if (onCollectionAdded) onCollectionAdded(res.data);
+      if (onSuccess) await onSuccess(); // ✅ Trigger refresh from parent
       onClose();
     } catch (error) {
       console.error(error.response?.data || error.message);
@@ -86,13 +78,7 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
       <Modal.Overlay />
-      <Modal.Content
-        style={{
-          borderRadius: "16px",
-          padding: "20px",
-        }}
-      >
-        {/* Header */}
+      <Modal.Content style={{ borderRadius: "16px", padding: "20px" }}>
         <Modal.Header
           style={{
             display: "flex",
@@ -102,11 +88,7 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
         >
           <Modal.CloseButton
             size={35}
-            style={{
-              order: 0,
-              marginRight: "1rem",
-              color: "#AB8262",
-            }}
+            style={{ order: 0, marginRight: "1rem", color: "#AB8262" }}
           />
           <Modal.Title style={{ flex: 1 }}>
             <Text
@@ -115,7 +97,7 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
               style={{
                 width: "100%",
                 fontSize: "26px",
-                fontWeight: "600",
+                fontWeight: "700",
               }}
             >
               New Collection
@@ -124,16 +106,11 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
           <div style={{ width: 36 }} />
         </Modal.Header>
 
-        {/* Body */}
         <Modal.Body>
           <form onSubmit={handleSubmit}>
             <Stack spacing="sm">
               <TextInput
-                label={
-                  <span>
-                    Collection Number
-                  </span>
-                }
+                label={<span style={{ fontWeight: 400 }}>Collection Number</span>}
                 name="name"
                 value={form.name}
                 onChange={handleChange}
@@ -143,11 +120,7 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
               />
 
               <NumberInput
-                label={
-                  <span>
-                    Capital
-                  </span>
-                }
+                label={<span style={{ fontWeight: 400 }}>Capital</span>}
                 placeholder="Enter capital"
                 value={form.capital}
                 onChange={handleCapitalChange}
@@ -163,7 +136,7 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
               />
 
               <DateInput
-                label="Release Date"
+                label={<span style={{ fontWeight: 400 }}>Release Date</span>}
                 placeholder="mm/dd/yyyy"
                 name="release_date"
                 value={form.release_date ? new Date(form.release_date) : null}
@@ -175,24 +148,14 @@ function AddCollectionModal({ opened, onClose, onCollectionAdded }) {
                 error={errors.release_date}
                 required
                 valueFormat="MM/DD/YYYY"
-
-
               />
 
-              {/* Save button aligned to right */}
-              <Group
-                mt="lg"
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  width: "100%",
-                }}
-              >
+              <Group mt="lg" justify="flex-end">
                 <Button
                   color="#AB8262"
                   style={{
                     borderRadius: "15px",
-                    width: "110px",
+                    width: "90px",
                     fontSize: "16px",
                   }}
                   type="submit"
