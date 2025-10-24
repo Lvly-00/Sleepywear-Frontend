@@ -6,6 +6,8 @@ import "boxicons/css/boxicons.min.css";
 import MainLayout from "./layouts/Layout";
 import PrivateRoute from "./components/PrivateRoute";
 import SleepyLoader from "./components/SleepyLoader";
+import NotFound from "./pages/NotFound";
+
 
 // Lazy load pages
 const Login = lazy(() => import("./pages/Login"));
@@ -108,6 +110,8 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route path="*" element={<NotFound />} />
+
           </Route>
         </Routes>
       </Suspense>
