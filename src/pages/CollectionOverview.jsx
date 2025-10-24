@@ -54,7 +54,6 @@ export default function CollectionOverview() {
     }
   }, [search, collections]);
 
-  // ✅ Handle delete
   const handleDelete = async () => {
     if (!collectionToDelete) return;
     try {
@@ -67,7 +66,6 @@ export default function CollectionOverview() {
     }
   };
 
-  // ✅ Handle add success — instantly update store
   const handleAddSuccess = (newCollection) => {
     if (newCollection?.id) {
       addCollection(newCollection);
@@ -75,7 +73,6 @@ export default function CollectionOverview() {
     setAddModalOpen(false);
   };
 
-  // ✅ Handle edit success — instantly update store
   const handleEditSuccess = (updatedCollection) => {
     if (updatedCollection?.id) {
       updateCollection(updatedCollection);
