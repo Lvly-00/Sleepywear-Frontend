@@ -14,7 +14,7 @@ const links = [
 
 function SidebarNav() {
   const navigate = useNavigate();
-  const location = useLocation(); 
+  const location = useLocation();
 
   const handleLogout = async () => {
     try {
@@ -33,14 +33,17 @@ function SidebarNav() {
     <nav className={classes.navbar}>
       {/* Logo */}
       <Center className={classes.logoWrapper}>
-        <img src={AppLogo} alt="App Logo" className={classes.logo} />
+        <img src={AppLogo} alt="SLEEPYWEARS Logo" className={classes.logo} />
       </Center>
 
       {/* Main Links */}
       <div className={classes.navbarMain}>
         <Stack justify="center" gap={10}>
           {links.map(({ icon: Icon, label, path }) => {
-            const isActive = location.pathname === path;
+            const isActive =
+              location.pathname === path ||
+              (path === "/collections" && location.pathname.startsWith("/collections"));
+
             return (
               <NavLink
                 key={label}
@@ -52,6 +55,7 @@ function SidebarNav() {
               </NavLink>
             );
           })}
+
         </Stack>
       </div>
 

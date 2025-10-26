@@ -17,7 +17,7 @@ import { Icons } from "../components/Icons";
 import api from "../api/axios";
 import { useCollectionStore } from "../store/collectionStore";
 
-export default function CollectionOverview() {
+export default function Collection() {
   const navigate = useNavigate();
 
   const {

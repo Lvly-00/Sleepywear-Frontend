@@ -17,14 +17,14 @@ import EditItemModal from "../components/EditItemModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
 import { useItemStore } from "../store/itemStore";
-import { useCollectionStore } from "../store/collectionStore"; // ✅ import Zustand collection store
+import { useCollectionStore } from "../store/collectionStore";
 
-function Inventory() {
+function Item() {
   const { id } = useParams();
 
   const { collections, fetchCollections, updateCollection } = useCollectionStore();
-  const { items, fetchItems, addItem, updateItem, removeItem, loading } =
-    useItemStore();
+  const { items, fetchItems, addItem, updateItem, removeItem, loading } = useItemStore();
+
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -40,17 +40,44 @@ function Inventory() {
   }, [id, fetchItems]);
 
   const collection = collections.find((c) => String(c.id) === String(id));
-
   const collectionItems = items[id] || [];
 
+  // Sync collection totals and status
+  const syncCollectionTotals = () => {
+    if (!collection) return;
+    const totalQty = collectionItems.length;
+    const stockQty = collectionItems.filter(i => i.status === "Available").length;
+    const status = stockQty > 0 ? "Active" : "Sold Out";
+
+    if (
+      collection.qty !== totalQty ||
+      collection.stock_qty !== stockQty ||
+      collection.status !== status
+    ) {
+      const updatedCollection = {
+        ...collection,
+        qty: totalQty,
+        stock_qty: stockQty,
+        status,
+      };
+      updateCollection(updatedCollection);
+    }
+  };
+
+  // Handle adding a new item
   const handleItemAdded = (newItem) => {
     addItem(id, newItem);
+    setAddModal(false); // ✅ close the modal immediately
+    setTimeout(syncCollectionTotals, 100);
   };
 
+  // Handle updating an item
   const handleItemUpdated = (updatedItem) => {
     updateItem(id, updatedItem);
+    setTimeout(syncCollectionTotals, 100);
   };
 
+  // Handle deleting an item
   const handleDelete = async () => {
     if (!itemToDelete) return;
     try {
@@ -58,6 +85,7 @@ function Inventory() {
       removeItem(id, itemToDelete.id);
       setDeleteModalOpen(false);
       setItemToDelete(null);
+      setTimeout(syncCollectionTotals, 100);
     } catch (err) {
       console.error("Error deleting item:", err.response?.data || err.message);
     }
@@ -103,7 +131,6 @@ function Inventory() {
                 height: 500,
               }}
             >
-              {/* Image Section */}
               <Card.Section>
                 <div
                   style={{
@@ -134,7 +161,6 @@ function Inventory() {
                 </div>
               </Card.Section>
 
-              {/* Info Section */}
               <div style={{ flexGrow: 1, marginTop: 12 }}>
                 <Text fw={500} lineClamp={1}>
                   {item.name}{" "}
@@ -150,10 +176,10 @@ function Inventory() {
                 </Text>
 
                 <Badge
-                  color={item.status === "available" ? "green" : "red"}
+                  color={item.status === "Available" ? "green" : "red"}
                   mt="xs"
                 >
-                  {item.status === "available" ? "Available" : "Taken"}
+                  {item.status === "Available" ? "Available" : "Taken"}
                 </Badge>
 
                 <Text size="sm" mt="xs" lineClamp={3}>
@@ -161,7 +187,6 @@ function Inventory() {
                 </Text>
               </div>
 
-              {/* Actions */}
               <Group mt="md" spacing="xs">
                 <Button
                   size="xs"
@@ -193,7 +218,6 @@ function Inventory() {
         </SimpleGrid>
       )}
 
-      {/* Delete Item Modal */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
@@ -201,15 +225,13 @@ function Inventory() {
         onConfirm={handleDelete}
       />
 
-      {/* Add Item Modal */}
       <AddItemModal
         opened={addModal}
         onClose={() => setAddModal(false)}
         collectionId={id}
-        onItemAdded={handleItemAdded}
+        onItemAdded={handleItemAdded} // ✅ modal closes after adding
       />
 
-      {/* Edit Item Modal */}
       {selectedItem && (
         <EditItemModal
           opened={editModal}
@@ -222,4 +244,4 @@ function Inventory() {
   );
 }
 
-export default Inventory;
+export default Item;

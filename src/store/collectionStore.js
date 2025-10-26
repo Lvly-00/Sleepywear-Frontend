@@ -1,4 +1,3 @@
-// src/store/collectionStore.js
 import { create } from "zustand";
 import api from "../api/axios";
 
@@ -15,8 +14,9 @@ export const useCollectionStore = create((set, get) => ({
                 if (a.status !== "Active" && b.status === "Active") return 1;
                 return 0;
             });
+
             set({ collections: sorted });
-            get().checkAndUpdateStatus(sorted);
+            get().recalculateAndSyncStatus(sorted);
         } catch (err) {
             console.error("Error fetching collections:", err);
         } finally {
@@ -24,43 +24,53 @@ export const useCollectionStore = create((set, get) => ({
         }
     },
 
-    // ✅ Check and auto-update status based on stock_qty
-    checkAndUpdateStatus: async(collections) => {
+    recalculateAndSyncStatus: async(collections) => {
         for (const col of collections) {
-            let newStatus =
-                col.stock_qty <= 0 ? "Sold Out" : "Active";
+            try {
+                const itemsRes = await api.get(`/items?collection_id=${col.id}`);
+                const items = itemsRes.data;
 
-            if (col.status !== newStatus) {
-                try {
-                    await api.put(`/collections/${col.id}`, {...col, status: newStatus });
+                const totalQty = items.length;
+                const stockQty = items.filter(i => i.status === "Available").length;
+
+                let newStatus = stockQty <= 0 ? "Sold Out" : "Active";
+
+                if (
+                    col.status !== newStatus ||
+                    col.qty !== totalQty ||
+                    col.stock_qty !== stockQty
+                ) {
+                    const updatedCol = {
+                        ...col,
+                        status: newStatus,
+                        qty: totalQty,
+                        stock_qty: stockQty,
+                    };
+                    await api.put(`/collections/${col.id}`, updatedCol);
+
                     set((state) => ({
                         collections: state.collections.map((c) =>
-                            c.id === col.id ? {...c, status: newStatus } : c
+                            c.id === col.id ? updatedCol : c
                         ),
                     }));
-                } catch (err) {
-                    console.error(`Failed to update status for ${col.name}:`, err);
                 }
+            } catch (err) {
+                console.error(`Failed to recalc collection ${col.name}:`, err);
             }
         }
     },
 
     addCollection: (newCollection) =>
-        set((state) => ({
-            collections: [newCollection, ...state.collections],
-        })),
+        set((state) => ({ collections: [newCollection, ...state.collections] })),
 
-    updateCollection: (updatedCollection) => {
+    updateCollection: async(updatedCollection) => {
         set((state) => {
             const updatedCollections = state.collections.map((c) =>
                 c.id === updatedCollection.id ? {...c, ...updatedCollection } : c
             );
-
-            // ✅ Automatically recheck status after any update
-            get().checkAndUpdateStatus(updatedCollections);
-
             return { collections: updatedCollections };
         });
+        get().recalculateAndSyncStatus([updatedCollection]);
     },
 
     removeCollection: (id) =>

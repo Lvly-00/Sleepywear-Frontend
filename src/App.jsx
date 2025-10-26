@@ -16,9 +16,9 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Orders = lazy(() => import("./pages/Order"));
 const AddOrder = lazy(() => import("./pages/AddOrder"));
-const CollectionOverview = lazy(() => import("./pages/CollectionOverview"));
+const Collection = lazy(() => import("./pages/Collection"));
 const EditCollection = lazy(() => import("./pages/EditCollection"));
-const Inventory = lazy(() => import("./pages/Inventory"));
+const Item = lazy(() => import("./pages/Item"));
 const Settings = lazy(() => import("./pages/Settings"));
 const CustomerLogs = lazy(() => import("./pages/CustomerLogs"));
 const ConfirmOrder = lazy(() => import("./pages/ConfirmOrder"));
@@ -74,7 +74,7 @@ function App() {
               path="/collections"
               element={
                 <PrivateRoute>
-                  <CollectionOverview />
+                  <Collection />
                 </PrivateRoute>
               }
             />
@@ -90,7 +90,7 @@ function App() {
               path="/collections/:id/items"
               element={
                 <PrivateRoute>
-                  <Inventory />
+                  <Item />
                 </PrivateRoute>
               }
             />

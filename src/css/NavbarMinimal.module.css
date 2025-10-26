@@ -1,86 +1,108 @@
 .navbar {
-  width: 220px; /* wider like the image */
-  height: 100vh;
-  padding: 20px 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background-color: #1e2235; /* dark background */
+    width: 220px;
+    /* wider like the image */
+    height: 100vh;
+    padding: 20px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: #1e2235;
+    /* dark background */
 }
 
 .logoWrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
 }
 
 .navbarMain {
-  flex: 1;
-  margin-top: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+    flex: 1;
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
+
 /* Links with text like in the image */
+
 .link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 44px;
-  padding: 0 14px;
-  border-radius: 8px;
-  color: #c7c7c7;
-  text-decoration: none;
-  font-size: 20px;
-  font-weight: 500;
-  transition: background-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: 8px;
+    color: #c7c7c7;
+    text-decoration: none;
+    font-size: 20px;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
 }
+
 
 /* Active link with white background */
+
 .active {
-  background-color: #fff;
-  color: #1e2235;
-  font-weight: 600;
+    background-color: #fff;
+    color: #1e2235;
+    font-weight: 600;
 }
+
 
 /* Label stays on right side */
+
 .linkLabel {
-  margin-left: 5px;
-  color: inherit;
-  font-size: 16px;
+    margin-left: 5px;
+    color: inherit;
+    font-size: 16px;
 }
 
+
 /* Bottom links like account & logout */
+
 .navbarBottom {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .dropdown {
-  background-color: #1e2235 !important;
-  border: none !important;
-  margin-left: 90px;
-  padding: 6px 0;
-  border-radius: 6px;
+    background-color: #1e2235 !important;
+    border: none !important;
+    margin-left: 90px;
+    padding: 6px 0;
+    border-radius: 6px;
 }
 
 .dropdownItem {
-  color: #c7c7c7 !important;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+    color: #c7c7c7 !important;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 4px;
+    transition: background-color 0.2s;
 }
 
 .dropdownItem:hover {
-  background-color: rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.active:hover img {
+    filter: brightness(0) invert(1);
+}
+
+.link:hover img {
+    filter: brightness(0) invert(1);
+}
+
+.link img {
+    filter: none;
 }

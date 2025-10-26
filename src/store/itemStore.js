@@ -13,16 +13,13 @@ export const useItemStore = create((set, get) => ({
         try {
             const res = await api.get(`/items?collection_id=${collectionId}`);
             const sorted = res.data.sort((a, b) => {
-                if (a.status === "available" && b.status !== "available") return -1;
-                if (a.status !== "available" && b.status === "available") return 1;
+                if (a.status === "Available" && b.status !== "Available") return -1;
+                if (a.status !== "Available" && b.status === "Available") return 1;
                 return 0;
             });
 
             set((state) => ({
-                items: {
-                    ...state.items,
-                    [collectionId]: sorted,
-                },
+                items: {...state.items, [collectionId]: sorted },
             }));
         } catch (err) {
             console.error("Error fetching items:", err);
@@ -31,16 +28,11 @@ export const useItemStore = create((set, get) => ({
         }
     },
 
-    // Add new item instantly
     addItem: (collectionId, newItem) =>
         set((state) => ({
-            items: {
-                ...state.items,
-                [collectionId]: [newItem, ...(state.items[collectionId] || [])],
-            },
+            items: {...state.items, [collectionId]: [newItem, ...(state.items[collectionId] || [])] },
         })),
 
-    // Update item instantly
     updateItem: (collectionId, updatedItem) =>
         set((state) => ({
             items: {
@@ -51,14 +43,11 @@ export const useItemStore = create((set, get) => ({
             },
         })),
 
-    // Delete item instantly
     removeItem: (collectionId, itemId) =>
         set((state) => ({
             items: {
                 ...state.items,
-                [collectionId]: state.items[collectionId].filter(
-                    (item) => item.id !== itemId
-                ),
+                [collectionId]: state.items[collectionId].filter((item) => item.id !== itemId),
             },
         })),
 }));
