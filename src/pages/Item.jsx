@@ -67,7 +67,7 @@ function Item() {
   // Handle adding a new item
   const handleItemAdded = (newItem) => {
     addItem(id, newItem);
-    setAddModal(false); // ✅ close the modal immediately
+    setAddModal(false); 
     setTimeout(syncCollectionTotals, 100);
   };
 
@@ -179,7 +179,7 @@ function Item() {
                   color={item.status === "Available" ? "green" : "red"}
                   mt="xs"
                 >
-                  {item.status === "Available" ? "Available" : "Taken"}
+                  {item.status === "Available" ? "Available" : "Sold Out"}
                 </Badge>
 
                 <Text size="sm" mt="xs" lineClamp={3}>
@@ -229,7 +229,7 @@ function Item() {
         opened={addModal}
         onClose={() => setAddModal(false)}
         collectionId={id}
-        onItemAdded={handleItemAdded} // ✅ modal closes after adding
+        onItemAdded={handleItemAdded} 
       />
 
       {selectedItem && (

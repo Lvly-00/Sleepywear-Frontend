@@ -15,7 +15,7 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
 import SleepyLoader from "../components/SleepyLoader";
 import { Icons } from "../components/Icons";
-import { orderStore } from "../store/orderStore"; 
+import { orderStore } from "../store/orderStore";
 import api from "../api/axios";
 
 const Order = () => {
@@ -29,15 +29,23 @@ const Order = () => {
   const [orderToDelete, setOrderToDelete] = useState(null);
 
   useEffect(() => {
-    fetchOrders(); 
+    const fetchAndDebug = async () => {
+      await fetchOrders();
+      console.log("Orders from store:", orders);
+    };
+    fetchAndDebug();
   }, [fetchOrders]);
+
+  console.log("Orders from store:", orders);
+
+
+
 
   const handleDelete = (order) => {
     setOrderToDelete(order);
     setDeleteModalOpen(true);
   };
 
-  // 🔎 Search filter
   const filteredOrders = orders.filter((order) => {
     const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
     return fullName.includes(search.toLowerCase());
@@ -126,22 +134,24 @@ const Order = () => {
                           variant="filled"
                           style={{
                             backgroundColor:
-                              order.payment_status === "paid" ? "#A5BDAE" : "#D9D9D9",
+                              order.payment?.payment_status === "Paid" ? "#A5BDAE" : "#D9D9D9",
                             color:
-                              order.payment_status === "paid" ? "#FFFFFF" : "#7A7A7A",
+                              order.payment?.payment_status === "Paid" ? "#FFFFFF" : "#7A7A7A",
                             width: "100px",
                             textAlign: "center",
-                            fontWeight: "600",
+                            fontWeight: 600,
                             borderRadius: "13px",
                             textTransform: "capitalize",
                           }}
                         >
-                          {order.payment_status || "unpaid"}
+                          {order.payment?.payment_status?.toLowerCase() || "unpaid"}
                         </Badge>
                       </Table.Td>
+
+
                       <Table.Td style={{ textAlign: "center" }}>
                         <Group gap="4" justify="center">
-                          {order.payment_status !== "paid" && (
+                          {order.payment?.payment_status !== "Paid" && (
                             <Button
                               size="xs"
                               color="#276D58"
@@ -156,6 +166,7 @@ const Order = () => {
                               <Icons.AddPayment size={24} />
                             </Button>
                           )}
+
                           <Button
                             size="xs"
                             variant="subtle"
@@ -187,7 +198,7 @@ const Order = () => {
         </ScrollArea>
       </Paper>
 
-      {/* 🗑 Delete Confirmation */}
+      {/* Delete Confirmation */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
@@ -204,7 +215,7 @@ const Order = () => {
         }}
       />
 
-      {/* 💵 Add Payment */}
+      {/* Add Payment */}
       {addPaymentOpen && selectedOrder && (
         <AddPaymentModal
           opened={addPaymentOpen}
@@ -214,7 +225,7 @@ const Order = () => {
         />
       )}
 
-      {/* 🧾 Invoice Modal */}
+      {/* Invoice Modal */}
       <InvoicePreview
         opened={invoiceModal}
         onClose={() => setInvoiceModal(false)}

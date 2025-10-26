@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Select, Card, Image, Text, Button, Grid, Group, Paper } from "@mantine/core";
 import { IconChevronDown } from "@tabler/icons-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
 import PageHeader from "../components/PageHeader";
 
 const AddOrder = () => {
+  const navigate = useNavigate();
+  const { state: locationState } = useLocation();
+
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCollections();
@@ -18,18 +20,35 @@ const AddOrder = () => {
   const fetchCollections = async () => {
     try {
       const res = await api.get("/collections");
+      console.log("Collections from API:", res.data);
+
       const activeCollections = res.data
-        .filter((c) => c.status === "Active")
+        .filter((c) => c.status === "Active") // only active collections
         .map((c) => ({
           ...c,
-          items: c.items.filter((i) => i.status === "available"),
+          items: (c.items || [])
+            .filter((i) => i.status === "Available")
+            .map((i) => ({
+              ...i,
+              image_url: i.image_url || (i.image ? `${import.meta.env.VITE_API_URL}/storage/${i.image}` : null),
+
+
+              collection_id: c.id,
+            })),
         }))
-        .filter((c) => c.items.length > 0);
+        .filter((c) => c.items.length > 0); // only collections with available items
+
+      console.log("Active collections:", activeCollections);
       setCollections(activeCollections);
+
+      if (activeCollections.length > 0) {
+        setSelectedCollection(activeCollections[0].id.toString());
+      }
     } catch (err) {
       console.error("Error fetching collections:", err);
     }
   };
+
 
   const handleItemToggle = (item) => {
     if (selectedItems.some((i) => i.id === item.id)) {
@@ -54,6 +73,7 @@ const AddOrder = () => {
     });
   };
 
+  // Get items from selected collection
   const availableItems =
     collections.find((c) => c.id.toString() === selectedCollection)?.items || [];
 
@@ -68,19 +88,12 @@ const AddOrder = () => {
             style={{ width: "260px" }}
             rightSection={<IconChevronDown size={18} stroke={1.5} />}
             rightSectionWidth={36}
-            data={collections.map((c) => ({
-              value: c.id.toString(),
-              label: c.name,
-            }))}
+            data={collections.map((c) => ({ value: c.id.toString(), label: c.name }))}
             value={selectedCollection}
-            onChange={(val) => {
-              setSelectedCollection(val);
-              setSelectedItems([]);
-            }}
+            onChange={(val) => setSelectedCollection(val)}
           />
         </Group>
 
-        {/* Item Cards */}
         {selectedCollection && (
           <Grid gutter="md" mt="lg">
             {availableItems.map((item) => {
@@ -125,21 +138,16 @@ const AddOrder = () => {
                           height={100}
                           fit="contain"
                           radius="md"
-                          style={{ objectFit: "contain" }}
                         />
                       </div>
                     )}
 
                     <div style={{ textAlign: "center" }}>
                       <Text fw={600} color="#0D0F66">
-                        {item.item_code}
+                        {item.item_code || item.code}
                       </Text>
-                      <Text fw={500} mt={2}>
-                        {item.name}
-                      </Text>
-                      <Text size="sm" color="dimmed">
-                        ₱{item.price}
-                      </Text>
+                      <Text fw={500} mt={2}>{item.name}</Text>
+                      <Text size="sm" color="dimmed">₱{item.price}</Text>
                     </div>
                   </Card>
                 </Grid.Col>
@@ -148,23 +156,14 @@ const AddOrder = () => {
           </Grid>
         )}
 
-        {/* Floating Place Order Button */}
         {selectedItems.length > 0 && (
           <Group
             position="right"
-            style={{
-              position: "fixed",
-              bottom: 60,
-              right: 80,
-              zIndex: 10,
-            }}
+            style={{ position: "fixed", bottom: 60, right: 80, zIndex: 10 }}
           >
             <Button
               size="md"
-              style={{
-                borderRadius: "15px",
-                backgroundColor: "#AB8262",
-              }}
+              style={{ borderRadius: "15px", backgroundColor: "#AB8262" }}
               onClick={handlePlaceOrder}
             >
               Place Order ({selectedItems.length})

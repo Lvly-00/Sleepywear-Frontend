@@ -71,7 +71,7 @@ function AddCollectionModal({ opened, onClose }) {
 
     try {
       const res = await api.post("/collections", form);
-      addCollection(res.data); // ✅ instantly update Zustand
+      addCollection(res.data); 
       onClose();
     } catch (error) {
       console.error(error.response?.data || error.message);

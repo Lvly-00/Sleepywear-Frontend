@@ -3,6 +3,7 @@ import api from "../api/axios";
 
 export const useCollectionStore = create((set, get) => ({
     collections: [],
+    versions: {},
     loading: false,
 
     fetchCollections: async() => {
@@ -16,6 +17,8 @@ export const useCollectionStore = create((set, get) => ({
             });
 
             set({ collections: sorted });
+
+            // Recalculate only if needed
             get().recalculateAndSyncStatus(sorted);
         } catch (err) {
             console.error("Error fetching collections:", err);
@@ -26,6 +29,8 @@ export const useCollectionStore = create((set, get) => ({
 
     recalculateAndSyncStatus: async(collections) => {
         for (const col of collections) {
+            const lastVersion = get().versions[col.id] || 0;
+
             try {
                 const itemsRes = await api.get(`/items?collection_id=${col.id}`);
                 const items = itemsRes.data;
@@ -35,10 +40,12 @@ export const useCollectionStore = create((set, get) => ({
 
                 let newStatus = stockQty <= 0 ? "Sold Out" : "Active";
 
+                // Only update if something changed
                 if (
                     col.status !== newStatus ||
                     col.qty !== totalQty ||
-                    col.stock_qty !== stockQty
+                    col.stock_qty !== stockQty ||
+                    lastVersion === 0
                 ) {
                     const updatedCol = {
                         ...col,
@@ -46,12 +53,14 @@ export const useCollectionStore = create((set, get) => ({
                         qty: totalQty,
                         stock_qty: stockQty,
                     };
+
                     await api.put(`/collections/${col.id}`, updatedCol);
 
                     set((state) => ({
                         collections: state.collections.map((c) =>
                             c.id === col.id ? updatedCol : c
                         ),
+                        versions: {...state.versions, [col.id]: (state.versions[col.id] || 0) + 1 },
                     }));
                 }
             } catch (err) {
@@ -61,20 +70,33 @@ export const useCollectionStore = create((set, get) => ({
     },
 
     addCollection: (newCollection) =>
-        set((state) => ({ collections: [newCollection, ...state.collections] })),
+        set((state) => ({
+            collections: [newCollection, ...state.collections],
+            versions: {...state.versions, [newCollection.id]: 1 },
+        })),
 
     updateCollection: async(updatedCollection) => {
+        const currentVersion = get().versions[updatedCollection.id] || 0;
+
         set((state) => {
             const updatedCollections = state.collections.map((c) =>
                 c.id === updatedCollection.id ? {...c, ...updatedCollection } : c
             );
             return { collections: updatedCollections };
         });
-        get().recalculateAndSyncStatus([updatedCollection]);
+
+        // Recalc only if version changed
+        if (currentVersion === 0) {
+            get().recalculateAndSyncStatus([updatedCollection]);
+        }
     },
 
     removeCollection: (id) =>
-        set((state) => ({
-            collections: state.collections.filter((col) => col.id !== id),
-        })),
+        set((state) => {
+            const newCollections = state.collections.filter((col) => col.id !== id);
+            const {
+                [id]: _, ...newVersions
+            } = state.versions;
+            return { collections: newCollections, versions: newVersions };
+        }),
 }));

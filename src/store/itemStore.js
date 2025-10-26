@@ -3,11 +3,16 @@ import api from "../api/axios";
 
 export const useItemStore = create((set, get) => ({
     items: {},
+    versions: {},
     loading: false,
 
     fetchItems: async(collectionId) => {
         const existing = get().items[collectionId];
-        if (existing && existing.length > 0) return;
+        const currentVersion = get().versions[collectionId] || 0;
+
+        if (existing && existing.length > 0 && currentVersion === get().versions[collectionId]) {
+            return;
+        }
 
         set({ loading: true });
         try {
@@ -20,6 +25,7 @@ export const useItemStore = create((set, get) => ({
 
             set((state) => ({
                 items: {...state.items, [collectionId]: sorted },
+                versions: {...state.versions, [collectionId]: (state.versions[collectionId] || 0) + 1 },
             }));
         } catch (err) {
             console.error("Error fetching items:", err);
@@ -30,7 +36,11 @@ export const useItemStore = create((set, get) => ({
 
     addItem: (collectionId, newItem) =>
         set((state) => ({
-            items: {...state.items, [collectionId]: [newItem, ...(state.items[collectionId] || [])] },
+            items: {
+                ...state.items,
+                [collectionId]: [newItem, ...(state.items[collectionId] || [])],
+            },
+            versions: {...state.versions, [collectionId]: (state.versions[collectionId] || 0) + 1 },
         })),
 
     updateItem: (collectionId, updatedItem) =>
@@ -41,6 +51,7 @@ export const useItemStore = create((set, get) => ({
                     item.id === updatedItem.id ? updatedItem : item
                 ),
             },
+            versions: {...state.versions, [collectionId]: (state.versions[collectionId] || 0) + 1 },
         })),
 
     removeItem: (collectionId, itemId) =>
@@ -49,5 +60,6 @@ export const useItemStore = create((set, get) => ({
                 ...state.items,
                 [collectionId]: state.items[collectionId].filter((item) => item.id !== itemId),
             },
+            versions: {...state.versions, [collectionId]: (state.versions[collectionId] || 0) + 1 },
         })),
 }));

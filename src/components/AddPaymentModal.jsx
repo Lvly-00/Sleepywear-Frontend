@@ -51,17 +51,16 @@ const AddPaymentModal = ({ opened, onClose, order }) => {
       const formData = new FormData();
       formData.append("payment_method", payment.method);
       formData.append("total_paid", totalAmount);
-      formData.append("payment_status", "paid");
+      formData.append("payment_status", "Paid");
       formData.append("additional_fee", payment.additionalFee || 0);
 
-      if (payment.image) formData.append("payment_image", payment.image);
-
-      const res = await api.post(`/orders/${order.id}/payment`, formData, {
+      await api.post(`/orders/${order.id}/payment`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // 🟢 Update Zustand state instantly
-      updateOrder({ ...order, payment_status: "paid" });
+      // 🔹 REFRESH the order from backend
+      const updatedOrderRes = await api.get(`/orders/${order.id}`);
+      updateOrder(updatedOrderRes.data); // update Zustand store
 
       onClose();
     } catch (err) {
@@ -69,6 +68,7 @@ const AddPaymentModal = ({ opened, onClose, order }) => {
       alert("Failed to save payment. Check console for details.");
     }
   };
+
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
@@ -148,13 +148,7 @@ const AddPaymentModal = ({ opened, onClose, order }) => {
               error={errors.additionalFee}
             />
 
-            {/* <FileInput
-              label="Upload Payment Proof (optional)"
-              placeholder="Upload image"
-              accept="image/*"
-              value={payment.image}
-              onChange={(file) => setPayment({ ...payment, image: file })}
-            /> */}
+          
 
             <Group
               mt="lg"

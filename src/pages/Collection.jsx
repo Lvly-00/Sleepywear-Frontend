@@ -37,12 +37,10 @@ export default function Collection() {
   const [collectionToDelete, setCollectionToDelete] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
-  // ✅ Fetch collections only once (and keep them cached)
   useEffect(() => {
     if (collections.length === 0) fetchCollections();
   }, [collections.length, fetchCollections]);
 
-  // ✅ Real-time filter when typing or store updates
   useEffect(() => {
     if (!search.trim()) {
       setFilteredCollections(collections);

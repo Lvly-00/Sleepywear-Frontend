@@ -67,63 +67,60 @@ const ConfirmOrder = () => {
   };
 
   const handlePlaceOrder = async () => {
-    const newErrors = {};
+  const newErrors = {};
 
-    if (orderItems.length === 0) {
-      newErrors.orderItems = "Please add at least one item.";
+  if (orderItems.length === 0) {
+    newErrors.orderItems = "Please add at least one item.";
+  }
+
+  ["first_name", "last_name", "address", "contact_number", "social_handle"].forEach(
+    (field) => {
+      const value = form[field];
+      if (!value) {
+        newErrors[field] = `${field
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())} is required`;
+      }
+      if (field === "social_handle" && !/^https?:\/\/.+/.test(value)) {
+        newErrors[field] =
+          "Social handle must be a valid URL starting with http or https";
+      }
+    }
+  );
+
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+
+  try {
+    // Prepare customer payload
+    const customerPayload = { ...form };
+    let customerId = selectedCustomer;
+
+    if (selectedCustomer) {
+      await api.put(`/customers/${selectedCustomer}`, customerPayload);
+    } else {
+      const res = await api.post("/customers", customerPayload);
+      customerId = res.data.id;
     }
 
-    ["first_name", "last_name", "address", "contact_number", "social_handle"].forEach(
-      (field) => {
-        const value = form[field];
-        if (!value) {
-          newErrors[field] = `${field
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase())} is required`;
-        }
-        if (field === "social_handle" && !/^https?:\/\/.+/.test(value)) {
-          newErrors[field] =
-            "Social handle must be a valid URL starting with http or https";
-        }
-      }
-    );
+    const payload = {
+      customer: {
+        id: customerId,
+        ...customerPayload,
+      },
+      items: orderItems.map((item) => ({
+        item_id: item.id,
+        item_name: item.name,
+        price: item.price,
+        quantity: 1,
+      })),
+    };
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+    const response = await api.post("/orders", payload);
 
-    try {
-      const customerPayload = { ...form };
-      let customerId = selectedCustomer;
-
-      if (selectedCustomer) {
-        await api.put(`/customers/${selectedCustomer}`, customerPayload);
-      } else {
-        const res = await api.post("/customers", customerPayload);
-        customerId = res.data.id;
-      }
-
-      const payload = {
-        invoice: {
-          customer_name: `${form.first_name} ${form.last_name}`,
-          notes: null,
-        },
-        orders: [
-          {
-            ...form,
-            items: orderItems.map((item) => ({
-              item_id: item.id,
-              item_name: item.name,
-              price: item.price,
-              quantity: 1,
-            })),
-          },
-        ],
-      };
-
-      await api.post("/orders", payload);
-
+    if (response.status === 200 || response.status === 201) {
       const invoice = {
         customer_name: `${form.first_name} ${form.last_name}`,
         address: form.address,
@@ -139,11 +136,15 @@ const ConfirmOrder = () => {
 
       setInvoiceData(invoice);
       setInvoiceModal(true);
-    } catch (err) {
-      console.error(err);
-      alert("Order failed. Check console.");
+    } else {
+      alert("Unexpected response from server.");
     }
-  };
+  } catch (err) {
+    console.error("Order creation failed:", err.response?.data || err.message);
+    alert("Order failed: " + (err.response?.data?.message || "Check console."));
+  }
+};
+
 
   return (
     <div style={{ padding: 20 }}>
