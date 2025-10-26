@@ -18,7 +18,6 @@ export const useCollectionStore = create((set, get) => ({
 
             set({ collections: sorted });
 
-            // Recalculate only if needed
             get().recalculateAndSyncStatus(sorted);
         } catch (err) {
             console.error("Error fetching collections:", err);
@@ -40,7 +39,6 @@ export const useCollectionStore = create((set, get) => ({
 
                 let newStatus = stockQty <= 0 ? "Sold Out" : "Active";
 
-                // Only update if something changed
                 if (
                     col.status !== newStatus ||
                     col.qty !== totalQty ||

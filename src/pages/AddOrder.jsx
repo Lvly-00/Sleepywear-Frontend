@@ -14,40 +14,43 @@ const AddOrder = () => {
   const [selectedItems, setSelectedItems] = useState([]);
 
   useEffect(() => {
+    if (locationState?.selectedItems) {
+      setSelectedItems(locationState.selectedItems);
+    }
     fetchCollections();
   }, []);
 
   const fetchCollections = async () => {
     try {
       const res = await api.get("/collections");
-      console.log("Collections from API:", res.data);
-
       const activeCollections = res.data
-        .filter((c) => c.status === "Active") // only active collections
+        .filter((c) => c.status === "Active")
         .map((c) => ({
           ...c,
           items: (c.items || [])
-            .filter((i) => i.status === "Available")
+            .filter((i) => i.status === "Available" || selectedItems.some(si => si.id === i.id))
             .map((i) => ({
               ...i,
               image_url: i.image_url || (i.image ? `${import.meta.env.VITE_API_URL}/storage/${i.image}` : null),
-
-
               collection_id: c.id,
             })),
         }))
-        .filter((c) => c.items.length > 0); // only collections with available items
+        .filter((c) => c.items.length > 0);
 
-      console.log("Active collections:", activeCollections);
       setCollections(activeCollections);
 
-      if (activeCollections.length > 0) {
+      // Set selected collection to first collection of selected items
+      if (selectedItems.length > 0) {
+        const firstCollectionId = selectedItems[0].collection_id?.toString() || activeCollections[0]?.id.toString();
+        setSelectedCollection(firstCollectionId);
+      } else if (activeCollections.length > 0) {
         setSelectedCollection(activeCollections[0].id.toString());
       }
     } catch (err) {
       console.error("Error fetching collections:", err);
     }
   };
+
 
 
   const handleItemToggle = (item) => {
@@ -57,6 +60,7 @@ const AddOrder = () => {
       setSelectedItems((prev) => [...prev, item]);
     }
   };
+
 
   const handlePlaceOrder = () => {
     if (selectedItems.length === 0) {

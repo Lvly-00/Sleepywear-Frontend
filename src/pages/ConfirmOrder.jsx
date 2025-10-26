@@ -67,83 +67,83 @@ const ConfirmOrder = () => {
   };
 
   const handlePlaceOrder = async () => {
-  const newErrors = {};
+    const newErrors = {};
 
-  if (orderItems.length === 0) {
-    newErrors.orderItems = "Please add at least one item.";
-  }
-
-  ["first_name", "last_name", "address", "contact_number", "social_handle"].forEach(
-    (field) => {
-      const value = form[field];
-      if (!value) {
-        newErrors[field] = `${field
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase())} is required`;
-      }
-      if (field === "social_handle" && !/^https?:\/\/.+/.test(value)) {
-        newErrors[field] =
-          "Social handle must be a valid URL starting with http or https";
-      }
-    }
-  );
-
-  if (Object.keys(newErrors).length > 0) {
-    setErrors(newErrors);
-    return;
-  }
-
-  try {
-    // Prepare customer payload
-    const customerPayload = { ...form };
-    let customerId = selectedCustomer;
-
-    if (selectedCustomer) {
-      await api.put(`/customers/${selectedCustomer}`, customerPayload);
-    } else {
-      const res = await api.post("/customers", customerPayload);
-      customerId = res.data.id;
+    if (orderItems.length === 0) {
+      newErrors.orderItems = "Please add at least one item.";
     }
 
-    const payload = {
-      customer: {
-        id: customerId,
-        ...customerPayload,
-      },
-      items: orderItems.map((item) => ({
-        item_id: item.id,
-        item_name: item.name,
-        price: item.price,
-        quantity: 1,
-      })),
-    };
+    ["first_name", "last_name", "address", "contact_number", "social_handle"].forEach(
+      (field) => {
+        const value = form[field];
+        if (!value) {
+          newErrors[field] = `${field
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase())} is required`;
+        }
+        if (field === "social_handle" && !/^https?:\/\/.+/.test(value)) {
+          newErrors[field] =
+            "Social handle must be a valid URL starting with http or https";
+        }
+      }
+    );
 
-    const response = await api.post("/orders", payload);
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
-    if (response.status === 200 || response.status === 201) {
-      const invoice = {
-        customer_name: `${form.first_name} ${form.last_name}`,
-        address: form.address,
-        contact_number: form.contact_number,
-        social_handle: form.social_handle,
-        items: orderItems.map((i) => ({
-          item_name: i.name,
+    try {
+      // Prepare customer payload
+      const customerPayload = { ...form };
+      let customerId = selectedCustomer;
+
+      if (selectedCustomer) {
+        await api.put(`/customers/${selectedCustomer}`, customerPayload);
+      } else {
+        const res = await api.post("/customers", customerPayload);
+        customerId = res.data.id;
+      }
+
+      const payload = {
+        customer: {
+          id: customerId,
+          ...customerPayload,
+        },
+        items: orderItems.map((item) => ({
+          item_id: item.id,
+          item_name: item.name,
+          price: item.price,
           quantity: 1,
-          price: i.price,
         })),
-        total,
       };
 
-      setInvoiceData(invoice);
-      setInvoiceModal(true);
-    } else {
-      alert("Unexpected response from server.");
+      const response = await api.post("/orders", payload);
+
+      if (response.status === 200 || response.status === 201) {
+        const invoice = {
+          customer_name: `${form.first_name} ${form.last_name}`,
+          address: form.address,
+          contact_number: form.contact_number,
+          social_handle: form.social_handle,
+          items: orderItems.map((i) => ({
+            item_name: i.name,
+            quantity: 1,
+            price: i.price,
+          })),
+          total,
+        };
+
+        setInvoiceData(invoice);
+        setInvoiceModal(true);
+      } else {
+        alert("Unexpected response from server.");
+      }
+    } catch (err) {
+      console.error("Order creation failed:", err.response?.data || err.message);
+      alert("Order failed: " + (err.response?.data?.message || "Check console."));
     }
-  } catch (err) {
-    console.error("Order creation failed:", err.response?.data || err.message);
-    alert("Order failed: " + (err.response?.data?.message || "Check console."));
-  }
-};
+  };
 
 
   return (
@@ -184,10 +184,17 @@ const ConfirmOrder = () => {
                   width: "80px",
                   height: "28px",
                 }}
-                onClick={() => navigate("/add-order")}
+                onClick={() => {
+                  navigate("/add-order", {
+                    state: {
+                      selectedItems: orderItems, // pass current items
+                    },
+                  });
+                }}
               >
                 Edit
               </Button>
+
             </Group>
 
             <Divider mb="sm" color="#C1A287" />

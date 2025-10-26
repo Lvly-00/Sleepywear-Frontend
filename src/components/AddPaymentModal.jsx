@@ -50,7 +50,7 @@ const AddPaymentModal = ({ opened, onClose, order }) => {
 
       const formData = new FormData();
       formData.append("payment_method", payment.method);
-      formData.append("total_paid", totalAmount);
+      formData.append("total", totalAmount);
       formData.append("payment_status", "Paid");
       formData.append("additional_fee", payment.additionalFee || 0);
 

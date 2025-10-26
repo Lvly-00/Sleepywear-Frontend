@@ -130,7 +130,7 @@ const Order = () => {
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
                         <Badge
-                          size="md"
+                          size="lg"
                           variant="filled"
                           style={{
                             backgroundColor:

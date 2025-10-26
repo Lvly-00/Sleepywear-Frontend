@@ -43,8 +43,10 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
       items,
     };
 
+    console.log("Raw invoiceData from API:", invoiceData);
+    console.log("Normalized invoice for display:", normalizedInvoice);
+
     setInvoice(normalizedInvoice);
-    console.log("Invoice state set:", normalizedInvoice);
   }, [invoiceData]);
 
 
@@ -66,9 +68,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
     const contentWidth = invoiceRef.current.scrollWidth;
     const contentHeight = invoiceRef.current.scrollHeight;
     const dynamicScale =
-      contentHeight > 2000
-        ? Math.max(1.5, 2.5 - contentHeight / 4000)
-        : 2;
+      contentHeight > 2000 ? Math.max(1.5, 2.5 - contentHeight / 4000) : 2;
 
     const canvas = await html2canvas(invoiceRef.current, {
       scale: dynamicScale,
@@ -88,7 +88,6 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
     link.href = image;
     link.click();
   };
-
 
   return (
     <Modal
@@ -120,7 +119,6 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
           fontFamily: "Fredoka, sans-serif",
         }}
       >
-        {/* Close button */}
         <div style={{ display: "flex", alignItems: "center" }}>
           <Modal.CloseButton
             size={35}
@@ -132,7 +130,6 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
           />
         </div>
 
-        {/* Download button */}
         <div style={{ display: "flex", alignItems: "center" }}>
           <Button
             size="md"
@@ -166,7 +163,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
           fontFamily: "Fredoka, sans-serif",
         }}
       >
-        <div ref={invoiceRef} style={{ padding: "1rem", fontFamily: "Fredoka, sans-serif" }}>
+        <div ref={invoiceRef} style={{ padding: "1rem" }}>
           <Group justify="center" mb="xs">
             <Image src={BrownLogo} alt="SleepyWears Logo" maw={300} />
           </Group>
@@ -178,9 +175,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
             mt="md"
             mb="xs"
             color="#AB8262"
-            style={{
-              fontSize: "20px",
-            }}
+            style={{ fontSize: "20px" }}
           >
             Billed To :
           </Text>
@@ -191,7 +186,6 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
               display: "grid",
               gridTemplateColumns: "200px 1fr",
               rowGap: "4px",
-              fontFamily: "Fredoka, sans-serif",
             }}
           >
             <Text fw={500}>Customer Name:</Text>
@@ -203,52 +197,42 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
             <Text fw={500}>Contact No:</Text>
             <Text>{invoice.contact_number || "Not provided"}</Text>
 
-
             <Text fw={500}>Social Media:</Text>
             <Text
-              sx={{
+              style={{
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                whiteSpace: "nowrap", 
-                wordBreak: "break-word", 
-                maxWidth: "100%", 
+                whiteSpace: "nowrap",
+                wordBreak: "break-word",
               }}
-              title={invoice.social_handle} >
+              title={invoice.social_handle}
+            >
               {invoice.social_handle || "Not provided"}
             </Text>
-
-
           </div>
 
           <Divider mb="md" mt="md" color="#C1A287" />
-
 
           <Text
             fw={500}
             mt="md"
             mb="xs"
             color="#AB8262"
-            style={{
-              fontSize: "20px",
-            }}
+            style={{ fontSize: "20px" }}
           >
             Clothes :
           </Text>
           <div style={{ paddingLeft: "1.5rem", marginRight: "1.5rem", marginTop: ".5rem" }}>
-
             <Table
               stickyHeader
               stickyHeaderOffset={0}
               style={{
-                fontFamily: "Fredoka, sans-serif",
                 borderCollapse: "separate",
-                borderSpacing: "0 8px", 
+                borderSpacing: "0 8px",
                 width: "100%",
               }}
-              highlightOnHover={false}
             >
               <Table.Tbody>
-                {/* Item rows */}
                 {invoice.items.map((item, idx) => (
                   <Table.Tr key={idx} style={{ border: "none" }}>
                     <Table.Td colSpan={3} style={{ border: "none", padding: 0 }}>
@@ -259,15 +243,12 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                           padding: "8px 12px",
                           display: "grid",
                           gridTemplateColumns: "1fr 2fr 1fr",
-                          alignItems: "center", 
+                          alignItems: "center",
                         }}
                       >
-                        
                         <span style={{ textAlign: "left" }}>{item.item?.code || "-"}</span>
-
                         <span style={{ textAlign: "left" }}>{item.item_name}</span>
-
-                        <span style={{ textAlign: "right", display: "block" }}>
+                        <span style={{ textAlign: "right" }}>
                           ₱ {Math.round(Number(item.price)).toLocaleString()}
                         </span>
                       </div>
@@ -275,8 +256,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                   </Table.Tr>
                 ))}
 
-                {/* Additional Fee row with background */}
-                {Number(invoice.total_paid) > Number(invoice.total) && (
+                {Number(invoice.payment?.additional_fee ?? 0) > 0 && (
                   <Table.Tr style={{ border: "none" }}>
                     <Table.Td colSpan={3} style={{ border: "none", padding: 0 }}>
                       <div
@@ -292,16 +272,14 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                         <span style={{ textAlign: "left" }}>Additional Fee</span>
                         <span></span>
                         <span style={{ textAlign: "right" }}>
-                          ₱ {(Number(invoice.total_paid) - Number(invoice.total)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          ₱ {Number(invoice.payment?.additional_fee ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </span>
-
-
                       </div>
                     </Table.Td>
                   </Table.Tr>
                 )}
 
-                {/* Total row (no background) */}
+
                 <Table.Tr style={{ border: "none" }}>
                   <Table.Td
                     style={{ border: "none", padding: "8px 12px", fontSize: "23px", color: "#9B521C" }}
@@ -314,25 +292,16 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                     style={{ border: "none", padding: "8px 12px", fontSize: "23px", textAlign: "right" }}
                     fw={600}
                   >
-                    ₱ {Number(invoice.total_paid || invoice.total).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    ₱ {Number(invoice.total + (invoice.payment?.additional_fee || 0)).toLocaleString()}
                   </Table.Td>
                 </Table.Tr>
               </Table.Tbody>
             </Table>
-
-
           </div>
-
 
           <Divider my="md" />
 
-          <Text
-            fw={500}
-            mt="md"
-            mb="xs"
-            color="#AB8262"
-            style={{ fontSize: "20px" }}
-          >
+          <Text fw={500} mt="md" mb="xs" color="#AB8262" style={{ fontSize: "20px" }}>
             Payment Details:
           </Text>
 
@@ -342,22 +311,21 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
               display: "grid",
               gridTemplateColumns: "200px 1fr",
               rowGap: "4px",
-              fontFamily: "Fredoka, sans-serif",
               marginTop: ".5rem",
             }}
           >
-            {invoice.payment_status?.toLowerCase() === "paid" ? (
+            {invoice.payment?.payment_status?.toLowerCase() === "paid" ? (
               <>
                 <Text fw={500}>Mode of Payment:</Text>
-                <Text>{invoice.payment_method || "Not provided"}</Text>
+                <Text>{invoice.payment?.payment_method || "Not provided"}</Text>
 
                 <Text fw={500}>Status:</Text>
-                <Text>{invoice.payment_status}</Text>
+                <Text>{invoice.payment?.payment_status || "Not provided"}</Text>
 
                 <Text fw={500}>Date:</Text>
                 <Text>
-                  {invoice.payment_date
-                    ? new Date(invoice.payment_date).toLocaleString("en-US", {
+                  {invoice.payment?.payment_date
+                    ? new Date(invoice.payment.payment_date).toLocaleString("en-US", {
                       year: "numeric",
                       month: "long",
                       day: "numeric",
@@ -371,14 +339,12 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                 <Text>09457409766 - Alyanna Marie Angeles</Text>
 
                 <Text fw={500}>Shopee Checkout :</Text>
-                <Text>
-                  https://ph.shp.ee/V6guXb
-                </Text>
+                <Text>https://ph.shp.ee/V6guXb</Text>
               </>
             )}
           </div>
-        </div>
 
+        </div>
       </Modal.Body>
     </Modal>
   );
