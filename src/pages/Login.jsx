@@ -14,7 +14,6 @@ import api from "../api/axios";
 import SubmitButton from "../components/SubmitButton";
 import CryptoJS from "crypto-js";
 
-// ✅ Derive unique per-device encryption key
 function getDeviceKey() {
   const fingerprint = navigator.userAgent + navigator.language + window.location.hostname;
   return CryptoJS.SHA256(fingerprint).toString();
@@ -149,7 +148,6 @@ function Login() {
     }
   };
 
-  // ✅ Same design preserved
   return (
     <div
       style={{

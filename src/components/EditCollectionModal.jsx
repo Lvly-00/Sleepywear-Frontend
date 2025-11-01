@@ -16,7 +16,7 @@ export default function EditCollectionModal({
   opened,
   onClose,
   collection,
-  onCollectionUpdated, // ✅ ensure this callback is called after edit
+  onCollectionUpdated,
 }) {
   const [form, setForm] = useState({
     name: "",

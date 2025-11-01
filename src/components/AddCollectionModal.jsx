@@ -71,10 +71,21 @@ function AddCollectionModal({ opened, onClose }) {
 
     try {
       const res = await api.post("/collections", form);
-      addCollection(res.data); 
+      addCollection(res.data);
       onClose();
     } catch (error) {
-      console.error(error.response?.data || error.message);
+      if (error.response && error.response.status === 422) {
+        // Laravel validation error format: { message, errors: { field: [msg] } }
+        const validationErrors = error.response.data.errors || {};
+        setErrors((prev) => ({
+          ...prev,
+          name: validationErrors.name ? validationErrors.name[0] : "",
+          release_date: validationErrors.release_date ? validationErrors.release_date[0] : "",
+          capital: validationErrors.capital ? validationErrors.capital[0] : "",
+        }));
+      } else {
+        console.error(error.response?.data || error.message);
+      }
     }
   };
 

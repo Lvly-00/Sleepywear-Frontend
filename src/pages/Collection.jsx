@@ -15,19 +15,12 @@ import EditCollectionModal from "../components/EditCollectionModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
 import api from "../api/axios";
-import { useCollectionStore } from "../store/collectionStore";
 
 export default function Collection() {
   const navigate = useNavigate();
 
-  const {
-    collections,
-    fetchCollections,
-    addCollection,
-    updateCollection,
-    removeCollection,
-    loading,
-  } = useCollectionStore();
+  const [collections, setCollections] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const [filteredCollections, setFilteredCollections] = useState([]);
   const [search, setSearch] = useState("");
@@ -37,9 +30,28 @@ export default function Collection() {
   const [collectionToDelete, setCollectionToDelete] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
+  // Fetch collections from backend
+  const fetchCollections = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/collections");
+      // Sort Active first
+      const sorted = res.data.sort((a, b) => {
+        if (a.status === "Active" && b.status !== "Active") return -1;
+        if (a.status !== "Active" && b.status === "Active") return 1;
+        return 0;
+      });
+      setCollections(sorted);
+    } catch (err) {
+      console.error("Error fetching collections:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (collections.length === 0) fetchCollections();
-  }, [collections.length, fetchCollections]);
+    fetchCollections();
+  }, []);
 
   useEffect(() => {
     if (!search.trim()) {
@@ -47,36 +59,38 @@ export default function Collection() {
     } else {
       const lower = search.toLowerCase();
       setFilteredCollections(
-        collections.filter((col) => col?.name?.toLowerCase().includes(lower))
+        collections.filter((col) =>
+          col?.name?.toLowerCase().includes(lower)
+        )
       );
     }
   }, [search, collections]);
 
+  // Delete handler
   const handleDelete = async () => {
     if (!collectionToDelete) return;
     try {
       await api.delete(`/collections/${collectionToDelete.id}`);
-      removeCollection(collectionToDelete.id);
       setDeleteModalOpen(false);
       setCollectionToDelete(null);
+      // Refetch to get fresh data
+      await fetchCollections();
     } catch (err) {
       console.error("Error deleting collection:", err);
     }
   };
 
-  const handleAddSuccess = (newCollection) => {
-    if (newCollection?.id) {
-      addCollection(newCollection);
-    }
+  // After successful add, refetch collections
+  const handleAddSuccess = async (newCollection) => {
     setAddModalOpen(false);
+    await fetchCollections();
   };
 
-  const handleEditSuccess = (updatedCollection) => {
-    if (updatedCollection?.id) {
-      updateCollection(updatedCollection);
-    }
+  // After successful edit, refetch collections
+  const handleEditSuccess = async (updatedCollection) => {
     setOpenedEdit(false);
     setSelectedCollection(null);
+    await fetchCollections();
   };
 
   return (
@@ -125,12 +139,8 @@ export default function Collection() {
                     key={col.id}
                     onClick={() => navigate(`/collections/${col.id}/items`)}
                     style={{ cursor: "pointer" }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
                     <Table.Td>{col.name || "—"}</Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
@@ -145,24 +155,17 @@ export default function Collection() {
                     <Table.Td style={{ textAlign: "center" }}>{col.qty ?? 0}</Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>{col.stock_qty ?? 0}</Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
-                      ₱
-                      {col.capital
-                        ? new Intl.NumberFormat("en-PH").format(Math.floor(col.capital))
-                        : "0"}
+                      ₱{col.capital ? new Intl.NumberFormat("en-PH").format(Math.floor(col.capital)) : "0"}
                     </Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
-                      ₱
-                      {col.total_sales
-                        ? new Intl.NumberFormat("en-PH").format(Math.floor(col.total_sales))
-                        : "0"}
+                      ₱{col.total_sales ? new Intl.NumberFormat("en-PH").format(Math.floor(col.total_sales)) : "0"}
                     </Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
                       <Badge
                         size="md"
                         variant="filled"
                         style={{
-                          backgroundColor:
-                            col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
+                          backgroundColor: col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
                           color: col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
                           width: "100px",
                           padding: "13px",
