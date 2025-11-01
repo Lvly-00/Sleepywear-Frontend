@@ -16,14 +16,17 @@ import AddItemModal from "../components/AddItemModal";
 import EditItemModal from "../components/EditItemModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
-import { useItemStore } from "../store/itemStore";
-import { useCollectionStore } from "../store/collectionStore";
 
 function Item() {
   const { id } = useParams();
 
-  const { collections, fetchCollections, updateCollection } = useCollectionStore();
-  const { items, fetchItems, addItem, updateItem, removeItem, loading } = useItemStore();
+  // Collections state
+  const [collections, setCollections] = useState([]);
+  const [loadingCollections, setLoadingCollections] = useState(false);
+
+  // Items state
+  const [items, setItems] = useState([]);
+  const [loadingItems, setLoadingItems] = useState(false);
 
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
@@ -31,22 +34,54 @@ function Item() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  const [addErrors, setAddErrors] = useState({});
+  const [editErrors, setEditErrors] = useState({});
+
+  // Fetch collections
+  const fetchCollections = async () => {
+    setLoadingCollections(true);
+    try {
+      const res = await api.get("/collections");
+      setCollections(res.data);
+    } catch (error) {
+      console.error("Error fetching collections:", error);
+    } finally {
+      setLoadingCollections(false);
+    }
+  };
+
+  // Fetch items by collection_id query parameter
+  const fetchItems = async (collectionId) => {
+    setLoadingItems(true);
+    try {
+      const res = await api.get("/items", {
+        params: { collection_id: collectionId },
+      });
+      setItems(res.data);
+      console.log("Fetched items:", res.data);
+    } catch (error) {
+      console.error("Error fetching items:", error);
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
   useEffect(() => {
     fetchCollections();
-  }, [fetchCollections]);
+  }, []);
 
   useEffect(() => {
-    fetchItems(id);
-  }, [id, fetchItems]);
+    if (id) fetchItems(id);
+  }, [id]);
 
   const collection = collections.find((c) => String(c.id) === String(id));
-  const collectionItems = items[id] || [];
+  const collectionItems = items;
 
-  // Sync collection totals and status
-  const syncCollectionTotals = () => {
+  // Sync collection totals by updating backend directly (optional)
+  const syncCollectionTotals = async () => {
     if (!collection) return;
     const totalQty = collectionItems.length;
-    const stockQty = collectionItems.filter(i => i.status === "Available").length;
+    const stockQty = collectionItems.filter((i) => i.status === "Available").length;
     const status = stockQty > 0 ? "Active" : "Sold Out";
 
     if (
@@ -54,38 +89,51 @@ function Item() {
       collection.stock_qty !== stockQty ||
       collection.status !== status
     ) {
-      const updatedCollection = {
-        ...collection,
-        qty: totalQty,
-        stock_qty: stockQty,
-        status,
-      };
-      updateCollection(updatedCollection);
+      try {
+        await api.put(`/collections/${collection.id}`, {
+          ...collection,
+          qty: totalQty,
+          stock_qty: stockQty,
+          status,
+        });
+        // Refetch collections after update
+        fetchCollections();
+      } catch (err) {
+        console.error("Error syncing collection totals:", err.response?.data || err.message);
+      }
     }
   };
 
-  // Handle adding a new item
-  const handleItemAdded = (newItem) => {
-    addItem(id, newItem);
-    setAddModal(false); 
+  const handleItemAdded = (newItemData) => {
+    setAddErrors({});
+    // Optimistically add item
+    setItems((prev) => [...prev, newItemData]);
+    setAddModal(false);
+    setTimeout(syncCollectionTotals, 100);
+    fetchItems(id); // Fetch fresh items just in case
+  };
+
+  const handleItemUpdated = (updatedItemData) => {
+    console.log("Item updated:", updatedItemData);
+    setEditErrors({});
+    setEditModal(false);
+    setSelectedItem(null);
+
+    fetchItems(id).then(() => {
+      console.log("Items refreshed after edit");
+    });
     setTimeout(syncCollectionTotals, 100);
   };
 
-  // Handle updating an item
-  const handleItemUpdated = (updatedItem) => {
-    updateItem(id, updatedItem);
-    setTimeout(syncCollectionTotals, 100);
-  };
-
-  // Handle deleting an item
   const handleDelete = async () => {
     if (!itemToDelete) return;
     try {
       await api.delete(`/items/${itemToDelete.id}`);
-      removeItem(id, itemToDelete.id);
+      setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
       setDeleteModalOpen(false);
       setItemToDelete(null);
       setTimeout(syncCollectionTotals, 100);
+      fetchItems(id);
     } catch (err) {
       console.error("Error deleting item:", err.response?.data || err.message);
     }
@@ -97,10 +145,13 @@ function Item() {
         title={collection ? collection.name : "Collection"}
         showBack
         addLabel="Add Item"
-        onAdd={() => setAddModal(true)}
+        onAdd={() => {
+          setAddErrors({});
+          setAddModal(true);
+        }}
       />
 
-      {loading && collectionItems.length === 0 ? (
+      {(loadingCollections || loadingItems) ? (
         <Center py="lg">
           <Text>Loading items...</Text>
         </Center>
@@ -175,10 +226,7 @@ function Item() {
                   Price: ₱{Number(item.price).toFixed(2)}
                 </Text>
 
-                <Badge
-                  color={item.status === "Available" ? "green" : "red"}
-                  mt="xs"
-                >
+                <Badge color={item.status === "Available" ? "green" : "red"} mt="xs">
                   {item.status === "Available" ? "Available" : "Sold Out"}
                 </Badge>
 
@@ -195,6 +243,7 @@ function Item() {
                   p={3}
                   onClick={() => {
                     setSelectedItem(item);
+                    setEditErrors({});
                     setEditModal(true);
                   }}
                 >
@@ -229,7 +278,7 @@ function Item() {
         opened={addModal}
         onClose={() => setAddModal(false)}
         collectionId={id}
-        onItemAdded={handleItemAdded} 
+        onItemAdded={handleItemAdded}
       />
 
       {selectedItem && (
@@ -238,6 +287,7 @@ function Item() {
           onClose={() => setEditModal(false)}
           item={selectedItem}
           onItemUpdated={handleItemUpdated}
+          errors={editErrors}
         />
       )}
     </Stack>

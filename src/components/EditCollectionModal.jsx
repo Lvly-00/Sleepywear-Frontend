@@ -1,119 +1,103 @@
 import React, { useState, useEffect } from "react";
 import {
-  Stack,
-  TextInput,
-  Button,
   Modal,
   Text,
-  Group,
+  TextInput,
   NumberInput,
+  Button,
+  Group,
+  Loader,
+  Center,
 } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
 import api from "../api/axios";
-import { useCollectionStore } from "../store/collectionStore";
 
-export default function EditCollectionModal({
-  opened,
-  onClose,
-  collection,
-  onCollectionUpdated,
-}) {
-  const [form, setForm] = useState({
-    name: "",
-    release_date: "",
-    capital: "",
-  });
-
-  const [errors, setErrors] = useState({
-    name: "",
-    release_date: "",
-    capital: "",
-  });
-
-  const { updateCollection } = useCollectionStore();
+export default function EditItemModal({ opened, onClose, item, onItemUpdated }) {
+  const [form, setForm] = useState({ name: "", price: 0 });
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({ name: "", price: "", file: "" });
 
   useEffect(() => {
-    if (collection && opened) {
-      setForm({
-        name: collection.name || "",
-        release_date: collection.release_date
-          ? new Date(collection.release_date)
-          : null,
-        capital: collection.capital ?? "",
-      });
-      setErrors({ name: "", release_date: "", capital: "" });
+    if (item && opened) {
+      setForm({ name: item.name || "", price: item.price || 0 });
+      setPreview(item.image_url || null);
+      setFile(null);
+      setErrors({ name: "", price: "", file: "" });
+      setLoading(false);
+      setIsSubmitting(false);
+    } else {
+      setLoading(true);
     }
-  }, [collection, opened]);
+  }, [item, opened]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const handleCapitalChange = (value) => {
-    if (value !== undefined) {
-      setForm((prev) => ({ ...prev, capital: value }));
-      setErrors((prev) => ({ ...prev, capital: "" }));
+  const handleFileChange = (e) => {
+    const selected = e.target.files[0];
+    if (selected) {
+      setFile(selected);
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+      setPreview(URL.createObjectURL(selected));
+      setErrors((prev) => ({ ...prev, file: "" }));
     }
-  };
-
-  const handleDateChange = (value) => {
-    setForm((prev) => ({ ...prev, release_date: value }));
-    setErrors((prev) => ({ ...prev, release_date: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({ name: "", price: "", file: "" });
 
-    let valid = true;
-    const newErrors = { name: "", release_date: "", capital: "" };
+    let hasError = false;
 
     if (!form.name.trim()) {
-      newErrors.name = "Collection name is required";
-      valid = false;
-    }
-    if (!form.release_date) {
-      newErrors.release_date = "Release date is required";
-      valid = false;
-    }
-    if (form.capital === "" || form.capital === null || form.capital < 0) {
-      newErrors.capital = "Capital must be a non-negative number";
-      valid = false;
+      setErrors((prev) => ({ ...prev, name: "Item name is required." }));
+      hasError = true;
     }
 
-    if (!valid) {
-      setErrors(newErrors);
-      return;
+    if (isNaN(form.price) || form.price < 0) {
+      setErrors((prev) => ({ ...prev, price: "Price must be ≥ 0." }));
+      hasError = true;
     }
+
+    if (hasError) return;
+
+    setIsSubmitting(true);
 
     try {
-      const payload = {
-        ...form,
-        capital: parseFloat(form.capital),
-        release_date: form.release_date
-          ? new Date(form.release_date).toISOString().split("T")[0]
-          : null,
-      };
+      const data = new FormData();
+      data.append("name", form.name.trim());
+      data.append("price", form.price);
+      if (file) data.append("image", file);
 
-      const res = await api.put(`/collections/${collection.id}`, payload);
+      const res = await api.post(`/items/${item.id}?_method=PUT`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      // ✅ Update Zustand store instantly
-      updateCollection(res.data);
-
-      // ✅ Also trigger parent callback
-      if (onCollectionUpdated) onCollectionUpdated(res.data);
-
+      onItemUpdated(res.data);
       onClose();
-    } catch (error) {
-      console.error(error.response?.data || error.message);
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      setErrors((prev) => ({
+        ...prev,
+        name: "Failed to update item. Try again.",
+      }));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
       <Modal.Overlay />
-      <Modal.Content style={{ borderRadius: "16px", padding: "20px" }}>
+      <Modal.Content
+        style={{
+          borderRadius: "20px",
+          padding: "10px",
+          margin: "auto",
+        }}
+      >
+        {/* Header */}
         <Modal.Header
           style={{
             display: "flex",
@@ -135,68 +119,148 @@ export default function EditCollectionModal({
               color="black"
               style={{ width: "100%", fontSize: "26px", fontWeight: "700" }}
             >
-              Edit Collection
+              Edit Item
             </Text>
           </Modal.Title>
           <div style={{ width: 36 }} />
         </Modal.Header>
 
+        {/* Body */}
         <Modal.Body>
-          <form onSubmit={handleSubmit}>
-            <Stack spacing="sm">
-              <TextInput
-                label="Collection Name"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                error={errors.name}
-                placeholder="Enter collection name"
-                required
-              />
-
-              <NumberInput
-                label="Capital"
-                placeholder="Enter capital"
-                value={form.capital}
-                onChange={handleCapitalChange}
-                min={0}
-                parser={(value) => value.replace(/\₱\s?|(,*)/g, "")}
-                formatter={(value) =>
-                  !Number.isNaN(parseFloat(value))
-                    ? `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                    : "₱ "
-                }
-                error={errors.capital}
-                required
-              />
-
-              <DateInput
-                label="Release Date"
-                placeholder="mm/dd/yyyy"
-                name="release_date"
-                value={form.release_date}
-                onChange={handleDateChange}
-                error={errors.release_date}
-                required
-                valueFormat="MM/DD/YYYY"
-              />
-
-
-              <Group mt="lg" justify="flex-end">
-                <Button
-                  color="#AB8262"
+          {loading ? (
+            <Center style={{ height: 200 }}>
+              <Loader />
+            </Center>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate>
+              {/* Upload Box */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginTop: "10px",
+                  marginBottom: "10px",
+                }}
+              >
+                <label
+                  htmlFor="editImageUpload"
                   style={{
-                    borderRadius: "15px",
-                    width: "90px",
+                    display: "block",
+                    width: "60%",
+                    height: "160px",
+                    border: "2px dashed #000000ff",
+                    textAlign: "center",
+                    color: "#999",
+                    cursor: "pointer",
                     fontSize: "16px",
+                    fontWeight: 500,
+                    overflow: "hidden",
+                    position: "relative",
                   }}
-                  type="submit"
                 >
-                  Update
+                  {preview ? (
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        padding: "5px",
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        color: "#aaa",
+                        fontWeight: "400",
+                      }}
+                    >
+                      Add Photo
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              <input
+                id="editImageUpload"
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+                disabled={isSubmitting}
+              />
+
+              {errors.file && (
+                <Text color="red" size="xs" mt={-5} ta="center">
+                  {errors.file}
+                </Text>
+              )}
+
+              {/* Inputs Row */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  marginTop: "25px",
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <TextInput
+                    label={<span style={{ fontWeight: "400" }}>Item Name</span>}
+                    withAsterisk
+                    placeholder="Enter name"
+                    value={form.name}
+                    onChange={(e) =>
+                      setForm({ ...form, name: e.target.value })
+                    }
+                    error={errors.name}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <NumberInput
+                    label={<span style={{ fontWeight: "400" }}>Price</span>}
+                    withAsterisk
+                    placeholder="Enter price"
+                    value={form.price}
+                    onChange={(value) => setForm({ ...form, price: value })}
+                    min={0}
+                    parser={(value) => value.replace(/\₱\s?|(,*)/g, "")}
+                    formatter={(value) =>
+                      !Number.isNaN(parseFloat(value))
+                        ? `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                        : "₱ "
+                    }
+                    error={errors.price}
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <Group mt="30px" justify="flex-end">
+                <Button
+                  type="submit"
+                  style={{
+                    backgroundColor: "#AB8262",
+                    color: "white",
+                    borderRadius: "12px",
+                    width: "90px",
+                    height: "36px",
+                    fontSize: "15px",
+                  }}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Update"}
                 </Button>
               </Group>
-            </Stack>
-          </form>
+            </form>
+          )}
         </Modal.Body>
       </Modal.Content>
     </Modal.Root>

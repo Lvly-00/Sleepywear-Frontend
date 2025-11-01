@@ -10,12 +10,11 @@ import {
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import api from "../api/axios";
-import { useCollectionStore } from "../store/collectionStore";
 
-function AddCollectionModal({ opened, onClose }) {
+function AddCollectionModal({ opened, onClose, onSuccess }) {
   const [form, setForm] = useState({
     name: "",
-    release_date: "",
+    release_date: null,
     capital: 0,
   });
 
@@ -25,24 +24,27 @@ function AddCollectionModal({ opened, onClose }) {
     capital: "",
   });
 
-  const { addCollection } = useCollectionStore();
-
   useEffect(() => {
     if (opened) {
-      setForm({ name: "", release_date: "", capital: 0 });
+      setForm({ name: "", release_date: null, capital: 0 });
       setErrors({ name: "", release_date: "", capital: "" });
     }
   }, [opened]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    setErrors({ ...errors, [name]: "" });
+    setForm((f) => ({ ...f, [name]: value }));
+    setErrors((e) => ({ ...e, [name]: "" }));
   };
 
   const handleCapitalChange = (value) => {
-    setForm({ ...form, capital: value });
-    setErrors({ ...errors, capital: "" });
+    setForm((f) => ({ ...f, capital: value }));
+    setErrors((e) => ({ ...e, capital: "" }));
+  };
+
+  const handleDateChange = (value) => {
+    setForm((f) => ({ ...f, release_date: value }));
+    setErrors((e) => ({ ...e, release_date: "" }));
   };
 
   const handleSubmit = async (e) => {
@@ -70,12 +72,20 @@ function AddCollectionModal({ opened, onClose }) {
     }
 
     try {
-      const res = await api.post("/collections", form);
-      addCollection(res.data);
+      const payload = {
+        ...form,
+        release_date:
+          form.release_date && form.release_date instanceof Date
+            ? form.release_date.toISOString().split("T")[0]
+            : form.release_date,
+      };
+
+      const res = await api.post("/collections", payload);
+
+      if (onSuccess) onSuccess(res.data);
       onClose();
     } catch (error) {
       if (error.response && error.response.status === 422) {
-        // Laravel validation error format: { message, errors: { field: [msg] } }
         const validationErrors = error.response.data.errors || {};
         setErrors((prev) => ({
           ...prev,
@@ -92,24 +102,11 @@ function AddCollectionModal({ opened, onClose }) {
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
       <Modal.Overlay />
-      <Modal.Content style={{ borderRadius: "16px", padding: "20px" }}>
-        <Modal.Header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Modal.CloseButton
-            size={35}
-            style={{ order: 0, marginRight: "1rem", color: "#AB8262" }}
-          />
+      <Modal.Content style={{ borderRadius: 16, padding: 20 }}>
+        <Modal.Header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Modal.CloseButton size={35} style={{ order: 0, marginRight: 16, color: "#AB8262" }} />
           <Modal.Title style={{ flex: 1 }}>
-            <Text
-              align="center"
-              color="black"
-              style={{ width: "100%", fontSize: "26px", fontWeight: "700" }}
-            >
+            <Text align="center" color="black" style={{ fontSize: 26, fontWeight: 700 }}>
               New Collection
             </Text>
           </Modal.Title>
@@ -117,7 +114,7 @@ function AddCollectionModal({ opened, onClose }) {
         </Modal.Header>
 
         <Modal.Body>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <Stack spacing="sm">
               <TextInput
                 label="Collection Number"
@@ -147,27 +144,19 @@ function AddCollectionModal({ opened, onClose }) {
 
               <DateInput
                 label="Release Date"
-                placeholder="mm/dd/yyyy"
-                name="release_date"
-                value={form.release_date ? new Date(form.release_date) : null}
-                onChange={(value) =>
-                  handleChange({
-                    target: { name: "release_date", value },
-                  })
-                }
+                placeholder="MM/DD/YYYY"
+                value={form.release_date}
+                onChange={handleDateChange}
                 error={errors.release_date}
                 required
                 valueFormat="MM/DD/YYYY"
+                clearable={false}
               />
 
               <Group mt="lg" justify="flex-end">
                 <Button
                   color="#AB8262"
-                  style={{
-                    borderRadius: "15px",
-                    width: "90px",
-                    fontSize: "16px",
-                  }}
+                  style={{ borderRadius: 15, width: 90, fontSize: 16 }}
                   type="submit"
                 >
                   Save

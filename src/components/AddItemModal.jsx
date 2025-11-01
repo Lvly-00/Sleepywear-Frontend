@@ -8,16 +8,13 @@ import {
   Group,
 } from "@mantine/core";
 import api from "../api/axios";
-import { useCollectionStore } from "../store/collectionStore";
 
 export default function AddItemModal({ opened, onClose, collectionId, onItemAdded }) {
   const [form, setForm] = useState({ name: "", price: 0 });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [errors, setErrors] = useState({ name: "", price: "", file: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ disable button
-
-  const { updateCollectionTotals } = useCollectionStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (opened) {
@@ -43,13 +40,22 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
     setErrors({ name: "", price: "", file: "" });
 
     let hasError = false;
-    if (!form.name.trim()) { setErrors((prev) => ({ ...prev, name: "Item name is required." })); hasError = true; }
-    if (isNaN(form.price) || form.price < 0) { setErrors((prev) => ({ ...prev, price: "Price must be ≥ 0." })); hasError = true; }
-    if (!file) { setErrors((prev) => ({ ...prev, file: "Image is required." })); hasError = true; }
+    if (!form.name.trim()) {
+      setErrors((prev) => ({ ...prev, name: "Item name is required." }));
+      hasError = true;
+    }
+    if (isNaN(form.price) || form.price < 0) {
+      setErrors((prev) => ({ ...prev, price: "Price must be ≥ 0." }));
+      hasError = true;
+    }
+    if (!file) {
+      setErrors((prev) => ({ ...prev, file: "Image is required." }));
+      hasError = true;
+    }
     if (hasError) return;
 
     try {
-      setIsSubmitting(true); // ✅ disable button
+      setIsSubmitting(true);
       const data = new FormData();
       data.append("collection_id", collectionId);
       data.append("name", form.name);
@@ -60,14 +66,13 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      onItemAdded(res.data);
-      updateCollectionTotals(collectionId);
-      onClose(); // ✅ close modal
+      onItemAdded(res.data);  // Pass created item to parent
+      onClose();
     } catch (err) {
       console.error("Error adding item:", err.response?.data || err.message);
       setErrors((prev) => ({ ...prev, name: "Failed to add item. Try again." }));
     } finally {
-      setIsSubmitting(false); // re-enable if failed
+      setIsSubmitting(false);
     }
   };
 
