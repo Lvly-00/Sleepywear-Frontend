@@ -7,7 +7,7 @@ import {
   Center,
 } from "@mantine/core";
 import { Icons } from "../components/Icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import WhiteLogo from "../assets/WhiteLogo.svg";
 import api from "../api/axios";
@@ -20,30 +20,119 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
+  const [attempts, setAttempts] = useState(
+    Number(localStorage.getItem("login_attempts")) || 0
+  );
+  const [cooldown, setCooldown] = useState(0);
+
   const navigate = useNavigate();
+
+  // ✅ Check cooldown on mount
+  useEffect(() => {
+    const cooldownEnd = localStorage.getItem("login_cooldown_end");
+    if (cooldownEnd) {
+      const remaining = Math.floor((Number(cooldownEnd) - Date.now()) / 1000);
+      if (remaining > 0) {
+        setCooldown(remaining);
+        setServerError("Too many attempts. Please wait 30 seconds.");
+      } else {
+        localStorage.removeItem("login_cooldown_end");
+      }
+    }
+  }, []);
+
+  // ✅ Handle cooldown expiration
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setInterval(() => {
+        setCooldown((prev) => {
+          if (prev <= 1) {
+            localStorage.removeItem("login_cooldown_end");
+            setServerError("");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [cooldown]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrors({});
     setServerError("");
+
+    // Prevent login during cooldown
+    if (cooldown > 0) {
+      setServerError("Too many attempts. Please wait 30 seconds.");
+      return;
+    }
+
+    // If 5 failed attempts → cooldown
+    if (attempts >= 5) {
+      const wait = 30 * 1000; // 30 seconds
+      const cooldownEnd = Date.now() + wait;
+      localStorage.setItem("login_cooldown_end", cooldownEnd);
+      setCooldown(wait / 1000);
+      setAttempts(0);
+      localStorage.setItem("login_attempts", 0);
+      setServerError("Too many attempts. Please wait 30 seconds.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const response = await api.post("/login", { email, password });
-
-      // Save token in localStorage
       localStorage.setItem("access_token", response.data.access_token);
-
-      // Navigate to dashboard
+      localStorage.setItem("login_attempts", 0);
+      setAttempts(0);
       navigate("/dashboard");
     } catch (err) {
-      if (err.response?.status === 422) {
-        setErrors(err.response.data.errors || {});
-      } else if (err.response?.data?.message) {
-        setServerError(err.response.data.message);
-      } else {
-        setServerError("An unexpected error occurred.");
+      setPassword("");
+      let msg = "An unexpected error occurred. Please try again.";
+
+      if (err.response) {
+        const status = err.response.status;
+        if (status === 422) {
+          setErrors(err.response.data.errors || {});
+          msg = "";
+        } else if (status === 401) {
+          msg = "Incorrect email or password. Please try again.";
+        } else if (status === 403) {
+          msg = "Access denied. Your account may be inactive.";
+        } else if (status === 404) {
+          msg = "Login route not found on the server.";
+        } else if (status === 429) {
+          msg = "Too many attempts. Please wait a few minutes.";
+        } else if (status === 500) {
+          msg = "Internal server error. Please try again later.";
+        } else {
+          msg = err.response.data.message || msg;
+        }
+      } else if (err.request) {
+        msg = "Unable to reach the server. Please check your connection.";
       }
+
+      // Increment failed attempts
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      localStorage.setItem("login_attempts", newAttempts);
+
+      // Trigger cooldown after 5 failed attempts
+      if (newAttempts >= 5) {
+        const wait = 30 * 1000;
+        const cooldownEnd = Date.now() + wait;
+        localStorage.setItem("login_cooldown_end", cooldownEnd);
+        setCooldown(wait / 1000);
+        setAttempts(0);
+        localStorage.setItem("login_attempts", 0);
+        msg = "Too many attempts. Please wait 30 seconds.";
+      }
+
+      setServerError(msg);
     } finally {
       setLoading(false);
     }
@@ -99,12 +188,6 @@ function Login() {
             LOGIN
           </Text>
 
-          {serverError && (
-            <Text color="red" align="center" size="sm" mb="sm">
-              {serverError}
-            </Text>
-          )}
-
           <form onSubmit={handleLogin}>
             <Stack spacing="md">
               <TextInput
@@ -116,10 +199,12 @@ function Login() {
                 error={errors.email ? errors.email[0] : undefined}
                 radius="md"
                 size="lg"
+                disabled={loading || cooldown > 0}
                 styles={{
                   input: {
                     borderColor: "#c5a47e",
                     color: "#c5a47e",
+                    backgroundColor: loading ? "#e9e9e9" : "white",
                   },
                   label: {
                     color: "#0b0c3f",
@@ -143,10 +228,12 @@ function Login() {
                 visibilityToggleIcon={({ reveal }) =>
                   reveal ? <Icons.Eye /> : <Icons.EyeOff />
                 }
+                disabled={loading || cooldown > 0}
                 styles={{
                   input: {
                     borderColor: "#c5a47e",
                     color: "#c5a47e",
+                    backgroundColor: loading ? "#e9e9e9" : "white",
                   },
                   label: {
                     color: "#0b0c3f",
@@ -156,6 +243,13 @@ function Login() {
                   },
                 }}
               />
+
+              {/* ✅ Static error message */}
+              {serverError && Object.keys(errors).length === 0 && (
+                <Text color="red" align="center" size="sm" mb="sm">
+                  {serverError}
+                </Text>
+              )}
 
               <Text align="right" size="xs">
                 <Link
@@ -177,11 +271,13 @@ function Login() {
                 fullWidth
                 radius="md"
                 size="lg"
+                disabled={cooldown > 0}
                 style={{
-                  backgroundColor: "#0D0F66",
+                  backgroundColor: cooldown > 0 ? "#a0a0a0" : "#0D0F66",
                   color: "#fff",
                   fontWeight: 500,
                   marginTop: "10px",
+                  cursor: cooldown > 0 ? "not-allowed" : "pointer",
                 }}
               >
                 Login

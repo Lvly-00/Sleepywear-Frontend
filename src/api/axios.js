@@ -17,14 +17,23 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Handle 401 globally
+// Handle 401 globally but ignore login route
 api.interceptors.response.use(
     (res) => res,
     (error) => {
-        if (error.response && error.response.status === 401) {
+        const originalRequest = error.config;
+
+        // ✅ Ignore 401 from /login and /register
+        if (
+            error.response &&
+            error.response.status === 401 &&
+            !originalRequest.url.includes("/login") &&
+            !originalRequest.url.includes("/register")
+        ) {
             localStorage.removeItem("access_token");
             window.location.href = "/";
         }
+
         return Promise.reject(error);
     }
 );
