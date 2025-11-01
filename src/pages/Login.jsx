@@ -12,6 +12,13 @@ import { Link, useNavigate } from "react-router-dom";
 import WhiteLogo from "../assets/WhiteLogo.svg";
 import api from "../api/axios";
 import SubmitButton from "../components/SubmitButton";
+import CryptoJS from "crypto-js";
+
+// ✅ Derive unique per-device encryption key
+function getDeviceKey() {
+  const fingerprint = navigator.userAgent + navigator.language + window.location.hostname;
+  return CryptoJS.SHA256(fingerprint).toString();
+}
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -27,7 +34,7 @@ function Login() {
 
   const navigate = useNavigate();
 
-  // ✅ Check cooldown on mount
+  // Load cooldown on mount
   useEffect(() => {
     const cooldownEnd = localStorage.getItem("login_cooldown_end");
     if (cooldownEnd) {
@@ -41,7 +48,7 @@ function Login() {
     }
   }, []);
 
-  // ✅ Handle cooldown expiration
+  // Handle countdown timer for cooldown
   useEffect(() => {
     if (cooldown > 0) {
       const timer = setInterval(() => {
@@ -54,7 +61,6 @@ function Login() {
           return prev - 1;
         });
       }, 1000);
-
       return () => clearInterval(timer);
     }
   }, [cooldown]);
@@ -64,15 +70,13 @@ function Login() {
     setErrors({});
     setServerError("");
 
-    // Prevent login during cooldown
     if (cooldown > 0) {
       setServerError("Too many attempts. Please wait 30 seconds.");
       return;
     }
 
-    // If 5 failed attempts → cooldown
     if (attempts >= 5) {
-      const wait = 30 * 1000; // 30 seconds
+      const wait = 30 * 1000;
       const cooldownEnd = Date.now() + wait;
       localStorage.setItem("login_cooldown_end", cooldownEnd);
       setCooldown(wait / 1000);
@@ -86,9 +90,18 @@ function Login() {
 
     try {
       const response = await api.post("/login", { email, password });
-      localStorage.setItem("access_token", response.data.access_token);
+
+      // 🔐 Encrypt token using per-device key
+      const key = getDeviceKey();
+      const encryptedToken = CryptoJS.AES.encrypt(
+        response.data.access_token,
+        key
+      ).toString();
+
+      localStorage.setItem("secure_access_token", encryptedToken);
       localStorage.setItem("login_attempts", 0);
       setAttempts(0);
+
       navigate("/dashboard");
     } catch (err) {
       setPassword("");
@@ -116,12 +129,10 @@ function Login() {
         msg = "Unable to reach the server. Please check your connection.";
       }
 
-      // Increment failed attempts
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
       localStorage.setItem("login_attempts", newAttempts);
 
-      // Trigger cooldown after 5 failed attempts
       if (newAttempts >= 5) {
         const wait = 30 * 1000;
         const cooldownEnd = Date.now() + wait;
@@ -138,6 +149,7 @@ function Login() {
     }
   };
 
+  // ✅ Same design preserved
   return (
     <div
       style={{
@@ -146,7 +158,6 @@ function Login() {
         fontFamily: "Poppins, sans-serif",
       }}
     >
-      {/* Left Section with Logo */}
       <div
         style={{
           flex: 2,
@@ -164,7 +175,6 @@ function Login() {
         />
       </div>
 
-      {/* Right Section with Form */}
       <Center style={{ flex: 1 }}>
         <Paper
           p="md"
@@ -244,7 +254,6 @@ function Login() {
                 }}
               />
 
-              {/* ✅ Static error message */}
               {serverError && Object.keys(errors).length === 0 && (
                 <Text color="red" align="center" size="sm" mb="sm">
                   {serverError}

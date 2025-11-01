@@ -1,4 +1,3 @@
-// src/pages/ResetPassword.jsx
 import React, { useState } from "react";
 import {
   PasswordInput,
@@ -6,9 +5,8 @@ import {
   Text,
   Stack,
   Center,
-  Notification,
 } from "@mantine/core";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import api from "../api/axios";
 import { Icons } from "../components/Icons";
 import WhiteLogo from "../assets/WhiteLogo.svg";
@@ -17,11 +15,10 @@ import SubmitButton from "../components/SubmitButton";
 function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState({ text: "", type: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ Use query parameters (?token=...&email=...)
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const email = searchParams.get("email");
@@ -39,6 +36,14 @@ function ResetPassword() {
       return;
     }
 
+    if (password.length < 8) {
+      setMessage({
+        text: "Password must be at least 8 characters.",
+        type: "error",
+      });
+      return;
+    }
+
     if (!token || !email) {
       setMessage({
         text: "Invalid reset link. Please request a new password reset.",
@@ -48,7 +53,7 @@ function ResetPassword() {
     }
 
     setLoading(true);
-    setMessage(null);
+    setMessage({ text: "", type: "" });
 
     const payload = {
       email,
@@ -58,31 +63,33 @@ function ResetPassword() {
     };
 
     try {
-      await api.post("/reset-password", payload);
-
+      const response = await api.post("/reset-password", payload);
       setMessage({
-        text: "Password reset successful. Redirecting to login...",
+        text:
+          response.data.message ||
+          "Password reset successful! Redirecting to login...",
         type: "success",
       });
       setTimeout(() => navigate("/"), 2000);
     } catch (err) {
-      if (err.response?.status === 422) {
-        const errors = err.response.data.errors;
-        setMessage({
-          text: Object.values(errors).flat().join(" "),
-          type: "error",
-        });
-      } else if (err.response?.data?.message) {
-        setMessage({
-          text: err.response.data.message,
-          type: "error",
-        });
-      } else {
-        setMessage({
-          text: "Failed to reset password. Please try again.",
-          type: "error",
-        });
+      let msg = "Failed to reset password. Please try again.";
+      if (err.response) {
+        if (err.response.status === 422) {
+          const errors = err.response.data.errors;
+          msg = Object.values(errors).flat().join(" ");
+        } else if (err.response.status === 400) {
+          msg = "Invalid or expired token. Please request a new reset link.";
+        } else if (err.response.status === 404) {
+          msg = "Email not found. Please verify your email.";
+        } else if (err.response.status === 429) {
+          msg = "Too many attempts. Please try again later.";
+        } else if (err.response.data?.message) {
+          msg = err.response.data.message;
+        }
+      } else if (err.request) {
+        msg = "Unable to reach the server. Please check your connection.";
       }
+      setMessage({ text: msg, type: "error" });
     } finally {
       setLoading(false);
     }
@@ -96,7 +103,7 @@ function ResetPassword() {
         fontFamily: "Poppins, sans-serif",
       }}
     >
-      {/* Left Section with Logo */}
+      {/* Left Section */}
       <div
         style={{
           flex: 2,
@@ -114,7 +121,7 @@ function ResetPassword() {
         />
       </div>
 
-      {/* Right Section with Form */}
+      {/* Right Section */}
       <Center style={{ flex: 1 }}>
         <Paper
           p="md"
@@ -128,24 +135,13 @@ function ResetPassword() {
             align="center"
             mb="xl"
             style={{
-              color: "#0b0c3f",
-              fontSize: 40,
-              fontFamily: "Poppins, sans-serif",
+              color: "#0D0F66",
+              fontSize: 35,
               fontWeight: 500,
             }}
           >
             RESET PASSWORD
           </Text>
-
-          {message && (
-            <Notification
-              color={message.type === "error" ? "red" : "green"}
-              title={message.type === "error" ? "Error" : "Success"}
-              mb="sm"
-            >
-              {message.text}
-            </Notification>
-          )}
 
           <form onSubmit={handleResetPassword}>
             <Stack spacing="md">
@@ -197,6 +193,20 @@ function ResetPassword() {
                 }}
               />
 
+              {message.text && (
+                <Text
+                  align="center"
+                  style={{
+                    color: message.type === "error" ? "#9E2626" : "#52966dff",
+                    marginBottom: 10,
+                    fontSize: 15,
+                    fontWeight: 400,
+                  }}
+                >
+                  {message.text}
+                </Text>
+              )}
+
               <SubmitButton
                 type="submit"
                 fullWidth
@@ -212,6 +222,20 @@ function ResetPassword() {
               >
                 Reset Password
               </SubmitButton>
+
+              <Text align="center" size="md">
+                <Link
+                  to="/"
+                  style={{
+                    color: "#1D72D4",
+                    fontSize: "16px",
+                    fontWeight: 300,
+                    textDecoration: "none",
+                  }}
+                >
+                  Back to Login
+                </Link>
+              </Text>
             </Stack>
           </form>
         </Paper>
