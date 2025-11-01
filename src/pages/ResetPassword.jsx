@@ -8,7 +8,7 @@ import {
   Center,
   Notification,
 } from "@mantine/core";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../api/axios";
 import { Icons } from "../components/Icons";
 import WhiteLogo from "../assets/WhiteLogo.svg";
@@ -20,9 +20,11 @@ function ResetPassword() {
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { token } = useParams();
-  const query = new URLSearchParams(useLocation().search);
-  const email = query.get("email");
+
+  // ✅ Use query parameters (?token=...&email=...)
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+  const email = searchParams.get("email");
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -34,6 +36,14 @@ function ResetPassword() {
 
     if (password !== confirmPassword) {
       setMessage({ text: "Passwords do not match.", type: "error" });
+      return;
+    }
+
+    if (!token || !email) {
+      setMessage({
+        text: "Invalid reset link. Please request a new password reset.",
+        type: "error",
+      });
       return;
     }
 
