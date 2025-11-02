@@ -15,11 +15,11 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
 import SleepyLoader from "../components/SleepyLoader";
 import { Icons } from "../components/Icons";
-import { orderStore } from "../store/orderStore";
 import api from "../api/axios";
 
 const Order = () => {
-  const { orders, fetchOrders, removeOrder, loading } = orderStore();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [invoiceModal, setInvoiceModal] = useState(false);
@@ -28,18 +28,27 @@ const Order = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
 
+  // Fetch orders from backend
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/orders");
+      setOrders(res.data);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Remove order from local state after delete
+  const removeOrder = (orderId) => {
+    setOrders((prev) => prev.filter((order) => order.id !== orderId));
+  };
+
   useEffect(() => {
-    const fetchAndDebug = async () => {
-      await fetchOrders();
-      console.log("Orders from store:", orders);
-    };
-    fetchAndDebug();
-  }, [fetchOrders]);
-
-  console.log("Orders from store:", orders);
-
-
-
+    fetchOrders();
+  }, []);
 
   const handleDelete = (order) => {
     setOrderToDelete(order);
@@ -88,7 +97,9 @@ const Order = () => {
                 <Table.Th style={{ textAlign: "center" }}>Qty</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Order Date</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Price</Table.Th>
-                <Table.Th style={{ textAlign: "center" }}>Payment Status</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>
+                  Payment Status
+                </Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Manage</Table.Th>
               </Table.Tr>
             </Table.Thead>
@@ -134,9 +145,13 @@ const Order = () => {
                           variant="filled"
                           style={{
                             backgroundColor:
-                              order.payment?.payment_status === "Paid" ? "#A5BDAE" : "#D9D9D9",
+                              order.payment?.payment_status === "Paid"
+                                ? "#A5BDAE"
+                                : "#D9D9D9",
                             color:
-                              order.payment?.payment_status === "Paid" ? "#FFFFFF" : "#7A7A7A",
+                              order.payment?.payment_status === "Paid"
+                                ? "#FFFFFF"
+                                : "#7A7A7A",
                             width: "100px",
                             textAlign: "center",
                             fontWeight: 600,
@@ -147,7 +162,6 @@ const Order = () => {
                           {order.payment?.payment_status?.toLowerCase() || "unpaid"}
                         </Badge>
                       </Table.Td>
-
 
                       <Table.Td style={{ textAlign: "center" }}>
                         <Group gap="4" justify="center">
@@ -221,7 +235,12 @@ const Order = () => {
           opened={addPaymentOpen}
           onClose={() => setAddPaymentOpen(false)}
           order={selectedOrder}
-          refreshOrders={fetchOrders}
+          onOrderUpdated={(updatedOrder) => {
+            // Update the local order in the list after payment update
+            setOrders((prev) =>
+              prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o))
+            );
+          }}
         />
       )}
 

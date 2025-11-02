@@ -2,7 +2,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Center, Stack, Menu } from "@mantine/core";
 import AppLogo from "../assets/Logo.svg";
 import classes from "../css/NavbarMinimal.module.css";
-import axios from "../api/axios";
+import api from "../api/axios";
 import { Icons } from "./Icons";
 
 const links = [
@@ -18,17 +18,14 @@ function SidebarNav() {
 
   const handleLogout = async () => {
     try {
-      await axios.post("/logout");
-
-      localStorage.removeItem("user");
-
+      await api.post("/logout");
+      localStorage.removeItem("access_token");
       navigate("/");
     } catch (err) {
       console.error("Logout failed:", err);
       alert("Failed to logout. Please try again.");
     }
   };
-
   return (
     <nav className={classes.navbar}>
       {/* Logo */}

@@ -35,12 +35,14 @@ export default function Collection() {
     setLoading(true);
     try {
       const res = await api.get("/collections");
+
       // Sort Active first
       const sorted = res.data.sort((a, b) => {
         if (a.status === "Active" && b.status !== "Active") return -1;
         if (a.status !== "Active" && b.status === "Active") return 1;
         return 0;
       });
+
       setCollections(sorted);
     } catch (err) {
       console.error("Error fetching collections:", err);
@@ -73,7 +75,6 @@ export default function Collection() {
       await api.delete(`/collections/${collectionToDelete.id}`);
       setDeleteModalOpen(false);
       setCollectionToDelete(null);
-      // Refetch to get fresh data
       await fetchCollections();
     } catch (err) {
       console.error("Error deleting collection:", err);
@@ -153,12 +154,25 @@ export default function Collection() {
                         : "—"}
                     </Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>{col.qty ?? 0}</Table.Td>
-                    <Table.Td style={{ textAlign: "center" }}>{col.stock_qty ?? 0}</Table.Td>
+
+                    {/* Updated Stock QTY: Count of available items */}
                     <Table.Td style={{ textAlign: "center" }}>
-                      ₱{col.capital ? new Intl.NumberFormat("en-PH").format(Math.floor(col.capital)) : "0"}
+                      {col.items
+                        ? col.items.filter((item) => item.status === "Available").length
+                        : 0}
+                    </Table.Td>
+
+                    <Table.Td style={{ textAlign: "center" }}>
+                      ₱
+                      {col.capital
+                        ? new Intl.NumberFormat("en-PH").format(Math.floor(col.capital))
+                        : "0"}
                     </Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
-                      ₱{col.total_sales ? new Intl.NumberFormat("en-PH").format(Math.floor(col.total_sales)) : "0"}
+                      ₱
+                      {col.total_sales
+                        ? new Intl.NumberFormat("en-PH").format(Math.floor(col.total_sales))
+                        : "0"}
                     </Table.Td>
                     <Table.Td style={{ textAlign: "center" }}>
                       <Badge

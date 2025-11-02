@@ -11,18 +11,15 @@ import {
   Group,
   Divider,
   ScrollArea,
-  Box,
 } from "@mantine/core";
 import api from "../api/axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import InvoicePreview from "../components/InvoicePreview";
 import PageHeader from "../components/PageHeader";
-import { orderStore } from "../store/orderStore";
 
 const ConfirmOrder = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { fetchOrders } = orderStore();
 
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -38,8 +35,12 @@ const ConfirmOrder = () => {
   const [errors, setErrors] = useState({});
 
   const orderItems = state?.items || [];
-  const total = orderItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
+  const total = orderItems.reduce(
+    (sum, item) => sum + parseFloat(item.price),
+    0
+  );
 
+  // Fetch customers locally
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
@@ -62,6 +63,16 @@ const ConfirmOrder = () => {
         address: customer.address,
         contact_number: customer.contact_number,
         social_handle: customer.social_handle,
+      });
+    } else {
+      // Clear form if cleared selection
+      setSelectedCustomer(null);
+      setForm({
+        first_name: "",
+        last_name: "",
+        address: "",
+        contact_number: "",
+        social_handle: "",
       });
     }
   };
@@ -145,7 +156,6 @@ const ConfirmOrder = () => {
     }
   };
 
-
   return (
     <div style={{ padding: 20 }}>
       <PageHeader title="Confirm Order" showBack />
@@ -166,10 +176,13 @@ const ConfirmOrder = () => {
             }}
           >
             <Group justify="space-between" mb="sm">
-              <Text fw={500} color="#0D0F66"
+              <Text
+                fw={500}
+                color="#0D0F66"
                 style={{
-                  fontSize: "30px"
-                }}>
+                  fontSize: "30px",
+                }}
+              >
                 Summary Order
               </Text>
 
@@ -194,7 +207,6 @@ const ConfirmOrder = () => {
               >
                 Edit
               </Button>
-
             </Group>
 
             <Divider mb="sm" color="#C1A287" />
@@ -236,7 +248,6 @@ const ConfirmOrder = () => {
                             )}
                             <span style={{ marginLeft: "25px" }}>{item.name}</span>
                           </Text>
-
                         </Table.Td>
                         <Table.Td
                           style={{
@@ -247,7 +258,8 @@ const ConfirmOrder = () => {
                             padding: "10px 14px",
                           }}
                         >
-                          ₱{Number(item.price).toLocaleString(undefined, {
+                          ₱
+                          {Number(item.price).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                           })}
                         </Table.Td>
@@ -258,11 +270,12 @@ const ConfirmOrder = () => {
               )}
             </ScrollArea>
 
-
             {/* Fixed total */}
             <Divider mt="sm" mb="xs" color="#C1A287" />
             <Group justify="space-between">
-              <Text fw={600} style={{ fontSize: "24px" }}>Total:</Text>
+              <Text fw={600} style={{ fontSize: "24px" }}>
+                Total:
+              </Text>
               <Text fw={700} style={{ fontSize: "24px" }}>
                 ₱{total.toFixed(2)}
               </Text>
@@ -286,10 +299,14 @@ const ConfirmOrder = () => {
             }}
           >
             <div>
-              <Text fw={500} mb="md" color="#0D0F66"
+              <Text
+                fw={500}
+                mb="md"
+                color="#0D0F66"
                 style={{
-                  fontSize: "30px"
-                }}>
+                  fontSize: "30px",
+                }}
+              >
                 Customer Information
               </Text>
 
@@ -309,17 +326,21 @@ const ConfirmOrder = () => {
                     borderRadius: 8,
                   },
                 }}
+                value={selectedCustomer ? selectedCustomer.toString() : ""}
               />
 
               <Grid pb={20}>
                 <Grid.Col span={6}>
                   <TextInput
-                    label={<span style={{
-                      fontWeight: "400"
-                    }}>
-
-                      First Name
-                    </span>}
+                    label={
+                      <span
+                        style={{
+                          fontWeight: "400",
+                        }}
+                      >
+                        First Name
+                      </span>
+                    }
                     required
                     value={form.first_name}
                     size="md"
@@ -327,17 +348,19 @@ const ConfirmOrder = () => {
                       setForm({ ...form, first_name: e.target.value })
                     }
                     error={errors.first_name}
-
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>
                   <TextInput
-                    label={<span style={{
-                      fontWeight: "400"
-                    }}>
-
-                      Last Name
-                    </span>}
+                    label={
+                      <span
+                        style={{
+                          fontWeight: "400",
+                        }}
+                      >
+                        Last Name
+                      </span>
+                    }
                     required
                     value={form.last_name}
                     size="md"
@@ -349,16 +372,20 @@ const ConfirmOrder = () => {
                 </Grid.Col>
               </Grid>
 
-              <TextInput pb={20}
-                label={<span style={{
-                  fontWeight: "400"
-                }}>
-                  Address
-                </span>}
+              <TextInput
+                pb={20}
+                label={
+                  <span
+                    style={{
+                      fontWeight: "400",
+                    }}
+                  >
+                    Address
+                  </span>
+                }
                 required
                 mt="sm"
                 size="md"
-
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
                 error={errors.address}
@@ -367,11 +394,15 @@ const ConfirmOrder = () => {
               <Grid mt="sm">
                 <Grid.Col span={6}>
                   <TextInput
-                    label={<span style={{
-                      fontWeight: "400"
-                    }}>
-                      Contact Number
-                    </span>}
+                    label={
+                      <span
+                        style={{
+                          fontWeight: "400",
+                        }}
+                      >
+                        Contact Number
+                      </span>
+                    }
                     required
                     value={form.contact_number}
                     size="md"
@@ -386,12 +417,15 @@ const ConfirmOrder = () => {
                 </Grid.Col>
                 <Grid.Col span={6}>
                   <TextInput
-                    label={<span style={{
-                      fontWeight: "400"
-                    }}>
-
-                      Social Media Link
-                    </span>}
+                    label={
+                      <span
+                        style={{
+                          fontWeight: "400",
+                        }}
+                      >
+                        Social Media Link
+                      </span>
+                    }
                     required
                     value={form.social_handle}
                     size="md"
@@ -421,12 +455,11 @@ const ConfirmOrder = () => {
               </Button>
             </Group>
 
-
             <InvoicePreview
               opened={invoiceModal}
               onClose={() => {
                 setInvoiceModal(false);
-                fetchOrders(true);
+                // No orderStore here, so we don't fetchOrders()
                 navigate("/orders");
               }}
               invoiceData={invoiceData}

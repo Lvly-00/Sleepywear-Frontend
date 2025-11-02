@@ -3,23 +3,20 @@ import {
   Stack,
   Select,
   NumberInput,
-  FileInput,
   Button,
   Modal,
   Text,
   Group,
 } from "@mantine/core";
 import api from "../api/axios";
-import { orderStore } from "../store/orderStore";
 
-const AddPaymentModal = ({ opened, onClose, order }) => {
+const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
   const [payment, setPayment] = useState({
     method: "",
     additionalFee: 0,
     image: null,
   });
   const [errors, setErrors] = useState({});
-  const { updateOrder } = orderStore();
 
   useEffect(() => {
     if (opened) {
@@ -60,7 +57,9 @@ const AddPaymentModal = ({ opened, onClose, order }) => {
 
       // 🔹 REFRESH the order from backend
       const updatedOrderRes = await api.get(`/orders/${order.id}`);
-      updateOrder(updatedOrderRes.data); // update Zustand store
+
+      // Pass updated order back to parent
+      if (onOrderUpdated) onOrderUpdated(updatedOrderRes.data);
 
       onClose();
     } catch (err) {
@@ -68,7 +67,6 @@ const AddPaymentModal = ({ opened, onClose, order }) => {
       alert("Failed to save payment. Check console for details.");
     }
   };
-
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
@@ -147,8 +145,6 @@ const AddPaymentModal = ({ opened, onClose, order }) => {
               min={0}
               error={errors.additionalFee}
             />
-
-          
 
             <Group
               mt="lg"

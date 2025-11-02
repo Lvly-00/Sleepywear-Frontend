@@ -246,7 +246,9 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                           alignItems: "center",
                         }}
                       >
-                        <span style={{ textAlign: "left" }}>{item.item?.code || "-"}</span>
+                        <span style={{ textAlign: "left" }}>
+                          {item.item?.code || item.code || "-"}
+                        </span>
                         <span style={{ textAlign: "left" }}>{item.item_name}</span>
                         <span style={{ textAlign: "right" }}>
                           ₱ {Math.round(Number(item.price)).toLocaleString()}

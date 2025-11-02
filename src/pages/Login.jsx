@@ -12,12 +12,6 @@ import { Link, useNavigate } from "react-router-dom";
 import WhiteLogo from "../assets/WhiteLogo.svg";
 import api from "../api/axios";
 import SubmitButton from "../components/SubmitButton";
-import CryptoJS from "crypto-js";
-
-function getDeviceKey() {
-  const fingerprint = navigator.userAgent + navigator.language + window.location.hostname;
-  return CryptoJS.SHA256(fingerprint).toString();
-}
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -47,7 +41,7 @@ function Login() {
     }
   }, []);
 
-  // Handle countdown timer for cooldown
+  // Cooldown countdown timer
   useEffect(() => {
     if (cooldown > 0) {
       const timer = setInterval(() => {
@@ -90,14 +84,8 @@ function Login() {
     try {
       const response = await api.post("/login", { email, password });
 
-      // 🔐 Encrypt token using per-device key
-      const key = getDeviceKey();
-      const encryptedToken = CryptoJS.AES.encrypt(
-        response.data.access_token,
-        key
-      ).toString();
-
-      localStorage.setItem("secure_access_token", encryptedToken);
+      // ✅ Store plain access token
+      localStorage.setItem("access_token", response.data.access_token);
       localStorage.setItem("login_attempts", 0);
       setAttempts(0);
 

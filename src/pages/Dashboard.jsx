@@ -21,6 +21,7 @@ function Dashboard() {
     const fetchSummary = async () => {
       try {
         const response = await api.get("/dashboard-summary");
+        console.log("Dashboard summary API response:", response.data);  // Debug log
         setSummary(response.data);
       } catch (error) {
         console.error("Failed to fetch dashboard summary:", error);
@@ -31,6 +32,8 @@ function Dashboard() {
   }, []);
 
   if (!summary) return <SleepyLoader />;
+
+  // console.log("totalCustomers:", summary.totalCustomers); 
 
   const cardStyle = {
     borderRadius: "16px",
@@ -44,32 +47,17 @@ function Dashboard() {
     textAlign: "center",
   };
 
-  const formatNumber = (num) => Math.round(num).toLocaleString();
+  const formatNumber = (num) => {
+    if (num === null || num === undefined || isNaN(num)) return "0";
+    return Math.round(num).toLocaleString();
+  };
 
-  // 🔹 Prepare chart data for current month only
-  const chartData = {};
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  const collectionSalesData = summary.collectionSales.map((collection) => ({
+    collection_name: collection.collection_name,
+    total_sales: collection.total_sales,
+  }));
 
-  summary.collectionSales.forEach((collection) => {
-    // backend data should include daily sales with date + total
-    (collection.dailySales || []).forEach((sale) => {
-      const saleDate = new Date(sale.date);
-      if (
-        saleDate.getMonth() === currentMonth &&
-        saleDate.getFullYear() === currentYear
-      ) {
-        if (!chartData[sale.date]) chartData[sale.date] = { date: sale.date };
-        chartData[sale.date][collection.collection_name] = sale.total;
-      }
-    });
-  });
-
-  const chartArray = Object.values(chartData).sort(
-    (a, b) => new Date(a.date) - new Date(b.date)
-  );
-
-  const COLORS = ["#944E1B", "#54361C", "#F0BB78"];
+  const COLORS = ["#944E1B", "#54361C", "#F0BB78", "#8B4513", "#B5651D"];
 
   return (
     <Stack p="lg" spacing="xl">
@@ -91,18 +79,14 @@ function Dashboard() {
         <Grid>
           <Grid.Col span={3}>
             <Card style={cardStyle}>
-              <Text weight={400}
-                style={{
-                  fontSize: "14 px"
-                }}>
+              <Text weight={400} style={{ fontSize: "14px" }}>
                 Net Income
               </Text>
               <Icons.Coins size={46} />
-
-              <Text color="#5D4324" style={{
-                fontSize: "25px",
-                fontWeight: 600
-              }}>
+              <Text
+                color="#5D4324"
+                style={{ fontSize: "25px", fontWeight: 600 }}
+              >
                 ₱{formatNumber(summary.netIncome)}
               </Text>
             </Card>
@@ -110,17 +94,14 @@ function Dashboard() {
 
           <Grid.Col span={3}>
             <Card style={cardStyle}>
-              <Text weight={400}
-                style={{
-                  fontSize: "14 px"
-                }}>
+              <Text weight={400} style={{ fontSize: "14px" }}>
                 Gross Income
               </Text>
               <Icons.Coin size={46} />
-              <Text color="#5D4324" style={{
-                fontSize: "25px",
-                fontWeight: 600
-              }}>
+              <Text
+                color="#5D4324"
+                style={{ fontSize: "25px", fontWeight: 600 }}
+              >
                 ₱{formatNumber(summary.grossIncome)}
               </Text>
             </Card>
@@ -128,17 +109,14 @@ function Dashboard() {
 
           <Grid.Col span={3}>
             <Card style={cardStyle}>
-              <Text weight={400}
-                style={{
-                  fontSize: "10 px"
-                }}>
+              <Text weight={400} style={{ fontSize: "14px" }}>
                 Total Items Sold
               </Text>
               <Icons.Tag size={46} />
-              <Text color="#5D4324" style={{
-                fontSize: "25px",
-                fontWeight: 600
-              }}>
+              <Text
+                color="#5D4324"
+                style={{ fontSize: "25px", fontWeight: 600 }}
+              >
                 {formatNumber(summary.totalItemsSold)}
               </Text>
             </Card>
@@ -146,25 +124,22 @@ function Dashboard() {
 
           <Grid.Col span={3}>
             <Card style={cardStyle}>
-              <Text weight={400}
-                style={{
-                  fontSize: "14 px"
-                }}>
-                Total Invoices
+              <Text weight={400} style={{ fontSize: "14px" }}>
+                Total Customers
               </Text>
-              <Icons.Invoice size={46} />
-              <Text color="#5D4324" style={{
-                fontSize: "25px",
-                fontWeight: 600
-              }}>
-                {formatNumber(summary.totalInvoices)}
+              <Icons.EyeOff size={46} />
+              <Text
+                color="#5D4324"
+                style={{ fontSize: "25px", fontWeight: 600 }}
+              >
+                {formatNumber(summary.totalCustomers)}
               </Text>
             </Card>
           </Grid.Col>
         </Grid>
       </Paper>
 
-      {/* Daily Sales per Collection */}
+      {/* Collection Sales Line Chart */}
       <Paper p="xl" style={{ backgroundColor: "#FAF8F3" }}>
         <Card p="lg">
           <Text
@@ -174,44 +149,27 @@ function Dashboard() {
             fz={20}
             style={{ color: "#05004E" }}
           >
-            Collection Sales for the Month of{" "}
-            {new Date().toLocaleString("default", { month: "long" })}
+            Collection Sales Totals
           </Text>
 
           <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={chartArray}>
-              <XAxis
-                dataKey="date"
-                tickFormatter={(date) => {
-                  const d = new Date(date);
-                  return d.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  });
-                }}
-              />
+            <LineChart
+              data={collectionSalesData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <XAxis dataKey="collection_name" />
               <YAxis />
-              <Tooltip
-                formatter={(value) => `₱${formatNumber(value)}`}
-                labelFormatter={(label) => {
-                  const d = new Date(label);
-                  return d.toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  });
-                }}
-              />
+              <Tooltip formatter={(value) => `₱${formatNumber(value)}`} />
               <Legend />
-              {summary.collectionSales.map((collection, idx) => (
-                <Line
-                  key={collection.collection_name}
-                  type="monotone"
-                  dataKey={collection.collection_name}
-                  stroke={COLORS[idx % COLORS.length]}
-                  dot={false}
-                />
-              ))}
+              <Line
+                type="monotone"
+                dataKey="total_sales"
+                stroke={COLORS[0]}
+                strokeWidth={3}
+                dot={{ r: 6 }}
+                activeDot={{ r: 8 }}
+                name="Total Sales"
+              />
             </LineChart>
           </ResponsiveContainer>
         </Card>
