@@ -14,6 +14,8 @@ import {
 } from "@mantine/core";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { notifications } from '@mantine/notifications';
+import { showNotification } from '@mantine/notifications';
 import PageHeader from "../components/PageHeader";
 import AddCollectionModal from "../components/AddCollectionModal";
 import EditCollectionModal from "../components/EditCollectionModal";
@@ -127,6 +129,11 @@ export default function Collection() {
       setCollectionToDelete(null);
       localStorage.removeItem(CACHE_KEY);
       localStorage.removeItem(CACHE_TIME_KEY);
+      showNotification({
+        title: 'Deleted',
+        message: `Collection "${collectionToDelete.name}" deleted successfully.`,
+        color: 'red',
+      });
       fetchCollections(false);
     } catch (err) {
       console.error("Error deleting collection:", err);
@@ -138,6 +145,11 @@ export default function Collection() {
     setCollections((prev) => [newCollection, ...prev]);
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(CACHE_TIME_KEY);
+    showNotification({
+      title: 'Added',
+      message: `Collection "${newCollection.name}" added successfully.`,
+      color: 'green',
+    });
     fetchCollections(false);
   };
 
@@ -149,6 +161,11 @@ export default function Collection() {
     );
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(CACHE_TIME_KEY);
+    showNotification({
+      title: 'Updated',
+      message: `Collection "${updatedCollection.name}" updated successfully.`,
+      color: 'blue',
+    });
     fetchCollections(false);
   };
 
@@ -200,6 +217,21 @@ export default function Collection() {
         addLabel="New Collection"
         onAdd={() => setAddModalOpen(true)}
       />
+      {/* <Button
+        onClick={() => {
+          Array(10)
+            .fill(0)
+            .forEach((_, index) => {
+              notifications.show({
+                title: `Notification ${index + 1}`,
+                message: 'Most notifications are added to queue',
+                autoClose: false,
+              });
+            });
+        }}
+      >
+        Show 10 notifications
+      </Button> */}
 
       <Paper
         radius="md"
@@ -272,10 +304,10 @@ export default function Collection() {
                       <Table.Td style={{ textAlign: "center" }}>
                         {col.release_date
                           ? new Date(col.release_date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
                           : "—"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
@@ -284,7 +316,7 @@ export default function Collection() {
                       <Table.Td style={{ textAlign: "center" }}>
                         {col.items
                           ? col.items.filter((item) => item.status === "Available")
-                              .length
+                            .length
                           : 0}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
@@ -297,8 +329,8 @@ export default function Collection() {
                         ₱
                         {col.total_sales
                           ? new Intl.NumberFormat("en-PH").format(
-                              Math.floor(col.total_sales)
-                            )
+                            Math.floor(col.total_sales)
+                          )
                           : "0"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
