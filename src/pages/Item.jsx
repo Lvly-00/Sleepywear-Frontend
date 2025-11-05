@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api/axios";
 import {
@@ -10,6 +10,8 @@ import {
   Group,
   Center,
   SimpleGrid,
+  Loader,
+  Skeleton,
 } from "@mantine/core";
 import PageHeader from "../components/PageHeader";
 import AddItemModal from "../components/AddItemModal";
@@ -17,68 +19,131 @@ import EditItemModal from "../components/EditItemModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
 
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+// Sorting helper: Available first, Sold Out last
+const sortItemsByStatus = (itemsList) => {
+  return [...itemsList].sort((a, b) => {
+    if (a.status === b.status) return 0;
+    if (a.status === "Available") return -1;
+    if (b.status === "Available") return 1;
+    return 0;
+  });
+};
+
 function Item() {
   const { id } = useParams();
-
-  // Collections state
   const [collections, setCollections] = useState([]);
-  const [loadingCollections, setLoadingCollections] = useState(false);
-
-  // Items state
   const [items, setItems] = useState([]);
   const [loadingItems, setLoadingItems] = useState(false);
-
+  const [loadingCollections, setLoadingCollections] = useState(false);
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-
   const [addErrors, setAddErrors] = useState({});
   const [editErrors, setEditErrors] = useState({});
+  const debounceRef = useRef(null);
 
-  // Fetch collections
-  const fetchCollections = async () => {
+  const fixImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    const base = import.meta.env.VITE_API_URL?.replace("/api", "");
+    return `${base}/storage/${url.replace("public/", "")}`;
+  };
+
+  const itemsCacheKey = (collectionId) => `items_cache_${collectionId}`;
+  const itemsCacheTimeKey = (collectionId) => `items_cache_${collectionId}_time`;
+
+  const fetchCollections = useCallback(async () => {
     setLoadingCollections(true);
     try {
-      const res = await api.get("/collections");
-      setCollections(res.data);
-    } catch (error) {
-      console.error("Error fetching collections:", error);
+      const cached = localStorage.getItem("collections_cache");
+      const ts = localStorage.getItem("collections_cache_time");
+      const now = Date.now();
+
+      if (cached && ts && now - Number(ts) < CACHE_TTL_MS) {
+        setCollections(JSON.parse(cached));
+      } else {
+        const res = await api.get("/collections");
+        setCollections(res.data);
+        localStorage.setItem("collections_cache", JSON.stringify(res.data));
+        localStorage.setItem("collections_cache_time", String(now));
+      }
+    } catch (err) {
+      console.error("Error fetching collections:", err);
     } finally {
       setLoadingCollections(false);
     }
-  };
+  }, []);
 
-  // Fetch items by collection_id query parameter
-  const fetchItems = async (collectionId) => {
-    setLoadingItems(true);
+  const fetchItemsFromServer = useCallback(async (collectionId) => {
+    if (!collectionId) return null;
     try {
-      const res = await api.get("/items", {
-        params: { collection_id: collectionId },
-      });
-      setItems(res.data);
-      console.log("Fetched items:", res.data);
-    } catch (error) {
-      console.error("Error fetching items:", error);
-    } finally {
-      setLoadingItems(false);
+      const res = await api.get("/items", { params: { collection_id: collectionId } });
+      const fixedItems = res.data.map((item) => ({
+        ...item,
+        image_url: fixImageUrl(item.image_url || item.image),
+      }));
+
+      const sortedItems = sortItemsByStatus(fixedItems);
+
+      setItems(sortedItems);
+      const now = Date.now();
+      sessionStorage.setItem(itemsCacheKey(collectionId), JSON.stringify(sortedItems));
+      sessionStorage.setItem(itemsCacheTimeKey(collectionId), String(now));
+      return sortedItems;
+    } catch (err) {
+      console.error("Error fetching items:", err);
+      return null;
     }
-  };
+  }, []);
+
+  const loadItems = useCallback(
+    async (collectionId) => {
+      if (!collectionId) return;
+      const cached = sessionStorage.getItem(itemsCacheKey(collectionId));
+      const ts = sessionStorage.getItem(itemsCacheTimeKey(collectionId));
+      const now = Date.now();
+
+      if (cached && ts && now - Number(ts) < CACHE_TTL_MS) {
+        try {
+          const parsed = JSON.parse(cached);
+          const sortedItems = sortItemsByStatus(parsed);
+          setItems(sortedItems);
+        } catch {
+          sessionStorage.removeItem(itemsCacheKey(collectionId));
+          sessionStorage.removeItem(itemsCacheTimeKey(collectionId));
+          await fetchItemsFromServer(collectionId);
+          return;
+        }
+
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          fetchItemsFromServer(collectionId);
+        }, 300);
+      } else {
+        setLoadingItems(true);
+        await fetchItemsFromServer(collectionId);
+        setLoadingItems(false);
+      }
+    },
+    [fetchItemsFromServer]
+  );
 
   useEffect(() => {
     fetchCollections();
-  }, []);
+  }, [fetchCollections]);
 
   useEffect(() => {
-    if (id) fetchItems(id);
-  }, [id]);
+    loadItems(id);
+  }, [id, loadItems]);
 
   const collection = collections.find((c) => String(c.id) === String(id));
   const collectionItems = items;
 
-  // Sync collection totals by updating backend directly (optional)
-  const syncCollectionTotals = async () => {
+  const syncCollectionTotals = useCallback(async () => {
     if (!collection) return;
     const totalQty = collectionItems.length;
     const stockQty = collectionItems.filter((i) => i.status === "Available").length;
@@ -96,48 +161,67 @@ function Item() {
           stock_qty: stockQty,
           status,
         });
-        // Refetch collections after update
+        localStorage.removeItem("collections_cache");
+        localStorage.removeItem("collections_cache_time");
         fetchCollections();
       } catch (err) {
-        console.error("Error syncing collection totals:", err.response?.data || err.message);
+        console.error("Error syncing totals:", err);
       }
     }
-  };
+  }, [collection, collectionItems, fetchCollections]);
 
-  const handleItemAdded = (newItemData) => {
-    setAddErrors({});
-    // Optimistically add item
-    setItems((prev) => [...prev, newItemData]);
+  const updateCacheAndRevalidate = useCallback(
+    (updatedList) => {
+      sessionStorage.setItem(itemsCacheKey(id), JSON.stringify(updatedList));
+      sessionStorage.setItem(itemsCacheTimeKey(id), String(Date.now()));
+      fetchItemsFromServer(id);
+      setTimeout(syncCollectionTotals, 200);
+    },
+    [id, fetchItemsFromServer, syncCollectionTotals]
+  );
+
+  const handleItemAdded = (newItem) => {
     setAddModal(false);
-    setTimeout(syncCollectionTotals, 100);
-    fetchItems(id); // Fetch fresh items just in case
+    const next = sortItemsByStatus([newItem, ...items]);
+    setItems(next);
+    updateCacheAndRevalidate(next);
   };
 
-  const handleItemUpdated = (updatedItemData) => {
-    console.log("Item updated:", updatedItemData);
-    setEditErrors({});
+  const handleItemUpdated = (updatedItem) => {
     setEditModal(false);
-    setSelectedItem(null);
-
-    fetchItems(id).then(() => {
-      console.log("Items refreshed after edit");
-    });
-    setTimeout(syncCollectionTotals, 100);
+    const next = sortItemsByStatus(items.map((i) => (i.id === updatedItem.id ? updatedItem : i)));
+    setItems(next);
+    updateCacheAndRevalidate(next);
   };
 
   const handleDelete = async () => {
     if (!itemToDelete) return;
     try {
-      await api.delete(`/items/${itemToDelete.id}`);
-      setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
+      const next = sortItemsByStatus(items.filter((i) => i.id !== itemToDelete.id));
+      setItems(next);
       setDeleteModalOpen(false);
       setItemToDelete(null);
-      setTimeout(syncCollectionTotals, 100);
-      fetchItems(id);
+      await api.delete(`/items/${itemToDelete.id}`);
+      updateCacheAndRevalidate(next);
     } catch (err) {
-      console.error("Error deleting item:", err.response?.data || err.message);
+      console.error("Error deleting item:", err);
+      fetchItemsFromServer(id);
     }
   };
+
+  const renderSkeletonGrid = (count = 6) => (
+    <SimpleGrid cols={3} spacing="lg" breakpoints={[{ maxWidth: 980, cols: 2 }, { maxWidth: 600, cols: 1 }]}>
+      {Array.from({ length: count }).map((_, idx) => (
+        <Card key={idx} shadow="sm" padding="md" radius="md" withBorder>
+          <Skeleton height={250} width="100%" mb="sm" />
+          <Skeleton height={20} width="80%" mb="xs" />
+          <Skeleton height={20} width="40%" mb="xs" />
+          <Skeleton height={16} width="60%" mb="xs" />
+          <Skeleton height={32} width="100%" />
+        </Card>
+      ))}
+    </SimpleGrid>
+  );
 
   return (
     <Stack p="lg" spacing="lg">
@@ -151,10 +235,12 @@ function Item() {
         }}
       />
 
-      {(loadingCollections || loadingItems) ? (
+      {loadingCollections ? (
         <Center py="lg">
-          <Text>Loading items...</Text>
+          <Loader />
         </Center>
+      ) : loadingItems ? (
+        renderSkeletonGrid()
       ) : collectionItems.length === 0 ? (
         <Center py="lg">
           <Text>No items found for this collection.</Text>
@@ -196,18 +282,17 @@ function Item() {
                 >
                   {item.image_url ? (
                     <img
-                      src={item.image_url}
+                      src={item.image_url || "/placeholder.png"}
                       alt={item.name}
                       style={{
                         height: "100%",
                         width: "100%",
                         objectFit: "cover",
+                        borderRadius: 8,
                       }}
                     />
                   ) : (
-                    <Text size="sm" c="dimmed">
-                      No image
-                    </Text>
+                    <Skeleton height={250} width="100%" />
                   )}
                 </div>
               </Card.Section>

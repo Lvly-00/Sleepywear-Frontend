@@ -19,15 +19,17 @@ function SidebarNav() {
   const handleLogout = async () => {
     try {
       await api.post("/logout");
-      localStorage.removeItem("access_token");
+      localStorage.clear();
+      sessionStorage.clear();
+      delete api.defaults.headers.common["Authorization"];
       navigate("/");
     } catch (err) {
       console.error("Logout failed:", err);
-      alert("Failed to logout. Please try again.");
+      alert("Logout failed. Please try again.");
     }
   };
 
-  
+
   return (
     <nav className={classes.navbar}>
       {/* Logo */}

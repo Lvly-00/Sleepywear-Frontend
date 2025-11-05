@@ -61,12 +61,13 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
       data.append("name", form.name);
       data.append("price", form.price);
       data.append("image", file);
+      data.append("status", "Available");
 
       const res = await api.post("/items", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      onItemAdded(res.data);  // Pass created item to parent
+      onItemAdded(res.data);
       onClose();
     } catch (err) {
       console.error("Error adding item:", err.response?.data || err.message);
@@ -83,30 +84,34 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
         style={{
           borderRadius: "20px",
           padding: "10px",
-          margin: "auto"
-        }}>
+          margin: "auto",
+        }}
+      >
         <Modal.Header
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center"
-          }}>
-          <Modal.CloseButton size={35}
+            alignItems: "center",
+          }}
+        >
+          <Modal.CloseButton
+            size={35}
             style={{
               order: 0,
               marginRight: "1rem",
-              color: "#AB8262"
-            }} />
-          <Modal.Title
-            style={{
-              flex: 1
-            }}>
-            <Text align="center" color="black"
+              color: "#AB8262",
+            }}
+          />
+          <Modal.Title style={{ flex: 1 }}>
+            <Text
+              align="center"
+              color="black"
               style={{
                 width: "100%",
                 fontSize: "26px",
-                fontWeight: "700"
-              }}>
+                fontWeight: "700",
+              }}
+            >
               Add Item
             </Text>
           </Modal.Title>
@@ -115,15 +120,16 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
 
         <Modal.Body>
           <form onSubmit={handleSubmit} noValidate>
-            {/* Upload Box */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "center",
                 marginTop: "10px",
-                marginBottom: "10px"
-              }}>
-              <label htmlFor="imageUpload"
+                marginBottom: "10px",
+              }}
+            >
+              <label
+                htmlFor="imageUpload"
                 style={{
                   display: "block",
                   width: "60%",
@@ -135,9 +141,21 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
                   fontSize: "16px",
                   fontWeight: 500,
                   overflow: "hidden",
-                  position: "relative"
-                }}>
-                {preview ? <img src={preview} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover", padding: "5px" }} /> :
+                  position: "relative",
+                }}
+              >
+                {preview ? (
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      padding: "5px",
+                    }}
+                  />
+                ) : (
                   <div
                     style={{
                       position: "absolute",
@@ -145,45 +163,70 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
                       left: "50%",
                       transform: "translate(-50%, -50%)",
                       color: "#aaa",
-                      fontWeight: "400"
-                    }}>
+                      fontWeight: "400",
+                    }}
+                  >
                     Add Photo
-                  </div>}
+                  </div>
+                )}
               </label>
             </div>
 
-            <input id="imageUpload" type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
-            {errors.file && <Text color="red" size="xs" mt={-5} ta="center">{errors.file}</Text>}
+            <input
+              id="imageUpload"
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
+            {errors.file && (
+              <Text color="red" size="xs" mt={-5} ta="center">
+                {errors.file}
+              </Text>
+            )}
 
-            {/* Inputs Row */}
             <div style={{ display: "flex", gap: "10px", marginTop: "25px" }}>
               <TextInput
                 label="Item Name"
-                withAsterisk placeholder="Enter name"
+                withAsterisk
+                placeholder="Enter name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                error={errors.name} />
+                error={errors.name}
+              />
               <NumberInput
                 label="Price"
                 withAsterisk
                 placeholder="Enter price"
                 value={form.price}
-                onChange={(value) => setForm({ ...form, price: value })} min={0} parser={(value) => value.replace(/\₱\s?|(,*)/g, "")}
-                formatter={(value) => !Number.isNaN(parseFloat(value)) ? `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "₱ "}
-                error={errors.price} />
+                onChange={(value) => setForm({ ...form, price: value })}
+                min={0}
+                parser={(value) => value.replace(/\₱\s?|(,*)/g, "")}
+                formatter={(value) =>
+                  !Number.isNaN(parseFloat(value))
+                    ? `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                    : "₱ "
+                }
+                error={errors.price}
+              />
             </div>
 
             <Group mt="30px" justify="flex-end">
-              <Button type="submit" disabled={isSubmitting}
+              <Button
+                type="submit"
+                disabled={isSubmitting}
                 style={{
                   backgroundColor: "#AB8262",
                   color: "white",
                   borderRadius: "12px",
                   width: "90px",
                   height: "36px",
-                  fontSize: "15px"
-                }}>
-                {isSubmitting ? "Saving..." : "Save"}
+                  fontSize: "15px",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  opacity: isSubmitting ? 0.7 : 1,
+                }}
+              >
+                Save
               </Button>
             </Group>
           </form>

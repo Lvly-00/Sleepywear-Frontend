@@ -12,7 +12,7 @@ import {
 import api from "../api/axios";
 
 export default function EditItemModal({ opened, onClose, item, onItemUpdated }) {
-  const [form, setForm] = useState({ name: "", price: 0 });
+  const [form, setForm] = useState({ name: "", price: 0, collection_id: "" });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,7 +20,11 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
 
   useEffect(() => {
     if (item) {
-      setForm({ name: item.name || "", price: item.price || 0 });
+      setForm({
+        name: item.name || "",
+        price: item.price || 0,
+        collection_id: item.collection_id || "",
+      });
       setPreview(item.image_url || null);
       setLoading(false);
     }
@@ -56,6 +60,7 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
     if (hasError) return;
 
     const data = new FormData();
+    data.append("collection_id", form.collection_id);
     data.append("name", form.name);
     data.append("price", form.price);
     if (file) data.append("image", file);
@@ -64,13 +69,15 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
       const res = await api.post(`/items/${item.id}?_method=PUT`, data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
       onItemUpdated(res.data);
       onClose();
     } catch (err) {
       console.error(err.response?.data || err.message);
       setErrors((prev) => ({
         ...prev,
-        name: "Failed to update item. Try again.",
+        name:
+          err.response?.data?.message || "Failed to update item. Try again.",
       }));
     }
   };
@@ -85,7 +92,6 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
           margin: "auto",
         }}
       >
-        {/* Header */}
         <Modal.Header
           style={{
             display: "flex",
@@ -113,7 +119,6 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
           <div style={{ width: 36 }} />
         </Modal.Header>
 
-        {/* Body */}
         <Modal.Body>
           {loading ? (
             <Center style={{ height: 200 }}>
@@ -121,7 +126,6 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
             </Center>
           ) : (
             <form onSubmit={handleSubmit} noValidate>
-              {/* Upload Box */}
               <div
                 style={{
                   display: "flex",
@@ -188,7 +192,6 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
                 </Text>
               )}
 
-              {/* Inputs Row */}
               <div
                 style={{
                   display: "flex",
@@ -227,7 +230,6 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
                 </div>
               </div>
 
-              {/* Save Button */}
               <Group mt="30px" justify="flex-end">
                 <Button
                   type="submit"

@@ -24,7 +24,6 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
     capital: "",
   });
 
-  // Populate form when modal opens with existing collection data
   useEffect(() => {
     if (opened && collection) {
       setForm({
