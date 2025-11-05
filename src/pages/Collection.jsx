@@ -31,7 +31,6 @@ export default function Collection() {
   const [collectionToDelete, setCollectionToDelete] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
-  // Fetch with local cache (trust backend sorting)
   const fetchCollections = async (showLoader = false) => {
     if (showLoader) setLoading(true);
     try {
@@ -109,7 +108,6 @@ export default function Collection() {
     fetchCollections(false);
   };
 
-  // 🧱 Skeleton Rows
   const renderSkeletonRows = (rows = 5) =>
     Array.from({ length: rows }).map((_, i) => (
       <Table.Tr key={i}>

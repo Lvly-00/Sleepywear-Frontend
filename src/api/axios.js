@@ -3,7 +3,6 @@ import axios from "axios";
 const API_URL =
     import.meta.env.VITE_API_URL || "https://sleepywear-backend.onrender.com/api";
 
-// Get access token from local storage
 const getToken = () => localStorage.getItem("access_token");
 
 const api = axios.create({
@@ -14,20 +13,17 @@ const api = axios.create({
     },
 });
 
-// ✅ Attach token to every request if available
 api.interceptors.request.use((config) => {
     const token = getToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
 });
 
-// ✅ Global response interceptor
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         const originalRequest = error.config;
 
-        // Handle Unauthorized (expired/invalid token)
         if (
             error.response &&
             error.response.status === 401 &&
