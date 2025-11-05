@@ -24,31 +24,49 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
   const [invoice, setInvoice] = useState(null);
 
   useEffect(() => {
-    if (!invoiceData) return;
+    if (!invoiceData) {
+      setInvoice(null);
+      return;
+    }
 
-    const items = invoiceData.items?.length
-      ? invoiceData.items
-      : (invoiceData.orders || []).flatMap(order =>
-        (order.items || []).map(orderItem => ({
-          ...orderItem,
-          item: orderItem.item || null,
-        }))
-      );
+    // Extract items robustly
+    const items =
+      Array.isArray(invoiceData.items) && invoiceData.items.length > 0
+        ? invoiceData.items
+        : Array.isArray(invoiceData.orders)
+        ? invoiceData.orders.flatMap((order) =>
+            Array.isArray(order.items)
+              ? order.items.map((orderItem) => ({
+                  ...orderItem,
+                  item: orderItem.item || null,
+                }))
+              : []
+          )
+        : [];
 
+    // Compute display_name safely
+    const display_name =
+      invoiceData.customer_name ||
+      [invoiceData.first_name, invoiceData.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() ||
+      "Customer";
+
+    // Normalize invoice object with defaults
     const normalizedInvoice = {
       ...invoiceData,
-      display_name:
-        invoiceData.customer_name ||
-        `${invoiceData.first_name || ""} ${invoiceData.last_name || ""}`.trim(),
+      display_name,
       items,
+      address: invoiceData.address || "Not provided",
+      contact_number: invoiceData.contact_number || "Not provided",
+      social_handle: invoiceData.social_handle || "Not provided",
+      payment: invoiceData.payment || {},
+      total: Number(invoiceData.total) || 0,
     };
-
-    console.log("Raw invoiceData from API:", invoiceData);
-    console.log("Normalized invoice for display:", normalizedInvoice);
 
     setInvoice(normalizedInvoice);
   }, [invoiceData]);
-
 
   if (!invoice) return null;
 
@@ -84,9 +102,21 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
 
     const image = canvas.toDataURL("image/png");
     const link = document.createElement("a");
-    link.download = `Invoice_${invoice.display_name || "Customer"}.png`;
+    link.download = `Invoice_${invoice.display_name.replace(/\s+/g, "_")}.png`;
     link.href = image;
     link.click();
+  };
+
+  // Helper to format date safely
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "Not provided";
+    const d = new Date(dateStr);
+    if (isNaN(d)) return "Invalid date";
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   return (

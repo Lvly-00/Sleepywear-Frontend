@@ -110,7 +110,7 @@ export default function Collection() {
 
   const renderSkeletonRows = (rows = 5) =>
     Array.from({ length: rows }).map((_, i) => (
-      <Table.Tr key={i}>
+      <Table.Tr key={i} style={{ borderBottom: "1px solid #D8CBB8" }}>
         <Table.Td>
           <Skeleton height={20} width="70%" />
         </Table.Td>
@@ -152,7 +152,11 @@ export default function Collection() {
         onAdd={() => setAddModalOpen(true)}
       />
 
-      <Paper radius="md" p="xl" style={{ minHeight: "70vh", marginBottom: "1rem" }}>
+      <Paper
+        radius="md"
+        p="xl"
+        style={{ minHeight: "70vh", marginBottom: "1rem" }}
+      >
         <ScrollArea scrollbarSize={8}>
           <Table highlightOnHover>
             <Table.Thead>
@@ -172,8 +176,11 @@ export default function Collection() {
               {loading ? (
                 renderSkeletonRows(6)
               ) : filteredCollections.length === 0 ? (
-                <Table.Tr>
-                  <Table.Td colSpan={8} style={{ textAlign: "center", padding: "2rem" }}>
+                <Table.Tr style={{ borderBottom: "1px solid #D8CBB8" }}>
+                  <Table.Td
+                    colSpan={8}
+                    style={{ textAlign: "center", padding: "2rem" }}
+                  >
                     <Text c="dimmed">No collections found</Text>
                   </Table.Td>
                 </Table.Tr>
@@ -187,7 +194,7 @@ export default function Collection() {
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.2 }}
                       onClick={() => navigate(`/collections/${col.id}/items`)}
-                      style={{ cursor: "pointer" }}
+                      style={{ cursor: "pointer", borderBottom: "1px solid #D8CBB8" }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = "#f8f9fa")
                       }
@@ -205,22 +212,29 @@ export default function Collection() {
                             })
                           : "—"}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>{col.qty ?? 0}</Table.Td>
+                      <Table.Td style={{ textAlign: "center" }}>
+                        {col.qty ?? 0}
+                      </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
                         {col.items
-                          ? col.items.filter((item) => item.status === "Available").length
+                          ? col.items.filter((item) => item.status === "Available")
+                              .length
                           : 0}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
                         ₱
                         {col.capital
-                          ? new Intl.NumberFormat("en-PH").format(Math.floor(col.capital))
+                          ? new Intl.NumberFormat("en-PH").format(
+                              Math.floor(col.capital)
+                            )
                           : "0"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
                         ₱
                         {col.total_sales
-                          ? new Intl.NumberFormat("en-PH").format(Math.floor(col.total_sales))
+                          ? new Intl.NumberFormat("en-PH").format(
+                              Math.floor(col.total_sales)
+                            )
                           : "0"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
@@ -239,7 +253,10 @@ export default function Collection() {
                           {col.status === "Active" ? "Active" : "Sold Out"}
                         </Badge>
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+                      <Table.Td
+                        style={{ textAlign: "center" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Group gap={4} justify="center">
                           <Button
                             size="xs"

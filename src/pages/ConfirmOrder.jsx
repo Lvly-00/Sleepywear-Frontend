@@ -21,26 +21,41 @@ const ConfirmOrder = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
 
+  // Initialize orderItems from location.state or sessionStorage
+  const [orderItems, setOrderItems] = useState(() => {
+    if (state?.items) return state.items;
+    const saved = sessionStorage.getItem("orderItems");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Initialize form from location.state or sessionStorage or empty
+  const [form, setForm] = useState(() => {
+    if (state?.form) return state.form;
+    const savedForm = sessionStorage.getItem("customerForm");
+    return savedForm
+      ? JSON.parse(savedForm)
+      : {
+        first_name: "",
+        last_name: "",
+        address: "",
+        contact_number: "",
+        social_handle: "",
+      };
+  });
+
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [form, setForm] = useState({
-    first_name: "",
-    last_name: "",
-    address: "",
-    contact_number: "",
-    social_handle: "",
-  });
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
   const [errors, setErrors] = useState({});
+  const [createdOrder, setCreatedOrder] = useState(null); // New state for order to navigate after modal close
 
-  const orderItems = state?.items || [];
   const total = orderItems.reduce(
     (sum, item) => sum + parseFloat(item.price),
     0
   );
 
-  // Fetch customers locally
+  // Fetch customers once
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
@@ -52,6 +67,16 @@ const ConfirmOrder = () => {
     };
     fetchCustomers();
   }, []);
+
+  // Sync orderItems to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem("orderItems", JSON.stringify(orderItems));
+  }, [orderItems]);
+
+  // Sync form to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem("customerForm", JSON.stringify(form));
+  }, [form]);
 
   const handleCustomerSelect = (customerId) => {
     const customer = customers.find((c) => c.id.toString() === customerId);
@@ -65,7 +90,7 @@ const ConfirmOrder = () => {
         social_handle: customer.social_handle,
       });
     } else {
-      // Clear form if cleared selection
+      // Clear selection and form
       setSelectedCustomer(null);
       setForm({
         first_name: "",
@@ -105,7 +130,6 @@ const ConfirmOrder = () => {
     }
 
     try {
-      // Prepare customer payload
       const customerPayload = { ...form };
       let customerId = selectedCustomer;
 
@@ -132,6 +156,9 @@ const ConfirmOrder = () => {
       const response = await api.post("/orders", payload);
 
       if (response.status === 200 || response.status === 201) {
+        const createdOrder = response.data;
+        setCreatedOrder(createdOrder); // Save created order for later navigation
+
         const invoice = {
           customer_name: `${form.first_name} ${form.last_name}`,
           address: form.address,
@@ -147,6 +174,12 @@ const ConfirmOrder = () => {
 
         setInvoiceData(invoice);
         setInvoiceModal(true);
+
+        // CLEAR THE ORDER ITEMS STATE AND STORAGE (sessionStorage + localStorage)
+        setOrderItems([]); // Clear React state
+        sessionStorage.removeItem("orderItems");
+        sessionStorage.removeItem("customerForm");
+        localStorage.removeItem("orderItemsCache"); // <-- Remove localStorage cache here
       } else {
         alert("Unexpected response from server.");
       }
@@ -155,7 +188,6 @@ const ConfirmOrder = () => {
       alert("Order failed: " + (err.response?.data?.message || "Check console."));
     }
   };
-
   return (
     <div style={{ padding: 20 }}>
       <PageHeader title="Confirm Order" showBack />
@@ -198,9 +230,11 @@ const ConfirmOrder = () => {
                   height: "28px",
                 }}
                 onClick={() => {
+                  sessionStorage.setItem("orderItems", JSON.stringify(orderItems));
+                  sessionStorage.setItem("customerForm", JSON.stringify(form));
                   navigate("/add-order", {
                     state: {
-                      selectedItems: orderItems, // pass current items
+                      selectedItems: orderItems,
                     },
                   });
                 }}
@@ -211,7 +245,6 @@ const ConfirmOrder = () => {
 
             <Divider mb="sm" color="#C1A287" />
 
-            {/* Scrollable table area */}
             <ScrollArea style={{ flexGrow: 1 }} scrollbarSize={6}>
               {orderItems.length === 0 ? (
                 <Text color="dimmed">No items in this order.</Text>
@@ -270,7 +303,6 @@ const ConfirmOrder = () => {
               )}
             </ScrollArea>
 
-            {/* Fixed total */}
             <Divider mt="sm" mb="xs" color="#C1A287" />
             <Group justify="space-between">
               <Text fw={600} style={{ fontSize: "24px" }}>
@@ -459,8 +491,13 @@ const ConfirmOrder = () => {
               opened={invoiceModal}
               onClose={() => {
                 setInvoiceModal(false);
-                // No orderStore here, so we don't fetchOrders()
-                navigate("/orders");
+
+                if (createdOrder) {
+                  navigate("/orders", {
+                    state: { reloadOrders: true, newOrder: createdOrder },
+                  });
+                  setCreatedOrder(null);
+                }
               }}
               invoiceData={invoiceData}
             />
