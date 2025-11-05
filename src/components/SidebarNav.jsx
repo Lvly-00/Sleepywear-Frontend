@@ -26,6 +26,8 @@ function SidebarNav() {
       alert("Failed to logout. Please try again.");
     }
   };
+
+  
   return (
     <nav className={classes.navbar}>
       {/* Logo */}

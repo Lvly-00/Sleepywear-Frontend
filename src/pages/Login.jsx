@@ -73,7 +73,7 @@ function Login() {
       const cooldownEnd = Date.now() + wait;
       localStorage.setItem("login_cooldown_end", cooldownEnd);
       setCooldown(wait / 1000);
-      setAttempts(0);
+      setAttempts(0); 
       localStorage.setItem("login_attempts", 0);
       setServerError("Too many attempts. Please wait 30 seconds.");
       return;
@@ -84,7 +84,6 @@ function Login() {
     try {
       const response = await api.post("/login", { email, password });
 
-      // ✅ Store plain access token
       localStorage.setItem("access_token", response.data.access_token);
       localStorage.setItem("login_attempts", 0);
       setAttempts(0);

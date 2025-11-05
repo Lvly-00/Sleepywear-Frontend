@@ -1,103 +1,119 @@
 import React, { useState, useEffect } from "react";
 import {
-  Modal,
-  Text,
+  Stack,
   TextInput,
   NumberInput,
   Button,
+  Modal,
+  Text,
   Group,
-  Loader,
-  Center,
 } from "@mantine/core";
+import { DateInput } from "@mantine/dates";
 import api from "../api/axios";
 
-export default function EditItemModal({ opened, onClose, item, onItemUpdated }) {
-  const [form, setForm] = useState({ name: "", price: 0 });
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState({ name: "", price: "", file: "" });
+function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
+  const [form, setForm] = useState({
+    name: "",
+    release_date: null,
+    capital: 0,
+  });
 
+  const [errors, setErrors] = useState({
+    name: "",
+    release_date: "",
+    capital: "",
+  });
+
+  // Populate form when modal opens with existing collection data
   useEffect(() => {
-    if (item && opened) {
-      setForm({ name: item.name || "", price: item.price || 0 });
-      setPreview(item.image_url || null);
-      setFile(null);
-      setErrors({ name: "", price: "", file: "" });
-      setLoading(false);
-      setIsSubmitting(false);
-    } else {
-      setLoading(true);
+    if (opened && collection) {
+      setForm({
+        name: collection.name || "",
+        release_date: collection.release_date
+          ? new Date(collection.release_date)
+          : null,
+        capital: collection.capital || 0,
+      });
+      setErrors({ name: "", release_date: "", capital: "" });
     }
-  }, [item, opened]);
+  }, [opened, collection]);
 
-  const handleFileChange = (e) => {
-    const selected = e.target.files[0];
-    if (selected) {
-      setFile(selected);
-      if (preview && preview.startsWith("blob:")) {
-        URL.revokeObjectURL(preview);
-      }
-      setPreview(URL.createObjectURL(selected));
-      setErrors((prev) => ({ ...prev, file: "" }));
-    }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+    setErrors((e) => ({ ...e, [name]: "" }));
+  };
+
+  const handleCapitalChange = (value) => {
+    setForm((f) => ({ ...f, capital: value }));
+    setErrors((e) => ({ ...e, capital: "" }));
+  };
+
+  const handleDateChange = (value) => {
+    setForm((f) => ({ ...f, release_date: value }));
+    setErrors((e) => ({ ...e, release_date: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors({ name: "", price: "", file: "" });
 
-    let hasError = false;
+    const newErrors = { name: "", release_date: "", capital: "" };
+    let valid = true;
 
     if (!form.name.trim()) {
-      setErrors((prev) => ({ ...prev, name: "Item name is required." }));
-      hasError = true;
+      newErrors.name = "Collection number is required";
+      valid = false;
+    }
+    if (!form.release_date) {
+      newErrors.release_date = "Release date is required";
+      valid = false;
+    }
+    if (form.capital === null || form.capital < 0) {
+      newErrors.capital = "Capital must be non-negative";
+      valid = false;
     }
 
-    if (isNaN(form.price) || form.price < 0) {
-      setErrors((prev) => ({ ...prev, price: "Price must be ≥ 0." }));
-      hasError = true;
+    if (!valid) {
+      setErrors(newErrors);
+      return;
     }
-
-    if (hasError) return;
-
-    setIsSubmitting(true);
 
     try {
-      const data = new FormData();
-      data.append("name", form.name.trim());
-      data.append("price", form.price);
-      if (file) data.append("image", file);
+      const payload = {
+        ...form,
+        release_date:
+          form.release_date && form.release_date instanceof Date
+            ? form.release_date.toISOString().split("T")[0]
+            : form.release_date,
+      };
 
-      const res = await api.post(`/items/${item.id}?_method=PUT`, data, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.put(`/collections/${collection.id}`, payload);
 
-      onItemUpdated(res.data);
+      if (onSuccess) onSuccess(res.data);
       onClose();
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-      setErrors((prev) => ({
-        ...prev,
-        name: "Failed to update item. Try again.",
-      }));
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      if (error.response && error.response.status === 422) {
+        const validationErrors = error.response.data.errors || {};
+        setErrors((prev) => ({
+          ...prev,
+          name: validationErrors.name ? validationErrors.name[0] : "",
+          release_date: validationErrors.release_date
+            ? validationErrors.release_date[0]
+            : "",
+          capital: validationErrors.capital
+            ? validationErrors.capital[0]
+            : "",
+        }));
+      } else {
+        console.error(error.response?.data || error.message);
+      }
     }
   };
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
       <Modal.Overlay />
-      <Modal.Content
-        style={{
-          borderRadius: "20px",
-          padding: "10px",
-          margin: "auto",
-        }}
-      >
-        {/* Header */}
+      <Modal.Content style={{ borderRadius: 16, padding: 20 }}>
         <Modal.Header
           style={{
             display: "flex",
@@ -107,162 +123,75 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
         >
           <Modal.CloseButton
             size={35}
-            style={{
-              order: 0,
-              marginRight: "1rem",
-              color: "#AB8262",
-            }}
+            style={{ order: 0, marginRight: 16, color: "#AB8262" }}
           />
           <Modal.Title style={{ flex: 1 }}>
             <Text
               align="center"
               color="black"
-              style={{ width: "100%", fontSize: "26px", fontWeight: "700" }}
+              style={{ fontSize: 26, fontWeight: 700 }}
             >
-              Edit Item
+              Edit Collection
             </Text>
           </Modal.Title>
           <div style={{ width: 36 }} />
         </Modal.Header>
 
-        {/* Body */}
         <Modal.Body>
-          {loading ? (
-            <Center style={{ height: 200 }}>
-              <Loader />
-            </Center>
-          ) : (
-            <form onSubmit={handleSubmit} noValidate>
-              {/* Upload Box */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  marginTop: "10px",
-                  marginBottom: "10px",
-                }}
-              >
-                <label
-                  htmlFor="editImageUpload"
-                  style={{
-                    display: "block",
-                    width: "60%",
-                    height: "160px",
-                    border: "2px dashed #000000ff",
-                    textAlign: "center",
-                    color: "#999",
-                    cursor: "pointer",
-                    fontSize: "16px",
-                    fontWeight: 500,
-                    overflow: "hidden",
-                    position: "relative",
-                  }}
-                >
-                  {preview ? (
-                    <img
-                      src={preview}
-                      alt="Preview"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        padding: "5px",
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        color: "#aaa",
-                        fontWeight: "400",
-                      }}
-                    >
-                      Add Photo
-                    </div>
-                  )}
-                </label>
-              </div>
-
-              <input
-                id="editImageUpload"
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={handleFileChange}
-                disabled={isSubmitting}
+          <form onSubmit={handleSubmit} noValidate>
+            <Stack spacing="sm">
+              <TextInput
+                label="Collection Number"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                error={errors.name}
+                placeholder="Enter collection number"
+                required
               />
 
-              {errors.file && (
-                <Text color="red" size="xs" mt={-5} ta="center">
-                  {errors.file}
-                </Text>
-              )}
+              <NumberInput
+                label="Capital"
+                placeholder="Enter capital"
+                value={form.capital}
+                onChange={handleCapitalChange}
+                min={0}
+                parser={(value) => value.replace(/\₱\s?|(,*)/g, "")}
+                formatter={(value) =>
+                  !Number.isNaN(parseFloat(value))
+                    ? `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                    : "₱ "
+                }
+                error={errors.capital}
+                required
+              />
 
-              {/* Inputs Row */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: "10px",
-                  marginTop: "25px",
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <TextInput
-                    label={<span style={{ fontWeight: "400" }}>Item Name</span>}
-                    withAsterisk
-                    placeholder="Enter name"
-                    value={form.name}
-                    onChange={(e) =>
-                      setForm({ ...form, name: e.target.value })
-                    }
-                    error={errors.name}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <NumberInput
-                    label={<span style={{ fontWeight: "400" }}>Price</span>}
-                    withAsterisk
-                    placeholder="Enter price"
-                    value={form.price}
-                    onChange={(value) => setForm({ ...form, price: value })}
-                    min={0}
-                    parser={(value) => value.replace(/\₱\s?|(,*)/g, "")}
-                    formatter={(value) =>
-                      !Number.isNaN(parseFloat(value))
-                        ? `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                        : "₱ "
-                    }
-                    error={errors.price}
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </div>
+              <DateInput
+                label="Release Date"
+                placeholder="MM/DD/YYYY"
+                value={form.release_date}
+                onChange={handleDateChange}
+                error={errors.release_date}
+                required
+                valueFormat="MM/DD/YYYY"
+                clearable={false}
+              />
 
-              {/* Save Button */}
-              <Group mt="30px" justify="flex-end">
+              <Group mt="lg" justify="flex-end">
                 <Button
+                  color="#AB8262"
+                  style={{ borderRadius: 15, width: 90, fontSize: 16 }}
                   type="submit"
-                  style={{
-                    backgroundColor: "#AB8262",
-                    color: "white",
-                    borderRadius: "12px",
-                    width: "90px",
-                    height: "36px",
-                    fontSize: "15px",
-                  }}
-                  disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Saving..." : "Update"}
+                  Update
                 </Button>
               </Group>
-            </form>
-          )}
+            </Stack>
+          </form>
         </Modal.Body>
       </Modal.Content>
     </Modal.Root>
   );
 }
+
+export default EditCollectionModal;
