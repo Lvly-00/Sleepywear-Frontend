@@ -31,7 +31,7 @@ const PageHeader = ({
         <Text
           component="h1"
           style={{
-            fontFamily: "'League Spartan', sans-serif",
+            fontFamily: "League Spartan', sans-serif",
             fontWeight: 700,
             fontSize: "64px",
             color: "#02034C",

@@ -37,6 +37,7 @@ import Coins from "../assets/icons/coins.svg";
 import Tag from "../assets/icons/tag.svg";
 import Invoice from "../assets/icons/clipboard.svg";
 
+import Customers from "../assets/icons/customers.svg";
 
 
 
@@ -85,6 +86,8 @@ export const Icons = {
     Coins: (props) => <IconWrapper src={Coins} alt="net income" {...props} />,
     Tag: (props) => <IconWrapper src={Tag} alt="Items Sold" {...props} />,
     Invoice: (props) => <IconWrapper src={Invoice} alt="invoice" {...props} />,
+    Customers: (props) => <IconWrapper src={Customers} alt="customers" {...props} />,
+
 
 
 

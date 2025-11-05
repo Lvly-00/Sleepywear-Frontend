@@ -21,7 +21,6 @@ function Dashboard() {
     const fetchSummary = async () => {
       try {
         const response = await api.get("/dashboard-summary");
-        console.log("Dashboard summary API response:", response.data);  // Debug log
         setSummary(response.data);
       } catch (error) {
         console.error("Failed to fetch dashboard summary:", error);
@@ -33,18 +32,19 @@ function Dashboard() {
 
   if (!summary) return <SleepyLoader />;
 
-  // console.log("totalCustomers:", summary.totalCustomers); 
-
   const cardStyle = {
-    borderRadius: "16px",
+    borderRadius: "28px",
     border: "1px solid #C2C2C2",
     boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-    height: "150px",
+    width: "100%",
+    maxWidth: "300px",
+    height: "250px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
     textAlign: "center",
+    margin: "0 auto",
   };
 
   const formatNumber = (num) => {
@@ -60,15 +60,15 @@ function Dashboard() {
   const COLORS = ["#944E1B", "#54361C", "#F0BB78", "#8B4513", "#B5651D"];
 
   return (
-    <Stack p="lg" spacing="xl">
+    <Stack p="lg">
       <PageHeader title="Dashboard" />
 
       {/* Summary Cards */}
       <Paper p="lg" style={{ backgroundColor: "#FAF8F3" }}>
         <Text
           style={{
-            fontSize: "23px",
-            fontWeight: "500",
+            fontSize: "clamp(24px, 4vw, 30px)",
+            fontWeight: 600,
             color: "#05004E",
             marginBottom: "1rem",
           }}
@@ -76,67 +76,80 @@ function Dashboard() {
           Summary
         </Text>
 
-        <Grid>
-          <Grid.Col span={3}>
-            <Card style={cardStyle}>
-              <Text weight={400} style={{ fontSize: "14px" }}>
-                Net Income
-              </Text>
-              <Icons.Coins size={46} />
-              <Text
-                color="#5D4324"
-                style={{ fontSize: "25px", fontWeight: 600 }}
-              >
-                ₱{formatNumber(summary.netIncome)}
-              </Text>
-            </Card>
-          </Grid.Col>
-
-          <Grid.Col span={3}>
-            <Card style={cardStyle}>
-              <Text weight={400} style={{ fontSize: "14px" }}>
-                Gross Income
-              </Text>
-              <Icons.Coin size={46} />
-              <Text
-                color="#5D4324"
-                style={{ fontSize: "25px", fontWeight: 600 }}
-              >
-                ₱{formatNumber(summary.grossIncome)}
-              </Text>
-            </Card>
-          </Grid.Col>
-
-          <Grid.Col span={3}>
-            <Card style={cardStyle}>
-              <Text weight={400} style={{ fontSize: "14px" }}>
-                Total Items Sold
-              </Text>
-              <Icons.Tag size={46} />
-              <Text
-                color="#5D4324"
-                style={{ fontSize: "25px", fontWeight: 600 }}
-              >
-                {formatNumber(summary.totalItemsSold)}
-              </Text>
-            </Card>
-          </Grid.Col>
-
-          <Grid.Col span={3}>
-            <Card style={cardStyle}>
-              <Text weight={400} style={{ fontSize: "14px" }}>
-                Total Customers
-              </Text>
-              <Icons.EyeOff size={46} />
-              <Text
-                color="#5D4324"
-                style={{ fontSize: "25px", fontWeight: 600 }}
-              >
-                {formatNumber(summary.totalCustomers)}
-              </Text>
-            </Card>
-          </Grid.Col>
+        <Grid gutter="xl" justify="center">
+          {[
+            {
+              label: "Net Income",
+              icon: <Icons.Coins size={66} />,
+              value: `₱${formatNumber(summary.netIncome)}`,
+              extraText: null,
+            },
+            {
+              label: "Gross Income",
+              icon: <Icons.Coin size={66} />,
+              value: `₱${formatNumber(summary.grossIncome)}`,
+              extraText: null,
+            },
+            {
+              label: "Total Items Sold",
+              icon: <Icons.Tag size={66} />,
+              value: formatNumber(summary.totalItemsSold),
+              extraText: "pieces",
+            },
+            {
+              label: "Total Customers",
+              icon: <Icons.Customers size={66} />,
+              value: formatNumber(summary.totalCustomers),
+              extraText: "total",
+            },
+          ].map(({ label, icon, value, extraText }, idx) => (
+            <Grid.Col
+              key={idx}
+              span={3}
+              sm={6}
+              xs={12}
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: 24,
+              }}
+            >
+              <Card style={{ ...cardStyle, maxWidth: 300, width: "100%" }}>
+                <Text
+                  weight={400}
+                  style={{ fontSize: "clamp(18px, 2.5vw, 20px)", marginBottom: 6 }}
+                >
+                  {label}
+                </Text>
+                {icon}
+                <Text
+                  color="#5D4324"
+                  style={{
+                    fontSize: "clamp(32px, 2vw, 50px)",
+                    fontWeight: 500,
+                    marginTop: 6,
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {value}
+                </Text>
+                {extraText && (
+                  <Text
+                    color="#7a6f58"
+                    style={{
+                      fontSize: "clamp(18px, 3vw, 25px)",
+                      marginTop: 1,
+                      fontWeight: 400,
+                    }}
+                  >
+                    {extraText}
+                  </Text>
+                )}
+              </Card>
+            </Grid.Col>
+          ))}
         </Grid>
+
       </Paper>
 
       {/* Collection Sales Line Chart */}
