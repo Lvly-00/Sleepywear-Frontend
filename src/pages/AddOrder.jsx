@@ -47,20 +47,41 @@ const AddOrder = () => {
 
   // Save caches on change
   useEffect(() => {
-    localStorage.setItem(ORDER_ITEMS_STORAGE_KEY, JSON.stringify(selectedItems));
+    try {
+      const dataStr = JSON.stringify(selectedItems);
+      if (new Blob([dataStr]).size < 4.5 * 1024 * 1024) { // 4.5MB limit buffer
+        localStorage.setItem(ORDER_ITEMS_STORAGE_KEY, dataStr);
+      } else {
+        console.warn("Order items too large for localStorage, skipping cache");
+      }
+    } catch (error) {
+      console.error("Error caching selectedItems:", error);
+    }
   }, [selectedItems]);
 
   useEffect(() => {
-    if (selectedCollection) {
-      localStorage.setItem(SELECTED_COLLECTION_STORAGE_KEY, selectedCollection);
+    try {
+      if (selectedCollection) {
+        localStorage.setItem(SELECTED_COLLECTION_STORAGE_KEY, selectedCollection);
+      }
+    } catch (error) {
+      console.error("Error caching selectedCollection:", error);
     }
   }, [selectedCollection]);
 
   useEffect(() => {
-    if (collections.length > 0) {
-      localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(collections));
+    try {
+      const dataStr = JSON.stringify(collections);
+      if (new Blob([dataStr]).size < 4.5 * 1024 * 1024) {
+        localStorage.setItem(COLLECTIONS_STORAGE_KEY, dataStr);
+      } else {
+        console.warn("Collections data too large for localStorage, skipping cache");
+      }
+    } catch (error) {
+      console.error("Error caching collections:", error);
     }
   }, [collections]);
+
 
   // Fetch collections on mount (background update)
   useEffect(() => {
