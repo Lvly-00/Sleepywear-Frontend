@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Table,
@@ -8,15 +9,27 @@ import {
   Badge,
   Paper,
   ScrollArea,
+  Stack,
   Skeleton,
 } from "@mantine/core";
 import { motion, AnimatePresence } from "framer-motion";
+
 import PageHeader from "../components/PageHeader";
 import AddCollectionModal from "../components/AddCollectionModal";
 import EditCollectionModal from "../components/EditCollectionModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
 import api from "../api/axios";
+
+const CACHE_KEY = "collections_cache";
+const CACHE_TIME_KEY = "collections_cache_time";
+const MIN_SKELETON_ROWS = 6;
+
+const rowVariants = {
+  hidden: { opacity: 0, y: -10 },
+  visible: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 10 },
+};
 
 export default function Collection() {
   const navigate = useNavigate();
@@ -31,35 +44,54 @@ export default function Collection() {
   const [collectionToDelete, setCollectionToDelete] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
-  const fetchCollections = async (showLoader = false) => {
-    if (showLoader) setLoading(true);
-    try {
-      const cachedData = localStorage.getItem("collections_cache");
-      const cacheTimestamp = localStorage.getItem("collections_cache_time");
-      const cacheTTL = 5 * 60 * 1000; // 5 minutes
-      const now = Date.now();
+  const collectionsRef = useRef(collections);
 
-      if (cachedData && cacheTimestamp && now - cacheTimestamp < cacheTTL) {
-        const parsed = JSON.parse(cachedData);
-        setCollections(parsed);
+  useEffect(() => {
+    collectionsRef.current = collections;
+  }, [collections]);
+
+  const fetchCollections = useCallback(
+    async (showLoader = false) => {
+      if (showLoader) setLoading(true);
+
+      try {
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        const cacheTimestamp = localStorage.getItem(CACHE_TIME_KEY);
+        const cacheTTL = 5 * 60 * 1000; // 5 minutes
+        const now = Date.now();
+
+        if (
+          cachedData &&
+          cacheTimestamp &&
+          now - parseInt(cacheTimestamp, 10) < cacheTTL
+        ) {
+          const parsed = JSON.parse(cachedData);
+          setCollections(parsed);
+          setLoading(false);
+          return;
+        }
+
+        const res = await api.get("/collections");
+        // Only update if changed
+        if (
+          !areCollectionsSame(collectionsRef.current, res.data)
+        ) {
+          setCollections(res.data);
+          localStorage.setItem(CACHE_KEY, JSON.stringify(res.data));
+          localStorage.setItem(CACHE_TIME_KEY, now.toString());
+        }
+      } catch (err) {
+        console.error("Error fetching collections:", err);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const res = await api.get("/collections");
-      setCollections(res.data);
-      localStorage.setItem("collections_cache", JSON.stringify(res.data));
-      localStorage.setItem("collections_cache_time", now.toString());
-    } catch (err) {
-      console.error("Error fetching collections:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    []
+  );
 
   useEffect(() => {
     fetchCollections(true);
-  }, []);
+  }, [fetchCollections]);
 
   useEffect(() => {
     if (!search.trim()) {
@@ -72,6 +104,18 @@ export default function Collection() {
     }
   }, [search, collections]);
 
+  // Helper to check if collections are same based on id and updated_at
+  function areCollectionsSame(arr1, arr2) {
+    if (arr1.length !== arr2.length) return false;
+    return arr1.every((c1, idx) => {
+      const c2 = arr2[idx];
+      if (c1.id !== c2.id) return false;
+      const date1 = c1.updated_at || "";
+      const date2 = c2.updated_at || "";
+      return date1 === date2;
+    });
+  }
+
   const handleDelete = async () => {
     if (!collectionToDelete) return;
     try {
@@ -81,8 +125,8 @@ export default function Collection() {
       );
       setDeleteModalOpen(false);
       setCollectionToDelete(null);
-      localStorage.removeItem("collections_cache");
-      localStorage.removeItem("collections_cache_time");
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       fetchCollections(false);
     } catch (err) {
       console.error("Error deleting collection:", err);
@@ -92,8 +136,8 @@ export default function Collection() {
   const handleAddSuccess = async (newCollection) => {
     setAddModalOpen(false);
     setCollections((prev) => [newCollection, ...prev]);
-    localStorage.removeItem("collections_cache");
-    localStorage.removeItem("collections_cache_time");
+    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_TIME_KEY);
     fetchCollections(false);
   };
 
@@ -103,10 +147,12 @@ export default function Collection() {
     setCollections((prev) =>
       prev.map((c) => (c.id === updatedCollection.id ? updatedCollection : c))
     );
-    localStorage.removeItem("collections_cache");
-    localStorage.removeItem("collections_cache_time");
+    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_TIME_KEY);
     fetchCollections(false);
   };
+
+  const skeletonRowCount = Math.max(collections.length, MIN_SKELETON_ROWS);
 
   const renderSkeletonRows = (rows = 5) =>
     Array.from({ length: rows }).map((_, i) => (
@@ -142,9 +188,12 @@ export default function Collection() {
     ));
 
   return (
-    <div style={{ padding: "1rem" }}>
+    <Stack
+      p="xs"
+      spacing="lg"
+    >
       <PageHeader
-        title="Collections"
+        title="Inventory"
         showSearch
         search={search}
         setSearch={setSearch}
@@ -155,10 +204,23 @@ export default function Collection() {
       <Paper
         radius="md"
         p="xl"
-        style={{ minHeight: "70vh", marginBottom: "1rem" }}
+        style={{
+          minHeight: "70vh",
+          marginBottom: "1rem",
+          background: "white",
+          position: "relative",
+          fontFamily: "'League Spartan', sans-serif"
+        }}
       >
-        <ScrollArea scrollbarSize={8}>
-          <Table highlightOnHover>
+        <ScrollArea scrollbarSize={8} style={{ minHeight: "70vh" }}>
+          <Table
+            highlightOnHover
+            styles={{
+              tr: { borderBottom: "1px solid #D8CBB8" },
+              th: { fontFamily: "'League Spartan', sans-serif", fontSize: "16px" },
+              td: { fontFamily: "'League Spartan', sans-serif" },
+            }}
+          >
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Collection Name</Table.Th>
@@ -174,7 +236,7 @@ export default function Collection() {
 
             <Table.Tbody>
               {loading ? (
-                renderSkeletonRows(6)
+                renderSkeletonRows(skeletonRowCount)
               ) : filteredCollections.length === 0 ? (
                 <Table.Tr style={{ borderBottom: "1px solid #D8CBB8" }}>
                   <Table.Td
@@ -189,12 +251,16 @@ export default function Collection() {
                   {filteredCollections.map((col) => (
                     <motion.tr
                       key={col.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
+                      variants={rowVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      layout
                       onClick={() => navigate(`/collections/${col.id}/items`)}
-                      style={{ cursor: "pointer", borderBottom: "1px solid #D8CBB8" }}
+                      style={{
+                        cursor: "pointer",
+                        borderBottom: "1px solid #D8CBB8",
+                      }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = "#f8f9fa")
                       }
@@ -224,9 +290,7 @@ export default function Collection() {
                       <Table.Td style={{ textAlign: "center" }}>
                         ₱
                         {col.capital
-                          ? new Intl.NumberFormat("en-PH").format(
-                              Math.floor(col.capital)
-                            )
+                          ? new Intl.NumberFormat("en-PH").format(Math.floor(col.capital))
                           : "0"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
@@ -246,6 +310,7 @@ export default function Collection() {
                               col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
                             color: col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
                             width: "100px",
+                            fontWeight: "400",
                             padding: "13px",
                             borderRadius: "13px",
                           }}
@@ -316,6 +381,6 @@ export default function Collection() {
           onSuccess={handleEditSuccess}
         />
       )}
-    </div>
+    </Stack>
   );
 }

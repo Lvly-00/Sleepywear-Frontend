@@ -126,7 +126,10 @@ const Order = () => {
   };
 
   return (
-    <Stack p="lg" spacing="lg">
+    <Stack
+      p="xs"
+      spacing="lg"
+    >
       <PageHeader
         title="Orders"
         showSearch
@@ -144,6 +147,7 @@ const Order = () => {
           minHeight: "70vh",
           marginBottom: "1rem",
           position: "relative",
+          fontFamily: "'League Spartan', sans-serif",
         }}
       >
         <ScrollArea scrollbars="x" style={{ minHeight: "70vh" }}>
@@ -151,6 +155,9 @@ const Order = () => {
             highlightOnHover
             styles={{
               tr: { borderBottom: "1px solid #D8CBB8" },
+              // Add font to table text, optional
+              th: { fontFamily: "'League Spartan', sans-serif", fontSize: "16px" },
+              td: { fontFamily: "'League Spartan', sans-serif" },
             }}
           >
             <Table.Thead>
@@ -243,7 +250,8 @@ const Order = () => {
                           })}
                         </Table.Td>
                         <Table.Td style={{ textAlign: "center" }}>
-                          ₱{Math.round(totalPrice)}
+                          ₱{Math.round(totalPrice).toLocaleString()}
+
                         </Table.Td>
                         <Table.Td style={{ textAlign: "center" }}>
                           <Badge
@@ -260,7 +268,7 @@ const Order = () => {
                                   : "#7A7A7A",
                               width: "100px",
                               textAlign: "center",
-                              fontWeight: 600,
+                              fontWeight: 400,
                               borderRadius: "13px",
                               textTransform: "capitalize",
                             }}

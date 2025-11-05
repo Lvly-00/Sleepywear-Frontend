@@ -15,7 +15,7 @@ const PageHeader = ({
   const navigate = useNavigate();
 
   return (
-    <Group justify="space-between" mb="md" mt={50}>
+    <Group justify="space-between"  mt={50}>
       {/* Left section: Back + Title */}
       <Group>
         {showBack && (

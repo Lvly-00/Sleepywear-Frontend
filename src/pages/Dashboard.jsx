@@ -60,7 +60,10 @@ function Dashboard() {
   const COLORS = ["#944E1B", "#54361C", "#F0BB78", "#8B4513", "#B5651D"];
 
   return (
-    <Stack p="lg">
+    <Stack
+      p="xs"
+      spacing="lg"
+    >
       <PageHeader title="Dashboard" />
 
       {/* Summary Cards */}
