@@ -9,12 +9,16 @@ import {
   Stack,
   Text,
   Grid,
+  Skeleton,
+  Transition,
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 import PageHeader from "../components/PageHeader";
-import SleepyLoader from "../components/SleepyLoader";
 import SubmitButton from "../components/SubmitButton";
 import { Icons } from "../components/Icons";
+
+const CACHE_KEY = "user_settings_cache";
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 const Settings = () => {
   const [profile, setProfile] = useState({ business_name: "", email: "" });
@@ -23,36 +27,63 @@ const Settings = () => {
     new_password: "",
     new_password_confirmation: "",
   });
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
-  // Fetch user settings on mount
+  // Helper: load cache if valid
+  const getCachedProfile = () => {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    if (Date.now() - parsed.timestamp > CACHE_TTL) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    return parsed.data;
+  };
+
+  // Fetch user settings (cached by backend + frontend)
   useEffect(() => {
+    const cachedProfile = getCachedProfile();
+
+    if (cachedProfile) {
+      setProfile(cachedProfile);
+      setLoading(false);
+    }
+
     const fetchProfile = async () => {
       try {
         const res = await api.get("/user/settings");
-        setProfile({
+        const freshData = {
           business_name: res.data.business_name || "",
           email: res.data.email || "",
-        });
+        };
+        setProfile(freshData);
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ data: freshData, timestamp: Date.now() })
+        );
       } catch (err) {
-        showNotification({
-          title: "Error",
-          message: "Failed to load user settings",
-          color: "red",
-          icon: <Icons.IconX size={16} />,
-        });
+        if (!cachedProfile) {
+          showNotification({
+            title: "Error",
+            message: "Failed to load user settings",
+            color: "red",
+            icon: <Icons.IconX size={16} />,
+          });
+        }
       } finally {
-        setInitialLoading(false);
+        setLoading(false);
       }
     };
 
+    // Always refresh in background (even if cache used)
     fetchProfile();
   }, []);
 
-  const handleUpdate = async (data, url, successMessage) => {
-    setLoading(true);
+  const handleUpdate = async (data, url, successMessage, updateCache = false) => {
     try {
+      setUpdating(true);
       const res = await api.put(url, data);
       showNotification({
         title: "Success",
@@ -60,6 +91,12 @@ const Settings = () => {
         color: "green",
         icon: <Icons.IconCheck size={16} />,
       });
+
+      // Update cache when profile updated
+      if (updateCache) {
+        const newCache = { data, timestamp: Date.now() };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
+      }
     } catch (err) {
       const errors = err.response?.data?.errors;
       showNotification({
@@ -71,13 +108,18 @@ const Settings = () => {
         icon: <Icons.IconX size={16} />,
       });
     } finally {
-      setLoading(false);
+      setUpdating(false);
     }
   };
 
   const updateProfile = (e) => {
     e.preventDefault();
-    handleUpdate(profile, "/user/settings", "Profile updated successfully");
+    handleUpdate(
+      profile,
+      "/user/settings",
+      "Profile updated successfully",
+      true
+    );
   };
 
   const updatePassword = (e) => {
@@ -94,8 +136,6 @@ const Settings = () => {
     });
   };
 
-  if (initialLoading) return <SleepyLoader minTime={200} />;
-
   return (
     <div
       style={{
@@ -108,78 +148,112 @@ const Settings = () => {
 
       {/* Profile Section */}
       <Grid gutter="xl" align="flex-start" mb="xl">
-        <Grid.Col span={5} style={{ marginLeft: 40, marginTop: 30 }}>
+        <Grid.Col
+          span={{ base: 12, md: 5 }}
+          style={{ marginLeft: 40, marginTop: 30 }}
+        >
           <Title order={2} style={{ color: "#02034C", fontWeight: 500 }}>
             Profile Information
           </Title>
           <Text size="md" color="#02034c6e">
-            Update your account’s Business Name and Email
+            Update your Business Name and Email.
           </Text>
         </Grid.Col>
 
-        <Grid.Col span={5}>
+        <Grid.Col span={{ base: 12, md: 5 }}>
           <Card
             shadow="md"
             padding="xl"
             radius="xl"
             style={{ border: "1px solid #E0E0E0", backgroundColor: "#FFFFFF" }}
           >
-            <form onSubmit={updateProfile}>
-              <Stack spacing="md">
-                <TextInput
-                  label="Business Name"
-                  value={profile.business_name}
-                  onChange={(e) =>
-                    setProfile({ ...profile, business_name: e.target.value })
-                  }
-                  radius="md"
-                  size="md"
-                  styles={{
-                    label: { color: "#232D80" },
-                    input: { borderColor: "#232D80", color: "#232c808f" },
-                  }}
-                />
-                <TextInput
-                  label="Email"
-                  value={profile.email}
-                  onChange={(e) =>
-                    setProfile({ ...profile, email: e.target.value })
-                  }
-                  radius="md"
-                  size="md"
-                  styles={{
-                    label: { color: "#232D80" },
-                    input: { borderColor: "#232D80", color: "#232c808f" },
-                  }}
-                />
-                <Group justify="flex-end">
-                  <SubmitButton
-                    type="submit"
-                    radius="xl"
-                    style={{ backgroundColor: "#232D80", color: "#fff" }}
-                    loading={loading}
-                  >
-                    Update
-                  </SubmitButton>
-                </Group>
+            {loading ? (
+              <Stack>
+                <Skeleton height={36} radius="md" />
+                <Skeleton height={36} radius="md" />
+                <Skeleton height={40} radius="xl" />
               </Stack>
-            </form>
+            ) : (
+              <Transition
+                mounted={!loading}
+                transition="fade"
+                duration={300}
+                timingFunction="ease"
+              >
+                {(styles) => (
+                  <form onSubmit={updateProfile} style={styles}>
+                    <Stack spacing="md">
+                      <TextInput
+                        label="Business Name"
+                        value={profile.business_name}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            business_name: e.target.value,
+                          })
+                        }
+                        radius="md"
+                        size="md"
+                        disabled={updating}
+                        styles={{
+                          label: { color: "#232D80" },
+                          input: {
+                            borderColor: "#232D80",
+                            color: "#232c808f",
+                          },
+                        }}
+                      />
+                      <TextInput
+                        label="Email"
+                        value={profile.email}
+                        onChange={(e) =>
+                          setProfile({ ...profile, email: e.target.value })
+                        }
+                        radius="md"
+                        size="md"
+                        disabled={updating}
+                        styles={{
+                          label: { color: "#232D80" },
+                          input: {
+                            borderColor: "#232D80",
+                            color: "#232c808f",
+                          },
+                        }}
+                      />
+                      <Group justify="flex-end">
+                        <SubmitButton
+                          type="submit"
+                          radius="xl"
+                          loading={updating}
+                          style={{ backgroundColor: "#232D80", color: "#fff" }}
+                        >
+                          Update
+                        </SubmitButton>
+                      </Group>
+                    </Stack>
+                  </form>
+                )}
+              </Transition>
+            )}
           </Card>
         </Grid.Col>
       </Grid>
 
       {/* Password Section */}
       <Grid gutter="sm" align="flex-start">
-        <Grid.Col span={5} style={{ marginLeft: 40, marginTop: 30 }}>
+        <Grid.Col
+          span={{ base: 12, md: 5 }}
+          style={{ marginLeft: 40, marginTop: 30 }}
+        >
           <Title order={2} style={{ color: "#02034C", fontWeight: 500 }}>
             Update Password
           </Title>
           <Text size="md" color="#02034c6e">
-            Use a strong combination of letters, numbers, and symbols (e.g., @, ?, 1, 2)
+            Use a strong combination of letters, numbers, and symbols (e.g. @, ?, 1, 2)
           </Text>
         </Grid.Col>
 
-        <Grid.Col span={5}>
+        <Grid.Col span={{ base: 12, md: 5 }}>
           <Card
             shadow="md"
             padding="xl"
@@ -191,11 +265,18 @@ const Settings = () => {
                 <PasswordInput
                   label="Current Password"
                   value={passwords.current_password}
-                  visibilityToggleIcon={({ reveal }) =>
-                    reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
-                  }
                   onChange={(e) =>
-                    setPasswords({ ...passwords, current_password: e.target.value })
+                    setPasswords({
+                      ...passwords,
+                      current_password: e.target.value,
+                    })
+                  }
+                  visibilityToggleIcon={({ reveal }) =>
+                    reveal ? (
+                      <Icons.BlueEye size={18} />
+                    ) : (
+                      <Icons.BlueEyeOff size={18} />
+                    )
                   }
                   radius="md"
                   size="md"
@@ -207,11 +288,18 @@ const Settings = () => {
                 <PasswordInput
                   label="New Password"
                   value={passwords.new_password}
-                  visibilityToggleIcon={({ reveal }) =>
-                    reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
-                  }
                   onChange={(e) =>
-                    setPasswords({ ...passwords, new_password: e.target.value })
+                    setPasswords({
+                      ...passwords,
+                      new_password: e.target.value,
+                    })
+                  }
+                  visibilityToggleIcon={({ reveal }) =>
+                    reveal ? (
+                      <Icons.BlueEye size={18} />
+                    ) : (
+                      <Icons.BlueEyeOff size={18} />
+                    )
                   }
                   radius="md"
                   size="md"
@@ -223,14 +311,18 @@ const Settings = () => {
                 <PasswordInput
                   label="Confirm New Password"
                   value={passwords.new_password_confirmation}
-                  visibilityToggleIcon={({ reveal }) =>
-                    reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
-                  }
                   onChange={(e) =>
                     setPasswords({
                       ...passwords,
                       new_password_confirmation: e.target.value,
                     })
+                  }
+                  visibilityToggleIcon={({ reveal }) =>
+                    reveal ? (
+                      <Icons.BlueEye size={18} />
+                    ) : (
+                      <Icons.BlueEyeOff size={18} />
+                    )
                   }
                   radius="md"
                   size="md"
@@ -244,7 +336,6 @@ const Settings = () => {
                     type="submit"
                     radius="xl"
                     style={{ backgroundColor: "#232D80", color: "#fff" }}
-                    loading={loading}
                   >
                     Update
                   </SubmitButton>
