@@ -10,8 +10,8 @@ import {
   Text,
   Grid,
   Skeleton,
-  Transition,
 } from "@mantine/core";
+import { Transition } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 import PageHeader from "../components/PageHeader";
 import SubmitButton from "../components/SubmitButton";
@@ -30,7 +30,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  // Helper: load cache if valid
+  // Load from cache if valid
   const getCachedProfile = () => {
     const cached = localStorage.getItem(CACHE_KEY);
     if (!cached) return null;
@@ -42,49 +42,49 @@ const Settings = () => {
     return parsed.data;
   };
 
-  // Fetch user settings (cached by backend + frontend)
-  useEffect(() => {
+  // Fetch user settings
+  const fetchProfile = async (force = false) => {
     const cachedProfile = getCachedProfile();
-
-    if (cachedProfile) {
+    if (cachedProfile && !force) {
       setProfile(cachedProfile);
       setLoading(false);
     }
 
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get("/user/settings");
-        const freshData = {
-          business_name: res.data.business_name || "",
-          email: res.data.email || "",
-        };
-        setProfile(freshData);
-        localStorage.setItem(
-          CACHE_KEY,
-          JSON.stringify({ data: freshData, timestamp: Date.now() })
-        );
-      } catch (err) {
-        if (!cachedProfile) {
-          showNotification({
-            title: "Error",
-            message: "Failed to load user settings",
-            color: "red",
-            icon: <Icons.IconX size={16} />,
-          });
-        }
-      } finally {
-        setLoading(false);
+    try {
+      const res = await api.get("/user/settings");
+      const freshData = {
+        business_name: res.data.business_name || "",
+        email: res.data.email || "",
+      };
+      setProfile(freshData);
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({ data: freshData, timestamp: Date.now() })
+      );
+    } catch (err) {
+      if (!cachedProfile) {
+        showNotification({
+          title: "Error",
+          message: "Failed to load user settings",
+          color: "red",
+          icon: <Icons.IconX size={16} />,
+        });
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Always refresh in background (even if cache used)
+  useEffect(() => {
     fetchProfile();
   }, []);
 
-  const handleUpdate = async (data, url, successMessage, updateCache = false) => {
+  // Generic update handler
+  const handleUpdate = async (data, url, successMessage, refresh = false) => {
     try {
       setUpdating(true);
       const res = await api.put(url, data);
+
       showNotification({
         title: "Success",
         message: res.data.message || successMessage,
@@ -92,10 +92,10 @@ const Settings = () => {
         icon: <Icons.IconCheck size={16} />,
       });
 
-      // Update cache when profile updated
-      if (updateCache) {
-        const newCache = { data, timestamp: Date.now() };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
+      if (refresh) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     } catch (err) {
       const errors = err.response?.data?.errors;
@@ -114,12 +114,7 @@ const Settings = () => {
 
   const updateProfile = (e) => {
     e.preventDefault();
-    handleUpdate(
-      profile,
-      "/user/settings",
-      "Profile updated successfully",
-      true
-    );
+    handleUpdate(profile, "/user/settings", "Profile updated successfully", true);
   };
 
   const updatePassword = (e) => {
@@ -165,7 +160,11 @@ const Settings = () => {
             shadow="md"
             padding="xl"
             radius="xl"
-            style={{ border: "1px solid #E0E0E0", backgroundColor: "#FFFFFF" }}
+            style={{
+              border: "1px solid #E0E0E0",
+              backgroundColor: "#FFFFFF",
+              minHeight: 180,
+            }}
           >
             {loading ? (
               <Stack>
@@ -258,90 +257,121 @@ const Settings = () => {
             shadow="md"
             padding="xl"
             radius="xl"
-            style={{ border: "1px solid #E0E0E0", backgroundColor: "#FFFFFF" }}
+            style={{
+              border: "1px solid #E0E0E0",
+              backgroundColor: "#FFFFFF",
+              minHeight: 180,
+            }}
           >
-            <form onSubmit={updatePassword}>
-              <Stack spacing="md">
-                <PasswordInput
-                  label="Current Password"
-                  value={passwords.current_password}
-                  onChange={(e) =>
-                    setPasswords({
-                      ...passwords,
-                      current_password: e.target.value,
-                    })
-                  }
-                  visibilityToggleIcon={({ reveal }) =>
-                    reveal ? (
-                      <Icons.BlueEye size={18} />
-                    ) : (
-                      <Icons.BlueEyeOff size={18} />
-                    )
-                  }
-                  radius="md"
-                  size="md"
-                  styles={{
-                    label: { color: "#232D80" },
-                    input: { borderColor: "#232D80", color: "#232c808f" },
-                  }}
-                />
-                <PasswordInput
-                  label="New Password"
-                  value={passwords.new_password}
-                  onChange={(e) =>
-                    setPasswords({
-                      ...passwords,
-                      new_password: e.target.value,
-                    })
-                  }
-                  visibilityToggleIcon={({ reveal }) =>
-                    reveal ? (
-                      <Icons.BlueEye size={18} />
-                    ) : (
-                      <Icons.BlueEyeOff size={18} />
-                    )
-                  }
-                  radius="md"
-                  size="md"
-                  styles={{
-                    label: { color: "#232D80" },
-                    input: { borderColor: "#232D80", color: "#232c808f" },
-                  }}
-                />
-                <PasswordInput
-                  label="Confirm New Password"
-                  value={passwords.new_password_confirmation}
-                  onChange={(e) =>
-                    setPasswords({
-                      ...passwords,
-                      new_password_confirmation: e.target.value,
-                    })
-                  }
-                  visibilityToggleIcon={({ reveal }) =>
-                    reveal ? (
-                      <Icons.BlueEye size={18} />
-                    ) : (
-                      <Icons.BlueEyeOff size={18} />
-                    )
-                  }
-                  radius="md"
-                  size="md"
-                  styles={{
-                    label: { color: "#232D80" },
-                    input: { borderColor: "#232D80", color: "#232c808f" },
-                  }}
-                />
-                <Group justify="flex-end">
-                  <SubmitButton
-                    type="submit"
-                    radius="xl"
-                    style={{ backgroundColor: "#232D80", color: "#fff" }}
-                  >
-                    Update
-                  </SubmitButton>
-                </Group>
+            {loading ? (
+              <Stack>
+                <Skeleton height={36} radius="md" />
+                <Skeleton height={36} radius="md" />
+                <Skeleton height={36} radius="md" />
+                <Skeleton height={40} radius="xl" />
               </Stack>
-            </form>
+            ) : (
+              <Transition
+                mounted={!loading}
+                transition="fade"
+                duration={300}
+                timingFunction="ease"
+              >
+                {(styles) => (
+                  <form onSubmit={updatePassword} style={styles}>
+                    <Stack spacing="md">
+                      <PasswordInput
+                        label="Current Password"
+                        value={passwords.current_password}
+                        onChange={(e) =>
+                          setPasswords({
+                            ...passwords,
+                            current_password: e.target.value,
+                          })
+                        }
+                        visibilityToggleIcon={({ reveal }) =>
+                          reveal ? (
+                            <Icons.BlueEye size={18} />
+                          ) : (
+                            <Icons.BlueEyeOff size={18} />
+                          )
+                        }
+                        radius="md"
+                        size="md"
+                        styles={{
+                          label: { color: "#232D80" },
+                          input: {
+                            borderColor: "#232D80",
+                            color: "#232c808f",
+                          },
+                        }}
+                      />
+                      <PasswordInput
+                        label="New Password"
+                        value={passwords.new_password}
+                        onChange={(e) =>
+                          setPasswords({
+                            ...passwords,
+                            new_password: e.target.value,
+                          })
+                        }
+                        visibilityToggleIcon={({ reveal }) =>
+                          reveal ? (
+                            <Icons.BlueEye size={18} />
+                          ) : (
+                            <Icons.BlueEyeOff size={18} />
+                          )
+                        }
+                        radius="md"
+                        size="md"
+                        styles={{
+                          label: { color: "#232D80" },
+                          input: {
+                            borderColor: "#232D80",
+                            color: "#232c808f",
+                          },
+                        }}
+                      />
+                      <PasswordInput
+                        label="Confirm New Password"
+                        value={passwords.new_password_confirmation}
+                        onChange={(e) =>
+                          setPasswords({
+                            ...passwords,
+                            new_password_confirmation: e.target.value,
+                          })
+                        }
+                        visibilityToggleIcon={({ reveal }) =>
+                          reveal ? (
+                            <Icons.BlueEye size={18} />
+                          ) : (
+                            <Icons.BlueEyeOff size={18} />
+                          )
+                        }
+                        radius="md"
+                        size="md"
+                        styles={{
+                          label: { color: "#232D80" },
+                          input: {
+                            borderColor: "#232D80",
+                            color: "#232c808f",
+                          },
+                        }}
+                      />
+                      <Group justify="flex-end">
+                        <SubmitButton
+                          type="submit"
+                          radius="xl"
+                          style={{ backgroundColor: "#232D80", color: "#fff" }}
+                        >
+                          Update
+                        </SubmitButton>
+                      </Group>
+                    </Stack>
+                  </form>
+                )}
+              </Transition>
+            )}
           </Card>
         </Grid.Col>
       </Grid>
