@@ -6,6 +6,7 @@ import {
   NumberInput,
   Button,
   Group,
+  AspectRatio,
 } from "@mantine/core";
 import api from "../api/axios";
 
@@ -120,6 +121,7 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
 
         <Modal.Body>
           <form onSubmit={handleSubmit} noValidate>
+            {/* ✅ Aspect-ratio consistent image upload box */}
             <div
               style={{
                 display: "flex",
@@ -128,48 +130,50 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
                 marginBottom: "10px",
               }}
             >
-              <label
-                htmlFor="imageUpload"
-                style={{
-                  display: "block",
-                  width: "60%",
-                  height: "160px",
-                  border: "2px dashed #000",
-                  textAlign: "center",
-                  color: "#999",
-                  cursor: "pointer",
-                  fontSize: "16px",
-                  fontWeight: 500,
-                  overflow: "hidden",
-                  position: "relative",
-                }}
-              >
-                {preview ? (
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      padding: "5px",
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      color: "#aaa",
-                      fontWeight: "400",
-                    }}
-                  >
-                    Add Photo
-                  </div>
-                )}
-              </label>
+              <AspectRatio ratio={1080 / 1350} w="60%">
+                <label
+                  htmlFor="imageUpload"
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    height: "100%",
+                    border: "2px dashed #000",
+                    textAlign: "center",
+                    color: "#999",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                    fontWeight: 500,
+                    overflow: "hidden",
+                    position: "relative",
+                    borderRadius: "12px",
+                  }}
+                >
+                  {preview ? (
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        color: "#aaa",
+                        fontWeight: "400",
+                      }}
+                    >
+                      Add Photo
+                    </div>
+                  )}
+                </label>
+              </AspectRatio>
             </div>
 
             <input

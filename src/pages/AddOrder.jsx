@@ -9,11 +9,14 @@ import {
   Group,
   Paper,
   Skeleton,
+  AspectRatio,
+  Stack
 } from "@mantine/core";
 import { IconChevronDown } from "@tabler/icons-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
 import PageHeader from "../components/PageHeader";
+
 
 const ORDER_ITEMS_STORAGE_KEY = "orderItemsCache";
 const SELECTED_COLLECTION_STORAGE_KEY = "selectedCollectionCache";
@@ -23,36 +26,29 @@ const AddOrder = () => {
   const navigate = useNavigate();
   const { state: locationState } = useLocation();
 
-  // Load cached selectedItems, fallback to location.state
   const [selectedItems, setSelectedItems] = useState(() => {
     if (locationState?.selectedItems) return locationState.selectedItems;
     const saved = localStorage.getItem(ORDER_ITEMS_STORAGE_KEY);
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Load cached selectedCollection
   const [selectedCollection, setSelectedCollection] = useState(() => {
     const saved = localStorage.getItem(SELECTED_COLLECTION_STORAGE_KEY);
     return saved || "";
   });
 
-  // Load cached collections or empty array
   const [collections, setCollections] = useState(() => {
     const saved = localStorage.getItem(COLLECTIONS_STORAGE_KEY);
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Show loading only if no cached collections
   const [loading, setLoading] = useState(collections.length === 0);
 
-  // Save caches on change
   useEffect(() => {
     try {
       const dataStr = JSON.stringify(selectedItems);
-      if (new Blob([dataStr]).size < 4.5 * 1024 * 1024) { // 4.5MB limit buffer
+      if (new Blob([dataStr]).size < 4.5 * 1024 * 1024) {
         localStorage.setItem(ORDER_ITEMS_STORAGE_KEY, dataStr);
-      } else {
-        console.warn("Order items too large for localStorage, skipping cache");
       }
     } catch (error) {
       console.error("Error caching selectedItems:", error);
@@ -74,16 +70,12 @@ const AddOrder = () => {
       const dataStr = JSON.stringify(collections);
       if (new Blob([dataStr]).size < 4.5 * 1024 * 1024) {
         localStorage.setItem(COLLECTIONS_STORAGE_KEY, dataStr);
-      } else {
-        console.warn("Collections data too large for localStorage, skipping cache");
       }
     } catch (error) {
       console.error("Error caching collections:", error);
     }
   }, [collections]);
 
-
-  // Fetch collections on mount (background update)
   useEffect(() => {
     fetchCollections();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,7 +84,6 @@ const AddOrder = () => {
   const fetchCollections = async () => {
     try {
       const res = await api.get("/collections");
-
       const activeCollections = res.data
         .filter((c) => c.status === "Active")
         .map((c) => ({
@@ -117,7 +108,6 @@ const AddOrder = () => {
 
       setCollections(activeCollections);
 
-      // Only set default collection if none selected yet
       if (!selectedCollection) {
         if (selectedItems.length > 0) {
           const firstCollectionId =
@@ -162,8 +152,11 @@ const AddOrder = () => {
     collections.find((c) => c.id.toString() === selectedCollection)?.items || [];
 
   return (
-    <div style={{ padding: 20 }}>
-      <PageHeader title="Add Order" showBack />
+    <Stack
+      p="xs"
+      spacing="lg"
+    >     
+     <PageHeader title="Add Order" showBack />
       <Paper radius="md" p="xl" style={{ minHeight: "75vh", marginBottom: "1rem" }}>
         <Group justify="flex-start" mb="md">
           {loading ? (
@@ -215,22 +208,22 @@ const AddOrder = () => {
                         padding="md"
                         onClick={() => handleItemToggle(item)}
                         style={{
-                          height: "350px",
-                          borderColor: selected ? "#0D0F66" : "#e0e0e0",
-                          backgroundColor: selected ? "#EAF1FF" : "white",
+                          aspectRatio: "1080 / 1350",
+                          borderColor: selected ? "#A5976B" : "#e0e0e0",
+                          backgroundColor: selected ? "#F1F0ED" : "white",
                           cursor: "pointer",
                           transition: "0.2s ease",
                           display: "flex",
                           flexDirection: "column",
-                          alignItems: "center",
                           justifyContent: "space-between",
+                          overflow: "hidden",
                         }}
                       >
                         {item.image_url && (
                           <div
                             style={{
                               width: "100%",
-                              height: "220px",
+                              aspectRatio: "1080 / 1350",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -242,22 +235,53 @@ const AddOrder = () => {
                             <Image
                               src={item.image_url}
                               alt={item.name}
-                              width={100}
-                              height={100}
-                              fit="contain"
-                              radius="md"
+                              fit="cover"
+                              width="100%"
+                              height="100%"
                             />
                           </div>
                         )}
 
-                        <div style={{ textAlign: "center" }}>
-                          <Text fw={600} color="#0D0F66">
-                            {item.item_code || item.code}
-                          </Text>
-                          <Text fw={500} mt={2}>
-                            {item.name}
-                          </Text>
-                          <Text size="sm" color="dimmed">
+                        <div style={{ textAlign: "center", padding: "8px 0" }}>
+                          <Group gap="xs" justify="center" wrap="nowrap">
+                            <Text
+                              fw={500}
+                              transform="uppercase"
+                              style={{
+                                fontFamily: "'League Spartan', sans-serif",
+                                fontSize: "clamp(14px, 2.5vw, 24px)",
+                              }}
+                            >
+                              {item.item_code || item.code}
+                            </Text>
+                            <Text
+                              c="dimmed"
+                              style={{
+                                fontSize: "clamp(18px, 2.5vw, 24px)",
+                              }}
+                            >
+                              |
+                            </Text>
+                            <Text
+                              fw={500}
+                              transform="uppercase"
+                              style={{
+                                fontFamily: "'League Spartan', sans-serif",
+                                fontSize: "clamp(14px, 2.5vw, 24px)",
+                              }}
+                            >
+                              {item.name}
+                            </Text>
+                          </Group>
+
+                          <Text
+                            color="#A6976B"
+                            style={{
+                              fontSize: "clamp(14px, 1.8vw, 20px)",
+                              fontWeight: 400,
+                              marginTop: "4px",
+                            }}
+                          >
                             ₱{item.price}
                           </Text>
                         </div>
@@ -267,6 +291,7 @@ const AddOrder = () => {
                 })
               )}
             </Grid>
+
           )
         )}
 
@@ -277,7 +302,12 @@ const AddOrder = () => {
           >
             <Button
               size="md"
-              style={{ borderRadius: "15px", backgroundColor: "#AB8262" }}
+              style={{
+                borderRadius: "15px",
+                backgroundColor: "#AB8262",
+                fontFamily: "Fredoka, sans-serif",
+                fontWeight: 600,
+              }}
               onClick={handlePlaceOrder}
             >
               Place Order ({selectedItems.length})
@@ -285,7 +315,7 @@ const AddOrder = () => {
           </Group>
         )}
       </Paper>
-    </div>
+    </Stack>
   );
 };
 
