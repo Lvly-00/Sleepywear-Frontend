@@ -13,7 +13,6 @@ import api from "../api/axios";
 const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
   const [payment, setPayment] = useState({
     method: "",
-    additionalFee: 0,
     image: null,
   });
   const [errors, setErrors] = useState({});
@@ -22,8 +21,7 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
     if (opened) {
       setPayment({
         method: "",
-        additionalFee: 0,
-        image: null,
+            image: null,
       });
       setErrors({});
     }
@@ -133,17 +131,6 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
               error={errors.paymentMethod}
               onChange={(value) => setPayment({ ...payment, method: value })}
               required
-            />
-
-            <NumberInput
-              label="Additional Fee (optional)"
-              placeholder="Enter amount"
-              value={payment.additionalFee}
-              onChange={(value) =>
-                setPayment({ ...payment, additionalFee: value || 0 })
-              }
-              min={0}
-              error={errors.additionalFee}
             />
 
             <Group

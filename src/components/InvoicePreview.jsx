@@ -252,7 +252,13 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
           >
             Clothes :
           </Text>
-          <div style={{ paddingLeft: "1.5rem", marginRight: "1.5rem", marginTop: ".5rem" }}>
+          <div
+            style={{
+              paddingLeft: "1.5rem",
+              marginRight: "1.5rem",
+              marginTop: ".5rem",
+            }}
+          >
             <Table
               stickyHeader
               stickyHeaderOffset={0}
@@ -279,7 +285,9 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                         <span style={{ textAlign: "left" }}>
                           {item.item?.code || item.code || "-"}
                         </span>
-                        <span style={{ textAlign: "left" }}>{item.item_name}</span>
+                        <span style={{ textAlign: "left" }}>
+                          {item.item_name}
+                        </span>
                         <span style={{ textAlign: "right" }}>
                           ₱ {Math.round(Number(item.price)).toLocaleString()}
                         </span>
@@ -288,43 +296,29 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                   </Table.Tr>
                 ))}
 
-                {Number(invoice.payment?.additional_fee ?? 0) > 0 && (
-                  <Table.Tr style={{ border: "none" }}>
-                    <Table.Td colSpan={3} style={{ border: "none", padding: 0 }}>
-                      <div
-                        style={{
-                          backgroundColor: "#FAF8F3",
-                          borderRadius: "12px",
-                          padding: "8px 12px",
-                          display: "grid",
-                          gridTemplateColumns: "1fr 2fr 1fr",
-                          alignItems: "center",
-                        }}
-                      >
-                        <span style={{ textAlign: "left" }}>Additional Fee</span>
-                        <span></span>
-                        <span style={{ textAlign: "right" }}>
-                          ₱ {Number(invoice.payment?.additional_fee ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                        </span>
-                      </div>
-                    </Table.Td>
-                  </Table.Tr>
-                )}
-
-
                 <Table.Tr style={{ border: "none" }}>
                   <Table.Td
-                    style={{ border: "none", padding: "8px 12px", fontSize: "23px", color: "#9B521C" }}
+                    style={{
+                      border: "none",
+                      padding: "8px 12px",
+                      fontSize: "23px",
+                      color: "#9B521C",
+                    }}
                     fw={500}
                   >
                     TOTAL :
                   </Table.Td>
                   <Table.Td style={{ border: "none", padding: "8px 12px" }}></Table.Td>
                   <Table.Td
-                    style={{ border: "none", padding: "8px 12px", fontSize: "23px", textAlign: "right" }}
+                    style={{
+                      border: "none",
+                      padding: "8px 12px",
+                      fontSize: "23px",
+                      textAlign: "right",
+                    }}
                     fw={600}
                   >
-                    ₱ {Number(invoice.total + (invoice.payment?.additional_fee || 0)).toLocaleString()}
+                    ₱ {Number(invoice.total).toLocaleString()}
                   </Table.Td>
                 </Table.Tr>
               </Table.Tbody>
@@ -333,7 +327,13 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
 
           <Divider my="md" />
 
-          <Text fw={500} mt="md" mb="xs" color="#AB8262" style={{ fontSize: "20px" }}>
+          <Text
+            fw={500}
+            mt="md"
+            mb="xs"
+            color="#AB8262"
+            style={{ fontSize: "20px" }}
+          >
             Payment Details:
           </Text>
 
@@ -357,11 +357,14 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                 <Text fw={500}>Date:</Text>
                 <Text>
                   {invoice.payment?.payment_date
-                    ? new Date(invoice.payment.payment_date).toLocaleString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })
+                    ? new Date(invoice.payment.payment_date).toLocaleString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )
                     : "Not provided"}
                 </Text>
               </>
@@ -375,7 +378,6 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
               </>
             )}
           </div>
-
         </div>
       </Modal.Body>
     </Modal>
