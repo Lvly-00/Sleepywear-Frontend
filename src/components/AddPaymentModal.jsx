@@ -131,7 +131,7 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
               error={errors.paymentMethod}
               onChange={(value) => setPayment({ ...payment, method: value })}
               required
-            />
+            />  
 
             <Group
               mt="lg"

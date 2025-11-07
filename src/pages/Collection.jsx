@@ -13,7 +13,7 @@ import {
 } from "@mantine/core";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { showNotification } from "@mantine/notifications";
+import notifySuccess from "../components/notifySuccess.jsx";
 import PageHeader from "../components/PageHeader";
 import AddCollectionModal from "../components/AddCollectionModal";
 import EditCollectionModal from "../components/EditCollectionModal";
@@ -21,24 +21,31 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
 import api from "../api/axios";
 
-const CACHE_KEY = "collections_cache";
-const CACHE_TIME_KEY = "collections_cache_time";
 const MIN_SKELETON_ROWS = 6;
 
 const rowVariants = {
   hidden: { opacity: 0, y: -10 },
-  visible: { opacity: 1, y: 0 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.10,
+      ease: "easeOut",
+    },
+  }),
   exit: { opacity: 0, y: 10 },
 };
 
 export default function Collection() {
   const navigate = useNavigate();
   const location = useLocation();
+  const preloadedCollections = location.state?.preloadedCollections || null;
 
-  const [collections, setCollections] = useState([]);
+  const [collections, setCollections] = useState(preloadedCollections || []);
+  const [loading, setLoading] = useState(!preloadedCollections);
+
   const [filteredCollections, setFilteredCollections] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const [openedEdit, setOpenedEdit] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState(null);
@@ -47,52 +54,47 @@ export default function Collection() {
   const [addModalOpen, setAddModalOpen] = useState(false);
 
   const collectionsRef = useRef(collections);
+  collectionsRef.current = collections;
 
-  useEffect(() => {
-    collectionsRef.current = collections;
-  }, [collections]);
+  // NEW: track if we've fetched data already this session
+  const hasFetchedRef = useRef(false);
 
-  const fetchCollections = useCallback(
-    async (showLoader = false) => {
-      if (showLoader) setLoading(true);
+  const fetchCollections = useCallback(async (showLoader = false) => {
+    if (showLoader) setLoading(true);
 
-      try {
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        const cacheTimestamp = localStorage.getItem(CACHE_TIME_KEY);
-        const cacheTTL = 5 * 60 * 1000; // 5 minutes
-        const now = Date.now();
+    try {
+      const res = await api.get("/collections");
 
-        if (
-          cachedData &&
-          cacheTimestamp &&
-          now - parseInt(cacheTimestamp, 10) < cacheTTL
-        ) {
-          const parsed = JSON.parse(cachedData);
-          setCollections(parsed);
-          setLoading(false);
-          return;
-        }
-
-        const res = await api.get("/collections");
-        // Only update if changed
-        if (!areCollectionsSame(collectionsRef.current, res.data)) {
-          setCollections(res.data);
-          localStorage.setItem(CACHE_KEY, JSON.stringify(res.data));
-          localStorage.setItem(CACHE_TIME_KEY, now.toString());
-        }
-      } catch (err) {
-        console.error("Error fetching collections:", err);
-      } finally {
-        setLoading(false);
+      // Only update if changed
+      if (!areCollectionsSame(collectionsRef.current, res.data)) {
+        setCollections(res.data);
       }
-    },
-    []
-  );
+    } catch (err) {
+      console.error("Error fetching collections:", err);
+    } finally {
+      setLoading(false);
+      hasFetchedRef.current = true; // Mark data as fetched
+    }
+  }, []);
 
-  useEffect(() => {
-    fetchCollections(true);
-  }, [fetchCollections]);
+   useEffect(() => {
+    if (!preloadedCollections) {
+      const fetchCollections = async () => {
+        setLoading(true);
+        try {
+          const res = await api.get("/collections");
+          setCollections(res.data);
+        } catch (err) {
+          console.error("Error fetching collections:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchCollections();
+    }
+  }, [preloadedCollections]);
 
+  // Refresh filtered list on search or collections update
   useEffect(() => {
     if (!search.trim()) {
       setFilteredCollections(collections);
@@ -124,13 +126,11 @@ export default function Collection() {
       setCollections((prev) => prev.filter((c) => c.id !== collectionToDelete.id));
       setDeleteModalOpen(false);
       setCollectionToDelete(null);
-      localStorage.removeItem(CACHE_KEY);
-      localStorage.removeItem(CACHE_TIME_KEY);
-      showNotification({
-        title: "Deleted",
-        message: `Collection "${collectionToDelete.name}" deleted successfully.`,
-        color: "red",
-      });
+
+      notifySuccess.deleted();
+
+      // Force refresh after delete
+      hasFetchedRef.current = false;
       fetchCollections(false);
     } catch (err) {
       console.error("Error deleting collection:", err);
@@ -141,13 +141,11 @@ export default function Collection() {
   const handleAddSuccess = async (newCollection) => {
     setAddModalOpen(false);
     setCollections((prev) => [newCollection, ...prev]);
-    localStorage.removeItem(CACHE_KEY);
-    localStorage.removeItem(CACHE_TIME_KEY);
-    showNotification({
-      title: "Added",
-      message: `Collection "${newCollection.name}" added successfully.`,
-      color: "green",
-    });
+
+    notifySuccess.addedCollection();
+
+    // Force refresh after add
+    hasFetchedRef.current = false;
     fetchCollections(false);
   };
 
@@ -158,13 +156,11 @@ export default function Collection() {
     setCollections((prev) =>
       prev.map((c) => (c.id === updatedCollection.id ? updatedCollection : c))
     );
-    localStorage.removeItem(CACHE_KEY);
-    localStorage.removeItem(CACHE_TIME_KEY);
-    showNotification({
-      title: "Updated",
-      message: `Collection "${updatedCollection.name}" updated successfully.`,
-      color: "blue",
-    });
+
+    notifySuccess.editedCollection();
+
+    // Force refresh after edit
+    hasFetchedRef.current = false;
     fetchCollections(false);
   };
 
@@ -203,13 +199,9 @@ export default function Collection() {
       </Table.Tr>
     ));
 
-  // Open add modal if navigated here with openAddModal state
   useEffect(() => {
     if (location.state?.openAddModal) {
       setAddModalOpen(true);
-
-      // Clear the navigation state so modal doesn't reopen on back/forward
-      // This requires a replace navigation with same path but no state
       navigate(location.pathname, { replace: true });
     }
   }, [location, navigate]);
@@ -265,16 +257,19 @@ export default function Collection() {
                 <Table.Tr style={{ borderBottom: "1px solid #D8CBB8" }}>
                   <Table.Td
                     colSpan={8}
-                    style={{ textAlign: "center", padding: "2rem" }}
+                    style={{ textAlign: "center", padding: "1.5rem" }}
                   >
-                    <Text c="dimmed">No collections found</Text>
+                    <Text c="dimmed" size="20px">
+                      No collections found
+                    </Text>
                   </Table.Td>
                 </Table.Tr>
               ) : (
                 <AnimatePresence>
-                  {filteredCollections.map((col) => (
+                  {filteredCollections.map((col, i) => (
                     <motion.tr
                       key={col.id}
+                      custom={i}
                       variants={rowVariants}
                       initial="hidden"
                       animate="visible"
@@ -298,10 +293,10 @@ export default function Collection() {
                       <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         {col.release_date
                           ? new Date(col.release_date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
                           : "—"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
@@ -310,23 +305,23 @@ export default function Collection() {
                       <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         {col.items
                           ? col.items.filter((item) => item.status === "Available")
-                              .length
+                            .length
                           : 0}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         ₱
                         {col.capital
                           ? new Intl.NumberFormat("en-PH").format(
-                              Math.floor(col.capital)
-                            )
+                            Math.floor(col.capital)
+                          )
                           : "0"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         ₱
                         {col.total_sales
                           ? new Intl.NumberFormat("en-PH").format(
-                              Math.floor(col.total_sales)
-                            )
+                            Math.floor(col.total_sales)
+                          )
                           : "0"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>

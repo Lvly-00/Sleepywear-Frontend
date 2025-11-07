@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Button,
   Group,
@@ -19,103 +20,62 @@ import PageHeader from "../components/PageHeader";
 import { Icons } from "../components/Icons";
 import api from "../api/axios";
 
-const CACHE_KEY = "orders_cache";
 const MIN_SKELETON_ROWS = 6;
 
-function isSameOrders(arr1, arr2) {
-  if (arr1.length !== arr2.length) return false;
+const rowVariants = {
+  hidden: { opacity: 0, y: -10 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.1, ease: "easeOut" },
+  }),
+  exit: { opacity: 0, y: 10 },
+};
 
-  // Check each order by id and updated_at/order_date (whichever exists)
-  return arr1.every((o1, idx) => {
-    const o2 = arr2[idx];
-    if (o1.id !== o2.id) return false;
+export default function Order() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const preloadedOrders = location.state?.preloadedOrders || null;
 
-    // Use updated_at if present, else order_date
-    const date1 = o1.updated_at || o1.order_date || "";
-    const date2 = o2.updated_at || o2.order_date || "";
-    return date1 === date2;
-  });
-}
+  const [orders, setOrders] = useState(preloadedOrders || []);
+  const [loading, setLoading] = useState(!preloadedOrders);
 
-const Order = () => {
-  const cachedOrders = sessionStorage.getItem(CACHE_KEY);
-  const initialOrders = cachedOrders ? JSON.parse(cachedOrders) : [];
-
-  const [orders, setOrders] = useState(initialOrders);
-  const [loading, setLoading] = useState(initialOrders.length === 0);
+  const [search, setSearch] = useState("");
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
-  const [search, setSearch] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
 
   const ordersRef = useRef(orders);
-  const firstFetchDone = useRef(false);
+  ordersRef.current = orders;
 
-  // Keep ordersRef updated
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/orders");
+      setOrders(res.data);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch orders once on mount (if not preloaded)
   useEffect(() => {
-    ordersRef.current = orders;
-  }, [orders]);
+    if (!preloadedOrders) {
+      fetchOrders();
+    }
+  }, [preloadedOrders, fetchOrders]);
 
-  // Persist cache when orders update
-  useEffect(() => {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(orders));
-  }, [orders]);
-
-  const fetchOrders = useCallback(
-    async (silent = false) => {
-      if (!silent && !firstFetchDone.current && ordersRef.current.length === 0) {
-        setLoading(true);
-      }
-      try {
-        const res = await api.get(`/orders?t=${Date.now()}`);
-        // Only update if data changed
-        if (!isSameOrders(ordersRef.current, res.data)) {
-          setOrders(res.data);
-          sessionStorage.setItem(CACHE_KEY, JSON.stringify(res.data));
-        }
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-        setOrders([]);
-      } finally {
-        if (!firstFetchDone.current) {
-          firstFetchDone.current = true;
-          setLoading(false);
-        } else if (!silent) {
-          setLoading(false);
-        }
-      }
-    },
-    []
-  );
-
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
-
-  // Poll every 30 seconds silently
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchOrders(true);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [fetchOrders]);
-
-  // Remove order from state and update cache
-  const removeOrder = (orderId) => {
-    setOrders((prev) => {
-      const updated = prev.filter((order) => order.id !== orderId);
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify(updated));
-      return updated;
-    });
-  };
-
+  // Filter orders based on search
   const filteredOrders = orders.filter((order) => {
     const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
     return fullName.includes(search.toLowerCase());
   });
+
   const skeletonRowCount = Math.max(orders.length, MIN_SKELETON_ROWS);
 
   const renderSkeletonRows = (rows = 5) =>
@@ -123,48 +83,40 @@ const Order = () => {
       <Table.Tr
         key={i}
         style={{
+          borderBottom: "1px solid #D8CBB8",
           paddingTop: 12,
           paddingBottom: 12,
-          minHeight: 50,
-          borderBottom: "1px solid #D8CBB8",
         }}
       >
-        <Table.Td style={{ textAlign: "left", padding: "12px 0" }}>
-          <Skeleton height={30} width={40} radius="sm" />
+        <Table.Td>
+          <Skeleton height={20} width="40%" />
         </Table.Td>
-        <Table.Td style={{ textAlign: "left", padding: "12px 0" }}>
-          <Skeleton height={30} width="65%" radius="sm" />
+        <Table.Td>
+          <Skeleton height={20} width="70%" />
         </Table.Td>
-        <Table.Td style={{ textAlign: "center", padding: "12px 0" }}>
-          <Skeleton height={30} width={25} radius="sm" />
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={20} width="30%" />
         </Table.Td>
-        <Table.Td style={{ textAlign: "center", padding: "12px 0" }}>
-          <Skeleton height={30} width={110} radius="sm" />
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={20} width="40%" />
         </Table.Td>
-        <Table.Td style={{ textAlign: "center", padding: "12px 0" }}>
-          <Skeleton height={30} width={60} radius="sm" />
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={20} width="30%" />
         </Table.Td>
-        <Table.Td style={{ textAlign: "center", padding: "12px 0" }}>
-          <Skeleton height={34} width={110} radius="sm" />
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={30} width="80px" radius="xl" />
         </Table.Td>
-        <Table.Td style={{ textAlign: "center", padding: "12px 0" }}>
-          <Skeleton height={34} width={90} radius="sm" />
+        <Table.Td style={{ textAlign: "center" }}>
+          <Group justify="center">
+            <Skeleton height={24} circle />
+            <Skeleton height={24} circle />
+          </Group>
         </Table.Td>
       </Table.Tr>
     ));
 
-
-  const rowVariants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: 10 },
-  };
-
   return (
-    <Stack
-      p="xs"
-      spacing="lg"
-    >
+    <Stack p="xs" spacing="lg">
       <PageHeader
         title="Orders"
         showSearch
@@ -173,6 +125,7 @@ const Order = () => {
         addLabel="Add Order"
         addLink="/add-order"
       />
+
       <Paper
         radius="md"
         p="xl"
@@ -189,14 +142,17 @@ const Order = () => {
             highlightOnHover
             styles={{
               tr: { borderBottom: "1px solid #D8CBB8" },
-              th: { fontFamily: "'League Spartan', sans-serif", fontSize: "20px" },
+              th: {
+                fontFamily: "'League Spartan', sans-serif",
+                fontSize: "20px",
+              },
               td: { fontFamily: "'League Spartan', sans-serif" },
             }}
           >
             <Table.Thead>
               <Table.Tr>
-                <Table.Th style={{ textAlign: "left" }}>Order ID</Table.Th>
-                <Table.Th style={{ textAlign: "left" }}>Customer Name</Table.Th>
+                <Table.Th>Order ID</Table.Th>
+                <Table.Th>Customer Name</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Qty</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Order Date</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Price</Table.Th>
@@ -212,14 +168,16 @@ const Order = () => {
                 <Table.Tr style={{ borderBottom: "1px solid #D8CBB8" }}>
                   <Table.Td
                     colSpan={8}
-                    style={{ textAlign: "center", padding: "2rem" }}
+                    style={{ textAlign: "center", padding: "1.5rem" }}
                   >
-                    <Text c="dimmed">No orders found</Text>
+                    <Text c="dimmed" size="20px">
+                      No orders found
+                    </Text>
                   </Table.Td>
                 </Table.Tr>
               ) : (
                 <AnimatePresence>
-                  {filteredOrders.map((order) => {
+                  {filteredOrders.map((order, i) => {
                     const fullName = `${order.first_name} ${order.last_name}`;
                     const totalQty =
                       order.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
@@ -234,6 +192,7 @@ const Order = () => {
                     return (
                       <motion.tr
                         key={order.id}
+                        custom={i}
                         variants={rowVariants}
                         initial="hidden"
                         animate="visible"
@@ -254,26 +213,22 @@ const Order = () => {
                           (e.currentTarget.style.backgroundColor = "transparent")
                         }
                       >
-                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
-                          {order.id}
-                        </Table.Td>
-                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
-                          {fullName}
-                        </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+                        <Table.Td>{order.id}</Table.Td>
+                        <Table.Td>{fullName}</Table.Td>
+                        <Table.Td style={{ textAlign: "center" }}>
                           {totalQty}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+                        <Table.Td style={{ textAlign: "center" }}>
                           {new Date(order.order_date).toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",
                             day: "numeric",
                           })}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+                        <Table.Td style={{ textAlign: "center" }}>
                           ₱{Math.round(totalPrice).toLocaleString()}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center"}}>
+                        <Table.Td style={{ textAlign: "center" }}>
                           <Badge
                             size="27"
                             variant="filled"
@@ -293,10 +248,8 @@ const Order = () => {
                               fontSize: "16px",
                             }}
                           >
-                            {(order.payment?.payment_status || "unpaid")}
-
+                            {order.payment?.payment_status || "Unpaid"}
                           </Badge>
-
                         </Table.Td>
                         <Table.Td style={{ textAlign: "center" }}>
                           <Group gap="4" justify="center">
@@ -340,7 +293,6 @@ const Order = () => {
         </ScrollArea>
       </Paper>
 
-
       {/* Delete Confirmation */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
@@ -350,7 +302,7 @@ const Order = () => {
           if (!orderToDelete) return;
           try {
             await api.delete(`/orders/${orderToDelete.id}`);
-            removeOrder(orderToDelete.id);
+            setOrders((prev) => prev.filter((o) => o.id !== orderToDelete.id));
             setDeleteModalOpen(false);
           } catch (err) {
             console.error("Error deleting order:", err);
@@ -365,13 +317,9 @@ const Order = () => {
           onClose={() => setAddPaymentOpen(false)}
           order={selectedOrder}
           onOrderUpdated={(updatedOrder) => {
-            setOrders((prev) => {
-              const updated = prev.map((o) =>
-                o.id === updatedOrder.id ? updatedOrder : o
-              );
-              sessionStorage.setItem(CACHE_KEY, JSON.stringify(updated));
-              return updated;
-            });
+            setOrders((prev) =>
+              prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o))
+            );
           }}
         />
       )}
@@ -384,6 +332,4 @@ const Order = () => {
       />
     </Stack>
   );
-};
-
-export default Order;
+}

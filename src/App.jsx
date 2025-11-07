@@ -5,8 +5,10 @@ import "boxicons/css/boxicons.min.css";
 
 import MainLayout from "./layouts/Layout";
 import PrivateRoute from "./components/PrivateRoute";
-import SleepyLoader from "./components/SleepyLoader";
+import SleepyLoader from "./components/TopLoadingBar";
 import NotFound from "./pages/NotFound";
+import FastCollectionsPage  from "./pages/FastCollectionsPage";
+
 
 
 // Lazy load pages
@@ -61,6 +63,11 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route path="/fast-collections" element={
+              <PrivateRoute>
+                <FastCollectionsPage />
+              </PrivateRoute>
+            } />
 
             <Route
               path="/confirm-order"

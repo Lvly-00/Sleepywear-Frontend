@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
+  Select,
   Card,
   Image,
   Text,
@@ -10,6 +11,7 @@ import {
   Skeleton,
   Stack,
 } from "@mantine/core";
+import { IconChevronDown } from "@tabler/icons-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
 import PageHeader from "../components/PageHeader";
@@ -144,6 +146,7 @@ const AddOrder = () => {
     });
   };
 
+  // Find items for currently selected collection
   const availableItems =
     collections.find((c) => c.id.toString() === selectedCollection)?.items || [];
 
@@ -151,11 +154,35 @@ const AddOrder = () => {
     navigate("/collections", { state: { openAddModal: true } });
   };
 
+  // Check if there are any items at all in any collection
+  const hasItems = collections.length > 0;
+
   return (
     <Stack p="xs" spacing="lg">
       <PageHeader title="Add Order" showBack />
+
       <Paper radius="md" p="xl" style={{ minHeight: "75vh", marginBottom: "1rem" }}>
-        {/* Removed dropdown here */}
+        {/* Show dropdown only if there are collections/items */}
+        {!loading && hasItems && (
+          <Group justify="flex-start" mb="md">
+            <Select
+              placeholder="Select Collection"
+              size="sm"
+              style={{ width: "260px" }}
+              rightSection={<IconChevronDown size={18} stroke={1.5} />}
+              rightSectionWidth={36}
+              data={collections.map((c) => ({
+                value: c.id.toString(),
+                label: c.name,
+              }))}
+              value={selectedCollection}
+              onChange={(val) => setSelectedCollection(val)}
+              searchable
+              nothingFound="No collections found"
+              clearable={false}
+            />
+          </Group>
+        )}
 
         {loading ? (
           <Grid gutter="md" mt="lg">
@@ -165,138 +192,148 @@ const AddOrder = () => {
               </Grid.Col>
             ))}
           </Grid>
+        ) : !hasItems ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "60vh",
+                width: "60vh",
+                textAlign: "center",
+              }}
+            >
+              <Text
+                color="#62626279"
+                size="50px"
+                style={{ marginBottom: 32, fontWeight: "400" }}
+              >
+                No items available in this collection
+              </Text>
+              <Button
+                color="#232D80"
+                radius="12"
+                size="lg"
+                onClick={handleAddCollectionRedirect}
+              >
+                Add Collection
+              </Button>
+            </div>
+          </div>
         ) : (
-          selectedCollection && (
-            <Grid gutter="lg" mt="xl" justify="center" align="center">
-              {availableItems.length === 0 ? (
-                <>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      height: "60vh",
-                      width: "60vh",
-                      textAlign: "center",
-                    }}
-                  >
-                    <Text
-                      color="#62626279"
-                      size="50px"
-                      style={{ marginBottom: 32, fontWeight: "400" }}
+          <Grid gutter="md" mt="lg">
+            {availableItems.length === 0 ? (
+              <Text
+                align="center"
+                color="dimmed"
+                size="xl"
+                style={{ width: "100%", marginTop: "2rem" }}
+              >
+                No available items in this collection.
+              </Text>
+            ) : (
+              availableItems.map((item) => {
+                const selected = selectedItems.some((i) => i.id === item.id);
+                return (
+                  <Grid.Col key={item.id} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+                    <Card
+                      shadow="md"
+                      radius="lg"
+                      withBorder
+                      padding="lg"
+                      onClick={() => handleItemToggle(item)}
+                      style={{
+                        aspectRatio: "1080 / 1350",
+                        borderColor: selected ? "#A5976B" : "#e0e0e0",
+                        backgroundColor: selected ? "#F1F0ED" : "white",
+                        cursor: "pointer",
+                        transition: "0.2s ease",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        overflow: "hidden",
+                      }}
                     >
-                      No items available in this collection
-                    </Text>
-                    <Button
-                      color="#232D80"
-                      radius="12"
-                      size="lg"
-                      onClick={handleAddCollectionRedirect}
-                    
-                    >
-                      Add Collection
-                    </Button>
-
-                  </div>
-
-                </>
-              ) : (
-                availableItems.map((item) => {
-                  const selected = selectedItems.some((i) => i.id === item.id);
-                  return (
-                    <Grid.Col key={item.id} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
-                      <Card
-                        shadow="md"
-                        radius="lg"
-                        withBorder
-                        padding="lg"
-                        onClick={() => handleItemToggle(item)}
-                        style={{
-                          aspectRatio: "1080 / 1350",
-                          borderColor: selected ? "#A5976B" : "#e0e0e0",
-                          backgroundColor: selected ? "#F1F0ED" : "white",
-                          cursor: "pointer",
-                          transition: "0.2s ease",
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {item.image_url && (
-                          <div
-                            style={{
-                              width: "100%",
-                              aspectRatio: "1080 / 1350",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: "#f9f9f9",
-                              borderRadius: "10px",
-                              overflow: "hidden",
-                            }}
-                          >
-                            <Image
-                              src={item.image_url}
-                              alt={item.name}
-                              fit="cover"
-                              width="100%"
-                              height="100%"
-                            />
-                          </div>
-                        )}
-
-                        <div style={{ textAlign: "center", padding: "8px 0" }}>
-                          <Group gap="xs" justify="center" wrap="nowrap">
-                            <Text
-                              fw={500}
-                              transform="uppercase"
-                              style={{
-                                fontFamily: "'League Spartan', sans-serif",
-                                fontSize: "clamp(14px, 2.5vw, 24px)",
-                              }}
-                            >
-                              {item.item_code || item.code}
-                            </Text>
-                            <Text
-                              c="dimmed"
-                              style={{
-                                fontSize: "clamp(18px, 2.5vw, 24px)",
-                              }}
-                            >
-                              |
-                            </Text>
-                            <Text
-                              fw={500}
-                              transform="uppercase"
-                              style={{
-                                fontFamily: "'League Spartan', sans-serif",
-                                fontSize: "clamp(14px, 2.5vw, 24px)",
-                              }}
-                            >
-                              {item.name}
-                            </Text>
-                          </Group>
-
-                          <Text
-                            color="#A6976B"
-                            style={{
-                              fontSize: "clamp(14px, 1.8vw, 20px)",
-                              fontWeight: 400,
-                              marginTop: "4px",
-                            }}
-                          >
-                            ₱{item.price}
-                          </Text>
+                      {item.image_url && (
+                        <div
+                          style={{
+                            width: "100%",
+                            aspectRatio: "1080 / 1350",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "#f9f9f9",
+                            borderRadius: "10px",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <Image
+                            src={item.image_url}
+                            alt={item.name}
+                            fit="cover"
+                            width="100%"
+                            height="100%"
+                          />
                         </div>
-                      </Card>
-                    </Grid.Col>
-                  );
-                })
-              )}
-            </Grid>
-          )
+                      )}
+
+                      <div style={{ textAlign: "center", padding: "8px 0" }}>
+                        <Group gap="xs" justify="center" wrap="nowrap">
+                          <Text
+                            fw={500}
+                            transform="uppercase"
+                            style={{
+                              fontFamily: "'League Spartan', sans-serif",
+                              fontSize: "clamp(14px, 2.5vw, 24px)",
+                            }}
+                          >
+                            {item.item_code || item.code}
+                          </Text>
+                          <Text
+                            c="dimmed"
+                            style={{
+                              fontSize: "clamp(18px, 2.5vw, 24px)",
+                            }}
+                          >
+                            |
+                          </Text>
+                          <Text
+                            fw={500}
+                            transform="uppercase"
+                            style={{
+                              fontFamily: "'League Spartan', sans-serif",
+                              fontSize: "clamp(14px, 2.5vw, 24px)",
+                            }}
+                          >
+                            {item.name}
+                          </Text>
+                        </Group>
+
+                        <Text
+                          color="#A6976B"
+                          style={{
+                            fontSize: "clamp(14px, 1.8vw, 20px)",
+                            fontWeight: 400,
+                            marginTop: "4px",
+                          }}
+                        >
+                          ₱{item.price}
+                        </Text>
+                      </div>
+                    </Card>
+                  </Grid.Col>
+                );
+              })
+            )}
+          </Grid>
         )}
 
         {selectedItems.length > 0 && !loading && (

@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import api from "../api/axios";
 import PageHeader from "../components/PageHeader";
-import SleepyLoader from "../components/SleepyLoader";
+import SleepyLoader from "../components/TopLoadingBar";
 import { Icons } from "../components/Icons";
 
 function Dashboard() {

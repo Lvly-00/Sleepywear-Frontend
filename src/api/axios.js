@@ -13,35 +13,42 @@ const api = axios.create({
     },
 });
 
+// 🧩 Attach token before each request
 api.interceptors.request.use((config) => {
     const token = getToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
 });
 
+// 🧹 Global response handler
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         const originalRequest = error.config;
 
+        // Handle unauthorized or expired session
         if (
             error.response &&
             error.response.status === 401 &&
             !originalRequest.url.includes("/login") &&
             !originalRequest.url.includes("/register")
         ) {
-            console.warn("Session expired. Clearing cache and redirecting to login...");
+            console.warn("⚠️ Session expired — clearing all caches and redirecting to login...");
 
-            // 🧹 Clear localStorage cache and tokens
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("collections_cache");
-            localStorage.removeItem("collections_cache_time");
-            localStorage.removeItem("user_settings_cache");
+            const cacheKeys = [
+                "access_token",
+                "collections_cache",
+                "collections_cache_time",
+                "user_settings_cache",
+                "products_cache",
+                "products_cache_time",
+                "dashboard_cache",
+            ];
 
-            // Optional: clear sessionStorage too
+            cacheKeys.forEach((key) => localStorage.removeItem(key));
+
             sessionStorage.clear();
 
-            // Redirect to login page
             window.location.href = "/";
         }
 

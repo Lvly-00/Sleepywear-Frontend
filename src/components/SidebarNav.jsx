@@ -1,9 +1,11 @@
+import React, { useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Center, Stack, Menu } from "@mantine/core";
 import AppLogo from "../assets/Logo.svg";
 import classes from "../css/NavbarMinimal.module.css";
 import api from "../api/axios";
 import { Icons } from "./Icons";
+import TopLoadingBar from "./TopLoadingBar";
 
 const links = [
   { icon: Icons.Dashboard, label: "Dashboard", path: "/dashboard" },
@@ -13,9 +15,65 @@ const links = [
 ];
 
 function SidebarNav() {
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [loadingInventory, setLoadingInventory] = useState(false);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ---- Handle Orders Navigation ----
+  const handleOrdersClick = async (e) => {
+    e.preventDefault();
+    if (loadingOrders) return;
+
+    setLoadingOrders(true);
+    try {
+      const res = await api.get("/orders");
+      navigate("/orders", { state: { preloadedOrders: res.data } });
+    } catch (err) {
+      console.error("Failed to fetch orders:", err);
+      alert("Failed to load orders. Please try again.");
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  // ---- Handle Inventory Navigation ----
+  const handleInventoryClick = async (e) => {
+    e.preventDefault();
+    if (loadingInventory) return;
+
+    setLoadingInventory(true);
+    try {
+      const res = await api.get("/collections");
+      navigate("/collections", { state: { preloadedCollections: res.data } });
+    } catch (err) {
+      console.error("Failed to fetch collections:", err);
+      alert("Failed to load inventory. Please try again.");
+    } finally {
+      setLoadingInventory(false);
+    }
+  };
+
+  // ---- Handle Customers Navigation ----
+  const handleCustomersClick = async (e) => {
+    e.preventDefault();
+    if (loadingCustomers) return;
+
+    setLoadingCustomers(true);
+    try {
+      const res = await api.get("/customers");
+      navigate("/customers", { state: { preloadedCustomers: res.data } });
+    } catch (err) {
+      console.error("Failed to fetch customers:", err);
+      alert("Failed to load customers. Please try again.");
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
+
+  // ---- Handle Logout ----
   const handleLogout = async () => {
     try {
       await api.post("/logout");
@@ -28,7 +86,6 @@ function SidebarNav() {
       alert("Logout failed. Please try again.");
     }
   };
-
 
   return (
     <nav className={classes.navbar}>
@@ -45,6 +102,79 @@ function SidebarNav() {
               location.pathname === path ||
               (path === "/collections" && location.pathname.startsWith("/collections"));
 
+            // Orders Preload
+            if (path === "/orders") {
+              return (
+                <div
+                  key={label}
+                  onClick={handleOrdersClick}
+                  className={`${classes.link} ${isActive ? classes.active : ""}`}
+                  style={{
+                    cursor: loadingOrders ? "wait" : "pointer",
+                    position: "relative",
+                  }}
+                  aria-disabled={loadingOrders}
+                >
+                  <Icon active={isActive} size={25} />
+                  <span className={classes.linkLabel}>{label}</span>
+                  {loadingOrders && (
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+                      <TopLoadingBar loading={true} />
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Inventory Preload
+            if (path === "/collections") {
+              return (
+                <div
+                  key={label}
+                  onClick={handleInventoryClick}
+                  className={`${classes.link} ${isActive ? classes.active : ""}`}
+                  style={{
+                    cursor: loadingInventory ? "wait" : "pointer",
+                    position: "relative",
+                  }}
+                  aria-disabled={loadingInventory}
+                >
+                  <Icon active={isActive} size={25} />
+                  <span className={classes.linkLabel}>{label}</span>
+                  {loadingInventory && (
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+                      <TopLoadingBar loading={true} />
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Customers Preload
+            if (path === "/customers") {
+              return (
+                <div
+                  key={label}
+                  onClick={handleCustomersClick}
+                  className={`${classes.link} ${isActive ? classes.active : ""}`}
+                  style={{
+                    cursor: loadingCustomers ? "wait" : "pointer",
+                    position: "relative",
+                  }}
+                  aria-disabled={loadingCustomers}
+                >
+                  <Icon active={isActive} size={25} />
+                  <span className={classes.linkLabel}>{label}</span>
+                  {loadingCustomers && (
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+                      <TopLoadingBar loading={true} />
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Normal Navigation
             return (
               <NavLink
                 key={label}
@@ -56,7 +186,6 @@ function SidebarNav() {
               </NavLink>
             );
           })}
-
         </Stack>
       </div>
 
@@ -79,7 +208,7 @@ function SidebarNav() {
           <Menu.Target>
             <div className={classes.link} style={{ cursor: "pointer" }}>
               <Icons.User size={25} />
-              <span className={classes.linkLabel}>Account </span>
+              <span className={classes.linkLabel}>Account</span>
             </div>
           </Menu.Target>
           <Menu.Dropdown>

@@ -21,14 +21,12 @@ const ConfirmOrder = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
 
-  // Initialize orderItems from location.state or sessionStorage
   const [orderItems, setOrderItems] = useState(() => {
     if (state?.items) return state.items;
     const saved = sessionStorage.getItem("orderItems");
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Initialize form from location.state or sessionStorage or empty
   const [form, setForm] = useState(() => {
     if (state?.form) return state.form;
     const savedForm = sessionStorage.getItem("customerForm");
@@ -48,7 +46,7 @@ const ConfirmOrder = () => {
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
   const [errors, setErrors] = useState({});
-  const [createdOrder, setCreatedOrder] = useState(null); // New state for order to navigate after modal close
+  const [createdOrder, setCreatedOrder] = useState(null);
 
   const total = orderItems.reduce(
     (sum, item) => sum + parseFloat(item.price),
@@ -68,12 +66,10 @@ const ConfirmOrder = () => {
     fetchCustomers();
   }, []);
 
-  // Sync orderItems to sessionStorage whenever it changes
   useEffect(() => {
     sessionStorage.setItem("orderItems", JSON.stringify(orderItems));
   }, [orderItems]);
 
-  // Sync form to sessionStorage whenever it changes
   useEffect(() => {
     sessionStorage.setItem("customerForm", JSON.stringify(form));
   }, [form]);
@@ -90,7 +86,6 @@ const ConfirmOrder = () => {
         social_handle: customer.social_handle,
       });
     } else {
-      // Clear selection and form
       setSelectedCustomer(null);
       setForm({
         first_name: "",
@@ -101,6 +96,35 @@ const ConfirmOrder = () => {
       });
     }
   };
+
+  // NEW: Update item by fetching current item then PUT full updated data
+  const updateItemStatus = async (itemId, newStatus) => {
+    try {
+      const { data: currentItem } = await api.get(`/items/${itemId}`);
+
+      // Remove fields that backend expects to be files or immutable
+      const {
+        image,
+        image_url,
+        created_at,
+        updated_at,
+        collection,
+        collection_name,
+        ...rest
+      } = currentItem;
+
+      const updatedItem = {
+        ...rest,
+        status: newStatus,
+      };
+
+      await api.put(`/items/${itemId}`, updatedItem);
+    } catch (error) {
+      console.error(`Failed to update item ${itemId}:`, error.response?.data || error.message);
+      throw error;
+    }
+  };
+
 
   const handlePlaceOrder = async () => {
     const newErrors = {};
@@ -129,7 +153,22 @@ const ConfirmOrder = () => {
       return;
     }
 
+    // === STOCK CHECK BEFORE PLACING ORDER ===
+    const unavailableItems = orderItems.filter(
+      (item) => item.status !== "Available"
+    );
+
+    if (unavailableItems.length > 0) {
+      alert(
+        `Cannot place order. Insufficient stock for: ${unavailableItems
+          .map((i) => i.name)
+          .join(", ")}`
+      );
+      return;
+    }
+
     try {
+      // Save or update customer
       const customerPayload = { ...form };
       let customerId = selectedCustomer;
 
@@ -140,6 +179,7 @@ const ConfirmOrder = () => {
         customerId = res.data.id;
       }
 
+      // Create order payload
       const payload = {
         customer: {
           id: customerId,
@@ -153,12 +193,26 @@ const ConfirmOrder = () => {
         })),
       };
 
+      // Create order
       const response = await api.post("/orders", payload);
 
       if (response.status === 200 || response.status === 201) {
         const createdOrder = response.data;
-        setCreatedOrder(createdOrder); // Save created order for later navigation
+        setCreatedOrder(createdOrder);
 
+        // === Update inventory (mark items Sold Out) ===
+        try {
+          await Promise.all(
+            orderItems.map(async (item) => {
+              await updateItemStatus(item.id, "Sold Out");
+            })
+          );
+        } catch (inventoryErr) {
+          console.error("Failed to update inventory:", inventoryErr);
+          alert("Warning: Order placed but failed to update some item statuses.");
+        }
+
+        // Prepare invoice data
         const invoice = {
           customer_name: `${form.first_name} ${form.last_name}`,
           address: form.address,
@@ -175,11 +229,15 @@ const ConfirmOrder = () => {
         setInvoiceData(invoice);
         setInvoiceModal(true);
 
-        // CLEAR THE ORDER ITEMS STATE AND STORAGE (sessionStorage + localStorage)
-        setOrderItems([]); // Clear React state
+        // Clear order items and storage
+        setOrderItems([]);
         sessionStorage.removeItem("orderItems");
         sessionStorage.removeItem("customerForm");
-        localStorage.removeItem("orderItemsCache"); // <-- Remove localStorage cache here
+        localStorage.removeItem("orderItemsCache");
+        localStorage.removeItem("collections_cache");
+        localStorage.removeItem("collections_cache_time");
+        window.dispatchEvent(new Event("collectionsUpdated"));
+
       } else {
         alert("Unexpected response from server.");
       }
@@ -188,6 +246,7 @@ const ConfirmOrder = () => {
       alert("Order failed: " + (err.response?.data?.message || "Check console."));
     }
   };
+
   return (
     <div style={{ padding: 20 }}>
       <PageHeader title="Confirm Order" showBack />
@@ -257,9 +316,9 @@ const ConfirmOrder = () => {
                     width: "100%",
                   }}
                 >
-                  <Table.Tbody>
+                  <tbody>
                     {orderItems.map((item) => (
-                      <Table.Tr
+                      <tr
                         key={item.id}
                         style={{
                           backgroundColor: "#FAF8F3",
@@ -267,7 +326,7 @@ const ConfirmOrder = () => {
                           overflow: "hidden",
                         }}
                       >
-                        <Table.Td
+                        <td
                           style={{
                             padding: "10px 14px",
                             border: "none",
@@ -281,8 +340,8 @@ const ConfirmOrder = () => {
                             )}
                             <span style={{ marginLeft: "25px" }}>{item.name}</span>
                           </Text>
-                        </Table.Td>
-                        <Table.Td
+                        </td>
+                        <td
                           style={{
                             textAlign: "right",
                             border: "none",
@@ -295,10 +354,10 @@ const ConfirmOrder = () => {
                           {Number(item.price).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                           })}
-                        </Table.Td>
-                      </Table.Tr>
+                        </td>
+                      </tr>
                     ))}
-                  </Table.Tbody>
+                  </tbody>
                 </Table>
               )}
             </ScrollArea>
@@ -364,41 +423,21 @@ const ConfirmOrder = () => {
               <Grid pb={20}>
                 <Grid.Col span={6}>
                   <TextInput
-                    label={
-                      <span
-                        style={{
-                          fontWeight: "400",
-                        }}
-                      >
-                        First Name
-                      </span>
-                    }
+                    label={<span style={{ fontWeight: "400" }}>First Name</span>}
                     required
                     value={form.first_name}
                     size="md"
-                    onChange={(e) =>
-                      setForm({ ...form, first_name: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, first_name: e.target.value })}
                     error={errors.first_name}
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>
                   <TextInput
-                    label={
-                      <span
-                        style={{
-                          fontWeight: "400",
-                        }}
-                      >
-                        Last Name
-                      </span>
-                    }
+                    label={<span style={{ fontWeight: "400" }}>Last Name</span>}
                     required
                     value={form.last_name}
                     size="md"
-                    onChange={(e) =>
-                      setForm({ ...form, last_name: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, last_name: e.target.value })}
                     error={errors.last_name}
                   />
                 </Grid.Col>
@@ -406,15 +445,7 @@ const ConfirmOrder = () => {
 
               <TextInput
                 pb={20}
-                label={
-                  <span
-                    style={{
-                      fontWeight: "400",
-                    }}
-                  >
-                    Address
-                  </span>
-                }
+                label={<span style={{ fontWeight: "400" }}>Address</span>}
                 required
                 mt="sm"
                 size="md"
@@ -426,15 +457,7 @@ const ConfirmOrder = () => {
               <Grid mt="sm">
                 <Grid.Col span={6}>
                   <TextInput
-                    label={
-                      <span
-                        style={{
-                          fontWeight: "400",
-                        }}
-                      >
-                        Contact Number
-                      </span>
-                    }
+                    label={<span style={{ fontWeight: "400" }}>Contact Number</span>}
                     required
                     value={form.contact_number}
                     size="md"
@@ -449,21 +472,11 @@ const ConfirmOrder = () => {
                 </Grid.Col>
                 <Grid.Col span={6}>
                   <TextInput
-                    label={
-                      <span
-                        style={{
-                          fontWeight: "400",
-                        }}
-                      >
-                        Social Media Link
-                      </span>
-                    }
+                    label={<span style={{ fontWeight: "400" }}>Social Media Link</span>}
                     required
                     value={form.social_handle}
                     size="md"
-                    onChange={(e) =>
-                      setForm({ ...form, social_handle: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, social_handle: e.target.value })}
                     error={errors.social_handle}
                   />
                 </Grid.Col>
@@ -491,7 +504,6 @@ const ConfirmOrder = () => {
               opened={invoiceModal}
               onClose={() => {
                 setInvoiceModal(false);
-
                 if (createdOrder) {
                   navigate("/orders", {
                     state: { reloadOrders: true, newOrder: createdOrder },
