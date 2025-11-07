@@ -19,7 +19,7 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
 import { Icons } from "../components/Icons";
 import api from "../api/axios";
-import NotifySuccess from "../components/NotifySuccess.jsx";
+import NotifySuccess from "../components/NotifySuccess";
 
 const MIN_SKELETON_ROWS = 6;
 
