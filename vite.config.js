@@ -20,6 +20,9 @@ export default defineConfig(({ mode }) => {
         resolve: {
             alias: {
                 '@tabler/icons-react': '@tabler/icons-react/dist/esm/icons/index.mjs',
+                '@': fileURLToPath(new URL('./src',
+                    import.meta.url)),
+
             },
         },
     };

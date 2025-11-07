@@ -18,7 +18,7 @@ import EditItemModal from "../components/EditItemModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
 import TopLoadingBar from "../components/TopLoadingBar";
-import NotifySuccess from "../components/NotifySuccess";
+import NotifySuccess from "@/components/NotifySuccess";
 
 const sortItemsByStatus = (itemsList) =>
   [...itemsList].sort((a, b) =>

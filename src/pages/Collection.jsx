@@ -13,7 +13,7 @@ import {
 } from "@mantine/core";
 import { motion, AnimatePresence } from "framer-motion";
 
-import NotifySuccess from "../components/NotifySuccess";
+import NotifySuccess from "@/components/NotifySuccess";
 import PageHeader from "../components/PageHeader";
 import AddCollectionModal from "../components/AddCollectionModal";
 import EditCollectionModal from "../components/EditCollectionModal";
