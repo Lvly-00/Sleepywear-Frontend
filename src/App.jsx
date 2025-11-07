@@ -7,7 +7,6 @@ import MainLayout from "./layouts/Layout";
 import PrivateRoute from "./components/PrivateRoute";
 import SleepyLoader from "./components/TopLoadingBar";
 import NotFound from "./pages/NotFound";
-import FastCollectionsPage  from "./pages/FastCollectionsPage";
 
 
 
@@ -63,11 +62,7 @@ function App() {
                 </PrivateRoute>
               }
             />
-            <Route path="/fast-collections" element={
-              <PrivateRoute>
-                <FastCollectionsPage />
-              </PrivateRoute>
-            } />
+          
 
             <Route
               path="/confirm-order"

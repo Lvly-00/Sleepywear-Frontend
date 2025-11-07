@@ -17,6 +17,7 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
+import NotifySuccess from "../components/NotifySuccess";
 
 const rowVariants = {
   hidden: { opacity: 0, y: -10 },
@@ -55,13 +56,16 @@ export default function CustomerLogs() {
     }
   }, [preloadedCustomers]);
 
-  // Delete a customer with skeleton reload effect
+  // Delete a customer with skeleton reload effect and notification
   const handleDelete = async (customer) => {
     try {
       setLoading(true);
       await api.delete(`/customers/${customer.id}`);
       const res = await api.get("/customers");
       setCustomers(res.data);
+      
+      // Show deleted notification here
+      NotifySuccess.deleted();
     } catch (err) {
       console.error("Error deleting customer:", err);
     } finally {

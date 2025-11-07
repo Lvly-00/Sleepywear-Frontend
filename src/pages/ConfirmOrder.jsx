@@ -16,7 +16,7 @@ import api from "../api/axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import InvoicePreview from "../components/InvoicePreview";
 import PageHeader from "../components/PageHeader";
-import NotifySuccess from "../components/NotifySuccess"; 
+import NotifySuccess from "../components/NotifySuccess.jsx";
 
 
 const ConfirmOrder = () => {
