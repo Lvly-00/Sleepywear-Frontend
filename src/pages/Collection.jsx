@@ -13,7 +13,7 @@ import {
 } from "@mantine/core";
 import { motion, AnimatePresence } from "framer-motion";
 
-import notifySuccess from "../components/notifySuccess.jsx";
+import NotifySuccess from "../components/NotifySuccess.jsx";
 import PageHeader from "../components/PageHeader";
 import AddCollectionModal from "../components/AddCollectionModal";
 import EditCollectionModal from "../components/EditCollectionModal";
@@ -127,7 +127,7 @@ export default function Collection() {
       setDeleteModalOpen(false);
       setCollectionToDelete(null);
 
-      notifySuccess.deleted();
+      NotifySuccess.deleted();
 
       // Force refresh after delete
       hasFetchedRef.current = false;
@@ -142,7 +142,7 @@ export default function Collection() {
     setAddModalOpen(false);
     setCollections((prev) => [newCollection, ...prev]);
 
-    notifySuccess.addedCollection();
+    NotifySuccess.addedCollection();
 
     // Force refresh after add
     hasFetchedRef.current = false;
@@ -157,7 +157,7 @@ export default function Collection() {
       prev.map((c) => (c.id === updatedCollection.id ? updatedCollection : c))
     );
 
-    notifySuccess.editedCollection();
+    NotifySuccess.editedCollection();
 
     // Force refresh after edit
     hasFetchedRef.current = false;

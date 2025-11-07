@@ -18,6 +18,7 @@ import EditItemModal from "../components/EditItemModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
 import TopLoadingBar from "../components/TopLoadingBar";
+import NotifySuccess from "../components/NotifySuccess"; // ✅ Import notifications
 
 const sortItemsByStatus = (itemsList) =>
   [...itemsList].sort((a, b) =>
@@ -95,7 +96,6 @@ function Item() {
 
   return (
     <>
-      {/* Top progress bar */}
       <TopLoadingBar loading={loading} />
 
       <Stack p="lg" spacing="lg">
@@ -212,16 +212,16 @@ function Item() {
         )}
       </Stack>
 
-      {/* Modals */}
+      {/* ✅ Modals with notifications */}
       <AddItemModal
         opened={addModal}
         onClose={() => setAddModal(false)}
         collectionId={id}
-        onItemAdded={(newItem) =>{
+        onItemAdded={(newItem) => {
           setItems((prev) => sortItemsByStatus([...prev, newItem]));
-
-      window.dispatchEvent(new Event("collectionsUpdated"));
-  }}        
+          window.dispatchEvent(new Event("collectionsUpdated"));
+          NotifySuccess.addedItem();
+        }}
       />
 
       {selectedItem && (
@@ -229,13 +229,14 @@ function Item() {
           opened={editModal}
           onClose={() => setEditModal(false)}
           item={selectedItem}
-          onItemUpdated={(updatedItem) =>
+          onItemUpdated={(updatedItem) => {
             setItems((prev) =>
               sortItemsByStatus(
                 prev.map((i) => (i.id === updatedItem.id ? updatedItem : i))
               )
-            )
-          }
+            );
+            NotifySuccess.editedItem();
+          }}
         />
       )}
 
@@ -248,6 +249,7 @@ function Item() {
           try {
             await api.delete(`/items/${itemToDelete.id}`);
             setItems((prev) => prev.filter((i) => i.id !== itemToDelete.id));
+            NotifySuccess.deleted();
           } catch (err) {
             console.error("Error deleting item:", err);
           } finally {

@@ -19,6 +19,7 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
 import { Icons } from "../components/Icons";
 import api from "../api/axios";
+import NotifySuccess from "../components/NotifySuccess"; //  import notification helper
 
 const MIN_SKELETON_ROWS = 6;
 
@@ -213,19 +214,21 @@ export default function Order() {
                           (e.currentTarget.style.backgroundColor = "transparent")
                         }
                       >
-                        <Table.Td>{order.id}</Table.Td>
-                        <Table.Td>{fullName}</Table.Td>
-                        <Table.Td style={{ textAlign: "center" }}>
+                        <Table.Td style={{ fontSize: "16px" }}>
+                          {order.id}
+                        </Table.Td>
+                        <Table.Td style={{ fontSize: "16px" }}>{fullName}</Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                           {totalQty}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center" }}>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                           {new Date(order.order_date).toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",
                             day: "numeric",
                           })}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center" }}>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                           ₱{Math.round(totalPrice).toLocaleString()}
                         </Table.Td>
                         <Table.Td style={{ textAlign: "center" }}>
@@ -265,7 +268,7 @@ export default function Order() {
                                   setAddPaymentOpen(true);
                                 }}
                               >
-                                <Icons.AddPayment size={24} />
+                                <Icons.AddPayment size={26} />
                               </Button>
                             )}
                             <Button
@@ -279,7 +282,7 @@ export default function Order() {
                                 setDeleteModalOpen(true);
                               }}
                             >
-                              <Icons.Trash size={24} />
+                              <Icons.Trash size={26} />
                             </Button>
                           </Group>
                         </Table.Td>
@@ -293,7 +296,7 @@ export default function Order() {
         </ScrollArea>
       </Paper>
 
-      {/* Delete Confirmation */}
+      {/*  Delete Confirmation */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
@@ -303,6 +306,7 @@ export default function Order() {
           try {
             await api.delete(`/orders/${orderToDelete.id}`);
             setOrders((prev) => prev.filter((o) => o.id !== orderToDelete.id));
+            NotifySuccess.deleted();
             setDeleteModalOpen(false);
           } catch (err) {
             console.error("Error deleting order:", err);
@@ -310,7 +314,7 @@ export default function Order() {
         }}
       />
 
-      {/* Add Payment */}
+      {/*  Add Payment */}
       {addPaymentOpen && selectedOrder && (
         <AddPaymentModal
           opened={addPaymentOpen}
@@ -320,6 +324,7 @@ export default function Order() {
             setOrders((prev) =>
               prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o))
             );
+            NotifySuccess.addedPayment(); //  show payment added notification
           }}
         />
       )}

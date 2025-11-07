@@ -10,6 +10,7 @@ import {
   Text,
   Stack,
   Center,
+  Skeleton,
 } from "@mantine/core";
 import PageHeader from "../components/PageHeader";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
@@ -36,6 +37,7 @@ export default function CustomerLogs() {
   const [deleteModal, setDeleteModal] = useState({ opened: false, customer: null });
   const [loading, setLoading] = useState(!preloadedCustomers);
 
+  // Fetch customers if not preloaded
   useEffect(() => {
     if (!preloadedCustomers) {
       const fetchCustomers = async () => {
@@ -53,11 +55,13 @@ export default function CustomerLogs() {
     }
   }, [preloadedCustomers]);
 
+  // Delete a customer with skeleton reload effect
   const handleDelete = async (customer) => {
     try {
       setLoading(true);
       await api.delete(`/customers/${customer.id}`);
-      setCustomers((prev) => prev.filter((c) => c.id !== customer.id));
+      const res = await api.get("/customers");
+      setCustomers(res.data);
     } catch (err) {
       console.error("Error deleting customer:", err);
     } finally {
@@ -70,6 +74,34 @@ export default function CustomerLogs() {
     const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
     return fullName.includes(search.toLowerCase());
   });
+
+  // Skeleton placeholder rows
+  const SkeletonRows = () => (
+    <Table.Tbody>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Table.Tr key={i}>
+          <Table.Td>
+            <Skeleton height={18} width="70%" />
+          </Table.Td>
+          <Table.Td style={{ textAlign: "center" }}>
+            <Skeleton height={18} width="60%" />
+          </Table.Td>
+          <Table.Td style={{ textAlign: "center" }}>
+            <Skeleton height={18} width="40%" />
+          </Table.Td>
+          <Table.Td style={{ textAlign: "center" }}>
+            <Skeleton height={18} width="50%" />
+          </Table.Td>
+          <Table.Td style={{ textAlign: "center" }}>
+            <Skeleton height={18} width="30%" />
+          </Table.Td>
+          <Table.Td style={{ textAlign: "center" }}>
+            <Skeleton height={18} width="20%" />
+          </Table.Td>
+        </Table.Tr>
+      ))}
+    </Table.Tbody>
+  );
 
   return (
     <Stack p="xs" spacing="lg" style={{ fontFamily: "'League Spartan', sans-serif" }}>
@@ -96,11 +128,24 @@ export default function CustomerLogs() {
       >
         <ScrollArea>
           {loading ? (
-            <Center py="lg">
-              <Text c="dimmed" size="lg">
-                Loading...
-              </Text>
-            </Center>
+            <Table
+              highlightOnHover
+              styles={{
+                tr: { borderBottom: "1px solid #D8CBB8", fontSize: "18px" },
+              }}
+            >
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Customer Name</Table.Th>
+                  <Table.Th style={{ textAlign: "center" }}>Address</Table.Th>
+                  <Table.Th style={{ textAlign: "center" }}>Contact Number</Table.Th>
+                  <Table.Th style={{ textAlign: "center" }}>Social Media Account</Table.Th>
+                  <Table.Th style={{ textAlign: "center" }}>Date Created</Table.Th>
+                  <Table.Th style={{ textAlign: "center" }}>Manage</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <SkeletonRows />
+            </Table>
           ) : filteredCustomers.length === 0 ? (
             <Center py="lg">
               <Text c="dimmed" size="lg">
@@ -114,11 +159,11 @@ export default function CustomerLogs() {
                 tr: { borderBottom: "1px solid #D8CBB8", fontSize: "18px" },
                 th: {
                   fontFamily: "'League Spartan', sans-serif",
-                  fontSize: "22px",
+                  fontSize: "20px",
                 },
                 td: {
                   fontFamily: "'League Spartan', sans-serif",
-                  fontSize: "18px",
+                  fontSize: "16px",
                 },
               }}
             >
@@ -169,7 +214,7 @@ export default function CustomerLogs() {
                             target="_blank"
                             rel="noopener noreferrer"
                             underline="hover"
-                            style={{ color: "#4455f0ff" }}
+                            style={{ color: "#4455f0ff", fontSize: "17px" }}
                           >
                             {c.social_handle}
                           </Anchor>
