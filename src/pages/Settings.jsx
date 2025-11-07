@@ -10,17 +10,19 @@ import {
   Text,
   Grid,
   Skeleton,
+  Transition,
 } from "@mantine/core";
-import { Transition } from "@mantine/core";
-import { showNotification } from "@mantine/notifications";
+import NotifySuccess from "../components/NotifySuccess";
 import PageHeader from "../components/PageHeader";
 import SubmitButton from "../components/SubmitButton";
 import { Icons } from "../components/Icons";
-
-const CACHE_KEY = "user_settings_cache";
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Settings = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // No preloadedProfile fallback anymore, always fetch fresh
   const [profile, setProfile] = useState({ business_name: "", email: "" });
   const [passwords, setPasswords] = useState({
     current_password: "",
@@ -30,46 +32,25 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  // Load from cache if valid
-  const getCachedProfile = () => {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return null;
-    const parsed = JSON.parse(cached);
-    if (Date.now() - parsed.timestamp > CACHE_TTL) {
-      localStorage.removeItem(CACHE_KEY);
-      return null;
-    }
-    return parsed.data;
+  // Password validation regex (min 8 chars, uppercase, lowercase, number, special char)
+  const isPasswordSecure = (password) => {
+    const regex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-={}[\]|\\:;"'<>,./~`])[A-Za-z\d@$!%*?&#^()_+\-={}[\]|\\:;"'<>,./~`]{8,}$/;
+    return regex.test(password);
   };
 
-  // Fetch user settings
-  const fetchProfile = async (force = false) => {
-    const cachedProfile = getCachedProfile();
-    if (cachedProfile && !force) {
-      setProfile(cachedProfile);
-      setLoading(false);
-    }
-
+  // Fetch user settings fresh on mount and after profile updates
+  const fetchProfile = async () => {
     try {
+      setLoading(true);
       const res = await api.get("/user/settings");
-      const freshData = {
+      setProfile({
         business_name: res.data.business_name || "",
         email: res.data.email || "",
-      };
-      setProfile(freshData);
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({ data: freshData, timestamp: Date.now() })
-      );
+      });
     } catch (err) {
-      if (!cachedProfile) {
-        showNotification({
-          title: "Error",
-          message: "Failed to load user settings",
-          color: "red",
-          icon: <Icons.IconX size={16} />,
-        });
-      }
+      NotifySuccess.deleted();
+      console.error("Fetch profile error:", err);
     } finally {
       setLoading(false);
     }
@@ -83,52 +64,73 @@ const Settings = () => {
   const handleUpdate = async (data, url, successMessage, refresh = false) => {
     try {
       setUpdating(true);
-      const res = await api.put(url, data);
+      await api.put(url, data);
 
-      showNotification({
-        title: "Success",
-        message: res.data.message || successMessage,
-        color: "green",
-        icon: <Icons.IconCheck size={16} />,
-      });
+      NotifySuccess.editedItem();
 
       if (refresh) {
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        // Refetch profile after profile update to refresh UI
+        await fetchProfile();
       }
     } catch (err) {
-      const errors = err.response?.data?.errors;
-      showNotification({
-        title: errors ? "Validation Error" : "Error",
-        message: errors
-          ? Object.values(errors).flat().join(" ")
-          : err.response?.data?.message || "Something went wrong",
-        color: "red",
-        icon: <Icons.IconX size={16} />,
-      });
+      NotifySuccess.deleted();
+      console.error("Update error:", err.response?.data);
     } finally {
       setUpdating(false);
     }
   };
 
+  // Update Profile handler
   const updateProfile = (e) => {
     e.preventDefault();
     handleUpdate(profile, "/user/settings", "Profile updated successfully", true);
   };
 
-  const updatePassword = (e) => {
+  // Update Password handler with validation and logout redirect
+  const updatePassword = async (e) => {
     e.preventDefault();
-    handleUpdate(
-      passwords,
-      "/user/settings/password",
-      "Password updated successfully"
-    );
-    setPasswords({
-      current_password: "",
-      new_password: "",
-      new_password_confirmation: "",
-    });
+
+    if (!isPasswordSecure(passwords.new_password)) {
+      NotifySuccess.weakPassword();
+      return;
+    }
+
+    if (passwords.new_password !== passwords.new_password_confirmation) {
+      NotifySuccess.passwordMismatch();
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      await api.put("/user/settings/password", passwords);
+
+      NotifySuccess.editedItem();
+
+      setPasswords({
+        current_password: "",
+        new_password: "",
+        new_password_confirmation: "",
+      });
+
+      // Clear auth info here (localStorage, cookies, context, etc.)
+      // Example if using localStorage token:
+      localStorage.removeItem("authToken");
+
+      navigate("/");
+    } catch (err) {
+      if (
+        err.response?.data?.errors?.current_password?.includes(
+          "Current password is incorrect."
+        )
+      ) {
+        NotifySuccess.incorrectPassword(); // Make sure this notification exists in NotifySuccess
+      } else {
+        NotifySuccess.deleted();
+      }
+      console.error("Password update error:", err.response?.data);
+    } finally {
+      setUpdating(false);
+    }
   };
 
   return (
@@ -143,10 +145,7 @@ const Settings = () => {
 
       {/* Profile Section */}
       <Grid gutter="xl" align="flex-start" mb="xl">
-        <Grid.Col
-          span={{ base: 12, md: 5 }}
-          style={{ marginLeft: 40, marginTop: 30 }}
-        >
+        <Grid.Col span={{ base: 12, md: 5 }} style={{ marginLeft: 40, marginTop: 30 }}>
           <Title order={2} style={{ color: "#02034C", fontWeight: 500 }}>
             Profile Information
           </Title>
@@ -173,12 +172,7 @@ const Settings = () => {
                 <Skeleton height={40} radius="xl" />
               </Stack>
             ) : (
-              <Transition
-                mounted={!loading}
-                transition="fade"
-                duration={300}
-                timingFunction="ease"
-              >
+              <Transition mounted={!loading} transition="fade" duration={300} timingFunction="ease">
                 {(styles) => (
                   <form onSubmit={updateProfile} style={styles}>
                     <Stack spacing="md">
@@ -205,9 +199,7 @@ const Settings = () => {
                       <TextInput
                         label="Email"
                         value={profile.email}
-                        onChange={(e) =>
-                          setProfile({ ...profile, email: e.target.value })
-                        }
+                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                         radius="md"
                         size="md"
                         disabled={updating}
@@ -240,10 +232,7 @@ const Settings = () => {
 
       {/* Password Section */}
       <Grid gutter="sm" align="flex-start">
-        <Grid.Col
-          span={{ base: 12, md: 5 }}
-          style={{ marginLeft: 40, marginTop: 30 }}
-        >
+        <Grid.Col span={{ base: 12, md: 5 }} style={{ marginLeft: 40, marginTop: 30 }}>
           <Title order={2} style={{ color: "#02034C", fontWeight: 500 }}>
             Update Password
           </Title>
@@ -271,12 +260,7 @@ const Settings = () => {
                 <Skeleton height={40} radius="xl" />
               </Stack>
             ) : (
-              <Transition
-                mounted={!loading}
-                transition="fade"
-                duration={300}
-                timingFunction="ease"
-              >
+              <Transition mounted={!loading} transition="fade" duration={300} timingFunction="ease">
                 {(styles) => (
                   <form onSubmit={updatePassword} style={styles}>
                     <Stack spacing="md">
@@ -290,14 +274,11 @@ const Settings = () => {
                           })
                         }
                         visibilityToggleIcon={({ reveal }) =>
-                          reveal ? (
-                            <Icons.BlueEye size={18} />
-                          ) : (
-                            <Icons.BlueEyeOff size={18} />
-                          )
+                          reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
                         }
                         radius="md"
                         size="md"
+                        disabled={updating}
                         styles={{
                           label: { color: "#232D80" },
                           input: {
@@ -316,14 +297,11 @@ const Settings = () => {
                           })
                         }
                         visibilityToggleIcon={({ reveal }) =>
-                          reveal ? (
-                            <Icons.BlueEye size={18} />
-                          ) : (
-                            <Icons.BlueEyeOff size={18} />
-                          )
+                          reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
                         }
                         radius="md"
                         size="md"
+                        disabled={updating}
                         styles={{
                           label: { color: "#232D80" },
                           input: {
@@ -342,14 +320,11 @@ const Settings = () => {
                           })
                         }
                         visibilityToggleIcon={({ reveal }) =>
-                          reveal ? (
-                            <Icons.BlueEye size={18} />
-                          ) : (
-                            <Icons.BlueEyeOff size={18} />
-                          )
+                          reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
                         }
                         radius="md"
                         size="md"
+                        disabled={updating}
                         styles={{
                           label: { color: "#232D80" },
                           input: {
@@ -362,6 +337,7 @@ const Settings = () => {
                         <SubmitButton
                           type="submit"
                           radius="xl"
+                          loading={updating}
                           style={{ backgroundColor: "#232D80", color: "#fff" }}
                         >
                           Update

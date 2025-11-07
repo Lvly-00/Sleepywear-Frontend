@@ -1,9 +1,17 @@
 import React, { useState } from "react";
-import { Group, TextInput, Button, Text, ActionIcon, Tooltip } from "@mantine/core";
+import {
+  Group,
+  TextInput,
+  Button,
+  Text,
+  ActionIcon,
+  Tooltip,
+} from "@mantine/core";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Icons } from "./Icons";
 import api from "../api/axios";
 import TopLoadingBar from "./TopLoadingBar";
+import CancelOrderModal from "./CancelOrderModal";
 
 const PageHeader = ({
   title,
@@ -14,41 +22,71 @@ const PageHeader = ({
   addLink,
   onAdd,
   showBack,
+  resetOrder, // optional prop to reset local order state
+  selectedItems, // array of selected order items to delete
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const handleBack = async () => {
+  const handleConfirmCancel = async () => {
+    setShowCancelModal(false);
     setLoading(true);
 
     try {
-      // If you're in an items page (e.g. /items/:id)
+      if (selectedItems && selectedItems.length > 0) {
+        await Promise.all(
+          selectedItems.map((itemId) =>
+            api.delete(`/order-items/${itemId}`).catch((err) => {
+              console.error(`Failed to delete item ${itemId}:`, err);
+            })
+          )
+        );
+      }
+
+      // Reset local order state (if provided)
+      if (resetOrder) resetOrder();
+
+      // Fetch updated orders and navigate
+      const res = await api.get("/orders");
+      navigate("/orders", { state: { preloadedOrders: res.data } });
+    } catch (err) {
+      console.error("Failed to cancel order:", err);
+      alert("An error occurred while canceling the order. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleBack = async () => {
+    // 🧾 If in CONFIRM ORDER → just go back to Add Order (no modal)
+    if (location.pathname.includes("/confirm-order")) {
+      navigate("/add-order");
+      return;
+    }
+
+    // ❌ If in ADD ORDER → show cancel modal
+    if (location.pathname.includes("/add-order")) {
+      setShowCancelModal(true);
+      return;
+    }
+
+    // 🔁 Normal back navigation for other pages
+    setLoading(true);
+    try {
       if (location.pathname.includes("/items")) {
         const res = await api.get("/collections");
         navigate("/collections", { state: { preloadedCollections: res.data } });
-      }
-
-      // If you're inside collections (e.g. /collections/:id)
-      else if (location.pathname.includes("/collections")) {
+      } else if (location.pathname.includes("/collections")) {
         const res = await api.get("/collections");
         navigate("/collections", { state: { preloadedCollections: res.data } });
-      }
-
-      // If you're in customers
-      else if (location.pathname.includes("/customers")) {
+      } else if (location.pathname.includes("/customers")) {
         const res = await api.get("/customers");
         navigate("/customers", { state: { preloadedCustomers: res.data } });
-      }
-
-      // If you're in orders
-      else if (location.pathname.includes("/orders")) {
+      } else if (location.pathname.includes("/orders")) {
         const res = await api.get("/orders");
         navigate("/orders", { state: { preloadedOrders: res.data } });
-      }
-
-      // Default fallback
-      else {
+      } else {
         navigate("/dashboard");
       }
     } catch (err) {
@@ -59,15 +97,22 @@ const PageHeader = ({
     }
   };
 
+
   return (
     <>
       <TopLoadingBar loading={loading} />
 
+      <CancelOrderModal
+        opened={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleConfirmCancel}
+      />
+
       <Group justify="space-between" mt={50}>
-        {/* Left section: Back button + Title */}
+        {/* Left: Back button + Title */}
         <Group>
           {showBack && (
-            <Tooltip label="Reload & Go Back" position="bottom" withArrow>
+            <Tooltip label="Go Back" position="bottom" withArrow>
               <ActionIcon
                 variant="subtle"
                 radius="xl"
@@ -78,10 +123,8 @@ const PageHeader = ({
                   transition: "background-color 0.2s ease",
                   cursor: loading ? "wait" : "pointer",
                 }}
-                onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = "#D3D8FF")}
-                onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = "#E8EBFF")}
               >
-                <Icons.Back size={32}/>
+                <Icons.Back size={32} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -100,7 +143,7 @@ const PageHeader = ({
           </Text>
         </Group>
 
-        {/* Right section: Search + Add button */}
+        {/* Right: Search + Add Button */}
         <Group>
           {showSearch && (
             <TextInput

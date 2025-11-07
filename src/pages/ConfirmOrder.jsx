@@ -16,6 +16,8 @@ import api from "../api/axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import InvoicePreview from "../components/InvoicePreview";
 import PageHeader from "../components/PageHeader";
+import NotifySuccess from "../components/NotifySuccess"; 
+
 
 const ConfirmOrder = () => {
   const navigate = useNavigate();
@@ -153,17 +155,24 @@ const ConfirmOrder = () => {
       return;
     }
 
-    // === STOCK CHECK BEFORE PLACING ORDER ===
-    const unavailableItems = orderItems.filter(
-      (item) => item.status !== "Available"
-    );
+    // Show loading notification with fixed ID
+    NotifySuccess.addedOrderLoading();
+
+    // Check stock
+    const unavailableItems = orderItems.filter((item) => item.status !== "Available");
 
     if (unavailableItems.length > 0) {
-      alert(
-        `Cannot place order. Insufficient stock for: ${unavailableItems
+      updateNotification({
+        id: "order-submit",
+        title: "Stock Error",
+        message: `Cannot place order. Insufficient stock for: ${unavailableItems
           .map((i) => i.name)
-          .join(", ")}`
-      );
+          .join(", ")}`,
+        color: "red",
+        autoClose: 4000,
+        loading: false,
+        disallowClose: false,
+      });
       return;
     }
 
@@ -200,7 +209,7 @@ const ConfirmOrder = () => {
         const createdOrder = response.data;
         setCreatedOrder(createdOrder);
 
-        // === Update inventory (mark items Sold Out) ===
+        // Update inventory (mark items Sold Out)
         try {
           await Promise.all(
             orderItems.map(async (item) => {
@@ -238,14 +247,34 @@ const ConfirmOrder = () => {
         localStorage.removeItem("collections_cache_time");
         window.dispatchEvent(new Event("collectionsUpdated"));
 
+        // Update notification to success
+        NotifySuccess.addedOrder();
+
       } else {
-        alert("Unexpected response from server.");
+        updateNotification({
+          id: "order-submit",
+          title: "Error",
+          message: "Unexpected response from server.",
+          color: "red",
+          autoClose: 4000,
+          loading: false,
+          disallowClose: false,
+        });
       }
     } catch (err) {
       console.error("Order creation failed:", err.response?.data || err.message);
-      alert("Order failed: " + (err.response?.data?.message || "Check console."));
+      updateNotification({
+        id: "order-submit",
+        title: "Order Failed",
+        message: err.response?.data?.message || "Check console for details.",
+        color: "red",
+        autoClose: 4000,
+        loading: false,
+        disallowClose: false,
+      });
     }
   };
+
 
   return (
     <div style={{ padding: 20 }}>

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Stack, Card, Text, Grid, Paper } from "@mantine/core";
+import { useLocation } from "react-router-dom";
+
+import { Stack, Card, Text, Grid, Paper, Skeleton } from "@mantine/core";
 import {
   ResponsiveContainer,
   LineChart,
@@ -15,22 +17,29 @@ import SleepyLoader from "../components/TopLoadingBar";
 import { Icons } from "../components/Icons";
 
 function Dashboard() {
-  const [summary, setSummary] = useState(null);
+  const location = useLocation();
+  const preloadedSummary = location.state?.preloadedSummary || null;
+
+  const [summary, setSummary] = useState(preloadedSummary);
+  const [loading, setLoading] = useState(!preloadedSummary);
 
   useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        const response = await api.get("/dashboard-summary");
-        setSummary(response.data);
-      } catch (error) {
-        console.error("Failed to fetch dashboard summary:", error);
-      }
-    };
+    if (!summary) {
+      const fetchSummary = async () => {
+        try {
+          setLoading(true);
+          const response = await api.get("/dashboard-summary");
+          setSummary(response.data);
+        } catch (error) {
+          console.error("Failed to fetch dashboard summary:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    fetchSummary();
-  }, []);
-
-  if (!summary) return <SleepyLoader />;
+      fetchSummary();
+    }
+  }, [summary]);
 
   const cardStyle = {
     borderRadius: "28px",
@@ -52,6 +61,31 @@ function Dashboard() {
     return Math.round(num).toLocaleString();
   };
 
+  if (loading)
+    return (
+      <Stack p="xs" spacing="lg">
+        <PageHeader title="Dashboard" />
+        <Grid gutter="xl" justify="center">
+          {[...Array(4)].map((_, idx) => (
+            <Grid.Col key={idx} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+              <Card style={cardStyle}>
+                <Skeleton height={25} width="60%" mb="sm" />
+                <Skeleton height={66} circle mb="sm" />
+                <Skeleton height={45} width="50%" mb="sm" />
+                <Skeleton height={30} width="40%" />
+              </Card>
+            </Grid.Col>
+          ))}
+        </Grid>
+
+        <Paper p="xl" style={{ backgroundColor: "#FAF8F3" }}>
+          <Card p="lg" style={{ height: 400 }}>
+            <Skeleton height="100%" />
+          </Card>
+        </Paper>
+      </Stack>
+    );
+
   const collectionSalesData = summary.collectionSales.map((collection) => ({
     collection_name: collection.collection_name,
     total_sales: collection.total_sales,
@@ -60,10 +94,7 @@ function Dashboard() {
   const COLORS = ["#944E1B", "#54361C", "#F0BB78", "#8B4513", "#B5651D"];
 
   return (
-    <Stack
-      p="xs"
-      spacing="lg"
-    >
+    <Stack p="xs" spacing="lg">
       <PageHeader title="Dashboard" />
 
       {/* Summary Cards */}
@@ -106,85 +137,74 @@ function Dashboard() {
               extraText: "total",
             },
           ].map(({ label, icon, value, extraText }, idx) => (
-            <Grid.Col
-              key={idx}
-              span={{ base: 12, sm: 6, md: 4, lg: 3 }}
-            
-            >
-          <Card style={{ ...cardStyle, maxWidth: 300, width: "100%" }}>
-            <Text
-              weight={400}
-              style={{ fontSize: "clamp(18px, 2.5vw, 20px)", marginBottom: 6 }}
-            >
-              {label}
-            </Text>
-            {icon}
-            <Text
-              color="#5D4324"
-              style={{
-                fontSize: "clamp(32px, 2vw, 50px)",
-                fontWeight: 500,
-                marginTop: 6,
-                wordBreak: "break-word",
-              }}
-            >
-              {value}
-            </Text>
-            {extraText && (
-              <Text
-                color="#7a6f58"
-                style={{
-                  fontSize: "clamp(18px, 3vw, 25px)",
-                  marginTop: 1,
-                  fontWeight: 400,
-                }}
-              >
-                {extraText}
-              </Text>
-            )}
-          </Card>
-        </Grid.Col>
+            <Grid.Col key={idx} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+              <Card style={{ ...cardStyle, maxWidth: 300, width: "100%" }}>
+                <Text
+                  weight={400}
+                  style={{ fontSize: "clamp(18px, 2.5vw, 20px)", marginBottom: 6 }}
+                >
+                  {label}
+                </Text>
+                {icon}
+                <Text
+                  color="#5D4324"
+                  style={{
+                    fontSize: "clamp(32px, 2vw, 50px)",
+                    fontWeight: 500,
+                    marginTop: 6,
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {value}
+                </Text>
+                {extraText && (
+                  <Text
+                    color="#7a6f58"
+                    style={{
+                      fontSize: "clamp(18px, 3vw, 25px)",
+                      marginTop: 1,
+                      fontWeight: 400,
+                    }}
+                  >
+                    {extraText}
+                  </Text>
+                )}
+              </Card>
+            </Grid.Col>
           ))}
-      </Grid>
+        </Grid>
+      </Paper>
 
-    </Paper>
+      {/* Collection Sales Line Chart */}
+      <Paper p="xl" style={{ backgroundColor: "#FAF8F3" }}>
+        <Card p="lg">
+          <Text fw={700} mb="sm" align="center" fz={20} style={{ color: "#05004E" }}>
+            Collection Sales Totals
+          </Text>
 
-      {/* Collection Sales Line Chart */ }
-  <Paper p="xl" style={{ backgroundColor: "#FAF8F3" }}>
-    <Card p="lg">
-      <Text
-        fw={700}
-        mb="sm"
-        align="center"
-        fz={20}
-        style={{ color: "#05004E" }}
-      >
-        Collection Sales Totals
-      </Text>
-
-      <ResponsiveContainer width="100%" height={350}>
-        <LineChart
-          data={collectionSalesData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          <XAxis dataKey="collection_name" />
-          <YAxis />
-          <Tooltip formatter={(value) => `₱${formatNumber(value)}`} />
-          <Legend />
-          <Line
-            type="monotone"
-            dataKey="total_sales"
-            stroke={COLORS[0]}
-            strokeWidth={3}
-            dot={{ r: 6 }}
-            activeDot={{ r: 8 }}
-            name="Total Sales"
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </Card>
-  </Paper>
-    </Stack >
+          <ResponsiveContainer width="100%" height={350}>
+            <LineChart
+              data={collectionSalesData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <XAxis dataKey="collection_name" />
+              <YAxis />
+              <Tooltip formatter={(value) => `₱${formatNumber(value)}`} />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="total_sales"
+                stroke={COLORS[0]}
+                strokeWidth={3}
+                dot={{ r: 6 }}
+                activeDot={{ r: 8 }}
+                name="Total Sales"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+      </Paper>
+    </Stack>
   );
 }
 

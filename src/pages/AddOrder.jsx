@@ -15,6 +15,7 @@ import { IconChevronDown } from "@tabler/icons-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
 import PageHeader from "../components/PageHeader";
+import CancelOrderModal from "../components/CancelOrderModal";
 
 const ORDER_ITEMS_STORAGE_KEY = "orderItemsCache";
 const SELECTED_COLLECTION_STORAGE_KEY = "selectedCollectionCache";
@@ -23,6 +24,7 @@ const COLLECTIONS_STORAGE_KEY = "collectionsCache";
 const AddOrder = () => {
   const navigate = useNavigate();
   const { state: locationState } = useLocation();
+  const [cancelModalOpened, setCancelModalOpened] = useState(false);
 
   const [selectedItems, setSelectedItems] = useState(() => {
     if (locationState?.selectedItems) return locationState.selectedItems;
@@ -42,6 +44,7 @@ const AddOrder = () => {
 
   const [loading, setLoading] = useState(collections.length === 0);
 
+  // Cache selectedItems to localStorage
   useEffect(() => {
     try {
       const dataStr = JSON.stringify(selectedItems);
@@ -53,6 +56,7 @@ const AddOrder = () => {
     }
   }, [selectedItems]);
 
+  // Cache selectedCollection to localStorage
   useEffect(() => {
     try {
       if (selectedCollection) {
@@ -63,6 +67,7 @@ const AddOrder = () => {
     }
   }, [selectedCollection]);
 
+  // Cache collections to localStorage
   useEffect(() => {
     try {
       const dataStr = JSON.stringify(collections);
@@ -82,30 +87,37 @@ const AddOrder = () => {
   const fetchCollections = async () => {
     try {
       const res = await api.get("/collections");
+
+      // Filter active collections and only include collections with items available or selected
       const activeCollections = res.data
         .filter((c) => c.status === "Active")
-        .map((c) => ({
-          ...c,
-          items: (c.items || [])
-            .filter(
-              (i) =>
-                i.status === "Available" ||
-                selectedItems.some((si) => si.id === i.id)
-            )
-            .map((i) => ({
-              ...i,
-              image_url:
-                i.image_url ||
-                (i.image
-                  ? `${import.meta.env.VITE_API_URL}/storage/${i.image}`
-                  : null),
-              collection_id: c.id,
-            })),
-        }))
+        .map((c) => {
+          // Filter items to available or selected
+          const filteredItems = (c.items || []).filter(
+            (i) =>
+              i.status === "Available" || selectedItems.some((si) => si.id === i.id)
+          );
+
+          // Map items to add image_url and collection_id
+          const itemsWithUrls = filteredItems.map((i) => ({
+            ...i,
+            image_url:
+              i.image_url ||
+              (i.image ? `${import.meta.env.VITE_API_URL}/storage/${i.image}` : null),
+            collection_id: c.id,
+          }));
+
+          return {
+            ...c,
+            items: itemsWithUrls,
+          };
+        })
+        // Only keep collections with at least one item
         .filter((c) => c.items.length > 0);
 
       setCollections(activeCollections);
 
+      // Set default selectedCollection if none selected
       if (!selectedCollection) {
         if (selectedItems.length > 0) {
           const firstCollectionId =
@@ -146,7 +158,7 @@ const AddOrder = () => {
     });
   };
 
-  // Find items for currently selected collection
+  // Items for selected collection
   const availableItems =
     collections.find((c) => c.id.toString() === selectedCollection)?.items || [];
 
@@ -154,7 +166,11 @@ const AddOrder = () => {
     navigate("/collections", { state: { openAddModal: true } });
   };
 
-  // Check if there are any items at all in any collection
+  const handleBack = () => {
+    const from = locationState?.from || "/orders";
+    navigate(from);
+  };
+
   const hasItems = collections.length > 0;
 
   return (
@@ -162,7 +178,6 @@ const AddOrder = () => {
       <PageHeader title="Add Order" showBack />
 
       <Paper radius="md" p="xl" style={{ minHeight: "75vh", marginBottom: "1rem" }}>
-        {/* Show dropdown only if there are collections/items */}
         {!loading && hasItems && (
           <Group justify="flex-start" mb="md">
             <Select
@@ -176,7 +191,7 @@ const AddOrder = () => {
                 label: c.name,
               }))}
               value={selectedCollection}
-              onChange={(val) => setSelectedCollection(val)}
+              onChange={setSelectedCollection}
               searchable
               nothingFound="No collections found"
               clearable={false}
@@ -198,45 +213,28 @@ const AddOrder = () => {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
+              height: "60vh",
+              width: "60vh",
+              flexDirection: "column",
+              textAlign: "center",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "60vh",
-                width: "60vh",
-                textAlign: "center",
-              }}
+            <Text color="#62626279" size="50px" style={{ marginBottom: 32, fontWeight: "400" }}>
+              No items available in this collection
+            </Text>
+            <Button
+              color="#232D80"
+              radius="12"
+              size="lg"
+              onClick={handleAddCollectionRedirect}
             >
-              <Text
-                color="#62626279"
-                size="50px"
-                style={{ marginBottom: 32, fontWeight: "400" }}
-              >
-                No items available in this collection
-              </Text>
-              <Button
-                color="#232D80"
-                radius="12"
-                size="lg"
-                onClick={handleAddCollectionRedirect}
-              >
-                Add Collection
-              </Button>
-            </div>
+              Add Collection
+            </Button>
           </div>
         ) : (
           <Grid gutter="md" mt="lg">
             {availableItems.length === 0 ? (
-              <Text
-                align="center"
-                color="dimmed"
-                size="xl"
-                style={{ width: "100%", marginTop: "2rem" }}
-              >
+              <Text align="center" color="dimmed" size="xl" style={{ width: "100%", marginTop: "2rem" }}>
                 No available items in this collection.
               </Text>
             ) : (
@@ -345,9 +343,24 @@ const AddOrder = () => {
               size="md"
               style={{
                 borderRadius: "15px",
+                paddingTop: "3px",
+                backgroundColor: "#9E2626",
+                fontFamily: "'League Spartan', sans-serif",
+                fontWeight: 500,
+              }}
+              onClick={() => setCancelModalOpened(true)}
+            >
+              Cancel Order ({selectedItems.length})
+            </Button>
+
+            <Button
+              size="md"
+              style={{
+                borderRadius: "15px",
+                paddingTop: "3px",
                 backgroundColor: "#AB8262",
-                fontFamily: "Fredoka, sans-serif",
-                fontWeight: 600,
+                fontFamily: "'League Spartan', sans-serif",
+                fontWeight: 500,
               }}
               onClick={handlePlaceOrder}
             >
@@ -356,6 +369,13 @@ const AddOrder = () => {
           </Group>
         )}
       </Paper>
+
+      <CancelOrderModal
+        opened={cancelModalOpened}
+        onClose={() => setCancelModalOpened(false)}
+        onResetItems={() => setSelectedItems([])}
+        onConfirm={() => navigate("/orders")}
+      />
     </Stack>
   );
 };
