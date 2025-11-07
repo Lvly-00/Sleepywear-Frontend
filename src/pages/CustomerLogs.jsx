@@ -256,7 +256,7 @@ function CustomerLogs() {
               highlightOnHover
               styles={{
                 tr: { borderBottom: "1px solid #D8CBB8" },
-                th: { fontFamily: "'League Spartan', sans-serif", fontWeight: 600, fontSize: "16px" },
+                th: { fontFamily: "'League Spartan', sans-serif", fontWeight: 600, fontSize: "20px" },
                 td: { fontFamily: "'League Spartan', sans-serif" },
               }}
             >
@@ -290,7 +290,7 @@ function CustomerLogs() {
                         layout
                         style={{ borderBottom: "1px solid #D8CBB8" }}
                       >
-                        <Table.Td style={{ textAlign: "left" }}>
+                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
                           {`${c.first_name} ${c.last_name}`}
                         </Table.Td>
                         <Table.Td
@@ -299,16 +299,20 @@ function CustomerLogs() {
                             wordWrap: "break-word",
                             whiteSpace: "normal",
                             maxWidth: "250px",
+                            fontSize: "16px" 
                           }}
                         >
                           {c.address || "—"}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center" }}>{c.contact_number}</Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px"  }}>
+                          {c.contact_number}
+                          </Table.Td>
                         <Table.Td
                           style={{
                             textAlign: "center",
                             maxWidth: "200px",
                             wordBreak: "break-word",
+                            fontSize: "16px" 
                           }}
                         >
                           {c.social_handle && /^https?:\/\//.test(c.social_handle) ? (
@@ -326,6 +330,7 @@ function CustomerLogs() {
                                 textAlign: "left",
                                 verticalAlign: "middle",
                                 color: "#4455f0ff",
+                                fontSize: "17px" 
                               }}
                               title={c.social_handle}
                             >
@@ -336,7 +341,7 @@ function CustomerLogs() {
                           )}
                         </Table.Td>
 
-                        <Table.Td style={{ textAlign: "center" }}>
+                        <Table.Td style={{ textAlign: "center", fontSize: "17px"  }}>
                           {c.created_at
                             ? new Date(c.created_at).toLocaleDateString("en-US", {
                                 year: "numeric",
@@ -356,7 +361,7 @@ function CustomerLogs() {
                               aria-label={`Delete customer ${c.first_name} ${c.last_name}`}
                               onClick={() => setDeleteModal({ opened: true, customer: c })}
                             >
-                              <Icons.Trash size={24} />
+                              <Icons.Trash size={26} />
                             </Button>
                           </Group>
                         </Table.Td>
@@ -380,7 +385,7 @@ function CustomerLogs() {
         }
         onConfirm={() => deleteModal.customer && handleDelete(deleteModal.customer)}
       />
-    </Stack>
+    </Stack >
   );
 }
 

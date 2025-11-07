@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Select,
   Card,
   Image,
   Text,
@@ -9,14 +8,11 @@ import {
   Group,
   Paper,
   Skeleton,
-  AspectRatio,
-  Stack
+  Stack,
 } from "@mantine/core";
-import { IconChevronDown } from "@tabler/icons-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
 import PageHeader from "../components/PageHeader";
-
 
 const ORDER_ITEMS_STORAGE_KEY = "orderItemsCache";
 const SELECTED_COLLECTION_STORAGE_KEY = "selectedCollectionCache";
@@ -151,35 +147,15 @@ const AddOrder = () => {
   const availableItems =
     collections.find((c) => c.id.toString() === selectedCollection)?.items || [];
 
+  const handleAddCollectionRedirect = () => {
+    navigate("/collections", { state: { openAddModal: true } });
+  };
+
   return (
-    <Stack
-      p="xs"
-      spacing="lg"
-    >     
-     <PageHeader title="Add Order" showBack />
+    <Stack p="xs" spacing="lg">
+      <PageHeader title="Add Order" showBack />
       <Paper radius="md" p="xl" style={{ minHeight: "75vh", marginBottom: "1rem" }}>
-        <Group justify="flex-start" mb="md">
-          {loading ? (
-            <Skeleton height={42} width={260} radius="md" />
-          ) : (
-            <Select
-              placeholder="Select Collection"
-              size="sm"
-              style={{ width: "260px" }}
-              rightSection={<IconChevronDown size={18} stroke={1.5} />}
-              rightSectionWidth={36}
-              data={collections.map((c) => ({
-                value: c.id.toString(),
-                label: c.name,
-              }))}
-              value={selectedCollection}
-              onChange={(val) => setSelectedCollection(val)}
-              searchable
-              nothingFound="No collections found"
-              clearable={false}
-            />
-          )}
-        </Group>
+        {/* Removed dropdown here */}
 
         {loading ? (
           <Grid gutter="md" mt="lg">
@@ -191,11 +167,40 @@ const AddOrder = () => {
           </Grid>
         ) : (
           selectedCollection && (
-            <Grid gutter="md" mt="lg">
+            <Grid gutter="lg" mt="xl" justify="center" align="center">
               {availableItems.length === 0 ? (
-                <Text color="dimmed" align="center" style={{ width: "100%" }}>
-                  No items available in this collection.
-                </Text>
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      height: "60vh",
+                      width: "60vh",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Text
+                      color="#62626279"
+                      size="50px"
+                      style={{ marginBottom: 32, fontWeight: "400" }}
+                    >
+                      No items available in this collection
+                    </Text>
+                    <Button
+                      color="#232D80"
+                      radius="12"
+                      size="lg"
+                      onClick={handleAddCollectionRedirect}
+                    
+                    >
+                      Add Collection
+                    </Button>
+
+                  </div>
+
+                </>
               ) : (
                 availableItems.map((item) => {
                   const selected = selectedItems.some((i) => i.id === item.id);
@@ -203,9 +208,9 @@ const AddOrder = () => {
                     <Grid.Col key={item.id} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
                       <Card
                         shadow="md"
-                        radius="md"
+                        radius="lg"
                         withBorder
-                        padding="md"
+                        padding="lg"
                         onClick={() => handleItemToggle(item)}
                         style={{
                           aspectRatio: "1080 / 1350",
@@ -291,7 +296,6 @@ const AddOrder = () => {
                 })
               )}
             </Grid>
-
           )
         )}
 

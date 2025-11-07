@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
   Button,
@@ -14,8 +13,7 @@ import {
 } from "@mantine/core";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { notifications } from '@mantine/notifications';
-import { showNotification } from '@mantine/notifications';
+import { showNotification } from "@mantine/notifications";
 import PageHeader from "../components/PageHeader";
 import AddCollectionModal from "../components/AddCollectionModal";
 import EditCollectionModal from "../components/EditCollectionModal";
@@ -35,6 +33,8 @@ const rowVariants = {
 
 export default function Collection() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [collections, setCollections] = useState([]);
   const [filteredCollections, setFilteredCollections] = useState([]);
   const [search, setSearch] = useState("");
@@ -75,9 +75,7 @@ export default function Collection() {
 
         const res = await api.get("/collections");
         // Only update if changed
-        if (
-          !areCollectionsSame(collectionsRef.current, res.data)
-        ) {
+        if (!areCollectionsSame(collectionsRef.current, res.data)) {
           setCollections(res.data);
           localStorage.setItem(CACHE_KEY, JSON.stringify(res.data));
           localStorage.setItem(CACHE_TIME_KEY, now.toString());
@@ -106,7 +104,7 @@ export default function Collection() {
     }
   }, [search, collections]);
 
-  // Helper to check if collections are same based on id and updated_at
+  // Check if collections are same based on id and updated_at
   function areCollectionsSame(arr1, arr2) {
     if (arr1.length !== arr2.length) return false;
     return arr1.every((c1, idx) => {
@@ -118,21 +116,20 @@ export default function Collection() {
     });
   }
 
+  // Handle delete collection
   const handleDelete = async () => {
     if (!collectionToDelete) return;
     try {
       await api.delete(`/collections/${collectionToDelete.id}`);
-      setCollections((prev) =>
-        prev.filter((c) => c.id !== collectionToDelete.id)
-      );
+      setCollections((prev) => prev.filter((c) => c.id !== collectionToDelete.id));
       setDeleteModalOpen(false);
       setCollectionToDelete(null);
       localStorage.removeItem(CACHE_KEY);
       localStorage.removeItem(CACHE_TIME_KEY);
       showNotification({
-        title: 'Deleted',
+        title: "Deleted",
         message: `Collection "${collectionToDelete.name}" deleted successfully.`,
-        color: 'red',
+        color: "red",
       });
       fetchCollections(false);
     } catch (err) {
@@ -140,19 +137,21 @@ export default function Collection() {
     }
   };
 
+  // Handle add success
   const handleAddSuccess = async (newCollection) => {
     setAddModalOpen(false);
     setCollections((prev) => [newCollection, ...prev]);
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(CACHE_TIME_KEY);
     showNotification({
-      title: 'Added',
+      title: "Added",
       message: `Collection "${newCollection.name}" added successfully.`,
-      color: 'green',
+      color: "green",
     });
     fetchCollections(false);
   };
 
+  // Handle edit success
   const handleEditSuccess = async (updatedCollection) => {
     setOpenedEdit(false);
     setSelectedCollection(null);
@@ -162,9 +161,9 @@ export default function Collection() {
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(CACHE_TIME_KEY);
     showNotification({
-      title: 'Updated',
+      title: "Updated",
       message: `Collection "${updatedCollection.name}" updated successfully.`,
-      color: 'blue',
+      color: "blue",
     });
     fetchCollections(false);
   };
@@ -204,11 +203,19 @@ export default function Collection() {
       </Table.Tr>
     ));
 
+  // Open add modal if navigated here with openAddModal state
+  useEffect(() => {
+    if (location.state?.openAddModal) {
+      setAddModalOpen(true);
+
+      // Clear the navigation state so modal doesn't reopen on back/forward
+      // This requires a replace navigation with same path but no state
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
+
   return (
-    <Stack
-      p="xs"
-      spacing="lg"
-    >
+    <Stack p="xs" spacing="lg">
       <PageHeader
         title="Inventory"
         showSearch
@@ -217,7 +224,7 @@ export default function Collection() {
         addLabel="New Collection"
         onAdd={() => setAddModalOpen(true)}
       />
-    
+
       <Paper
         radius="md"
         p="xl"
@@ -226,15 +233,15 @@ export default function Collection() {
           marginBottom: "1rem",
           background: "white",
           position: "relative",
-          fontFamily: "'League Spartan', sans-serif"
+          fontFamily: "'League Spartan', sans-serif",
         }}
       >
         <ScrollArea scrollbarSize={8} style={{ minHeight: "70vh" }}>
           <Table
             highlightOnHover
             styles={{
-              tr: { borderBottom: "1px solid #D8CBB8", fontSize: "20px"  },
-              th: { fontFamily: "'League Spartan', sans-serif", fontSize: "16px" },
+              tr: { borderBottom: "1px solid #D8CBB8", fontSize: "20px" },
+              th: { fontFamily: "'League Spartan', sans-serif", fontSize: "20px" },
               td: { fontFamily: "'League Spartan', sans-serif" },
             }}
           >
@@ -285,56 +292,62 @@ export default function Collection() {
                         (e.currentTarget.style.backgroundColor = "transparent")
                       }
                     >
-                      <Table.Td>{col.name || "—"}</Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>
+                      <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
+                        {col.name || "—"}
+                      </Table.Td>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         {col.release_date
                           ? new Date(col.release_date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
                           : "—"}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         {col.qty ?? 0}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         {col.items
                           ? col.items.filter((item) => item.status === "Available")
-                            .length
+                              .length
                           : 0}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         ₱
                         {col.capital
-                          ? new Intl.NumberFormat("en-PH").format(Math.floor(col.capital))
+                          ? new Intl.NumberFormat("en-PH").format(
+                              Math.floor(col.capital)
+                            )
                           : "0"}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         ₱
                         {col.total_sales
                           ? new Intl.NumberFormat("en-PH").format(
-                            Math.floor(col.total_sales)
-                          )
+                              Math.floor(col.total_sales)
+                            )
                           : "0"}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         <Badge
-                          size="md"
+                          size="27"
                           variant="filled"
                           style={{
                             backgroundColor:
                               col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
                             color: col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
-                            width: "100px",
-                            fontWeight: "400",
-                            padding: "13px",
-                            borderRadius: "13px",
+                            width: "130px",
+                            fontWeight: 400,
+                            paddingTop: "5px",
+                            borderRadius: "16px",
+                            fontSize: "16px",
                           }}
                         >
                           {col.status === "Active" ? "Active" : "Sold Out"}
                         </Badge>
                       </Table.Td>
+
                       <Table.Td
                         style={{ textAlign: "center" }}
                         onClick={(e) => e.stopPropagation()}
@@ -350,7 +363,7 @@ export default function Collection() {
                               setOpenedEdit(true);
                             }}
                           >
-                            <Icons.Edit size={24} />
+                            <Icons.Edit size={26} />
                           </Button>
                           <Button
                             size="xs"
@@ -363,7 +376,7 @@ export default function Collection() {
                               setDeleteModalOpen(true);
                             }}
                           >
-                            <Icons.Trash size={24} />
+                            <Icons.Trash size={26} />
                           </Button>
                         </Group>
                       </Table.Td>
