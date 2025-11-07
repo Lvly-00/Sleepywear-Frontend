@@ -100,7 +100,7 @@ function Dashboard() {
               extraText: "pieces",
             },
             {
-              label: "Total Customers",
+              label: "Customers",
               icon: <Icons.Customers size={66} />,
               value: formatNumber(summary.totalCustomers),
               extraText: "total",
@@ -108,89 +108,83 @@ function Dashboard() {
           ].map(({ label, icon, value, extraText }, idx) => (
             <Grid.Col
               key={idx}
-              span={3}
-              sm={6}
-              xs={12}
+              span={{ base: 12, sm: 6, md: 4, lg: 3 }}
+            
+            >
+          <Card style={{ ...cardStyle, maxWidth: 300, width: "100%" }}>
+            <Text
+              weight={400}
+              style={{ fontSize: "clamp(18px, 2.5vw, 20px)", marginBottom: 6 }}
+            >
+              {label}
+            </Text>
+            {icon}
+            <Text
+              color="#5D4324"
               style={{
-                display: "flex",
-                justifyContent: "center",
-                marginBottom: 24,
+                fontSize: "clamp(32px, 2vw, 50px)",
+                fontWeight: 500,
+                marginTop: 6,
+                wordBreak: "break-word",
               }}
             >
-              <Card style={{ ...cardStyle, maxWidth: 300, width: "100%" }}>
-                <Text
-                  weight={400}
-                  style={{ fontSize: "clamp(18px, 2.5vw, 20px)", marginBottom: 6 }}
-                >
-                  {label}
-                </Text>
-                {icon}
-                <Text
-                  color="#5D4324"
-                  style={{
-                    fontSize: "clamp(32px, 2vw, 50px)",
-                    fontWeight: 500,
-                    marginTop: 6,
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {value}
-                </Text>
-                {extraText && (
-                  <Text
-                    color="#7a6f58"
-                    style={{
-                      fontSize: "clamp(18px, 3vw, 25px)",
-                      marginTop: 1,
-                      fontWeight: 400,
-                    }}
-                  >
-                    {extraText}
-                  </Text>
-                )}
-              </Card>
-            </Grid.Col>
+              {value}
+            </Text>
+            {extraText && (
+              <Text
+                color="#7a6f58"
+                style={{
+                  fontSize: "clamp(18px, 3vw, 25px)",
+                  marginTop: 1,
+                  fontWeight: 400,
+                }}
+              >
+                {extraText}
+              </Text>
+            )}
+          </Card>
+        </Grid.Col>
           ))}
-        </Grid>
+      </Grid>
 
-      </Paper>
+    </Paper>
 
-      {/* Collection Sales Line Chart */}
-      <Paper p="xl" style={{ backgroundColor: "#FAF8F3" }}>
-        <Card p="lg">
-          <Text
-            fw={700}
-            mb="sm"
-            align="center"
-            fz={20}
-            style={{ color: "#05004E" }}
-          >
-            Collection Sales Totals
-          </Text>
+      {/* Collection Sales Line Chart */ }
+  <Paper p="xl" style={{ backgroundColor: "#FAF8F3" }}>
+    <Card p="lg">
+      <Text
+        fw={700}
+        mb="sm"
+        align="center"
+        fz={20}
+        style={{ color: "#05004E" }}
+      >
+        Collection Sales Totals
+      </Text>
 
-          <ResponsiveContainer width="100%" height={350}>
-            <LineChart
-              data={collectionSalesData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <XAxis dataKey="collection_name" />
-              <YAxis />
-              <Tooltip formatter={(value) => `₱${formatNumber(value)}`} />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="total_sales"
-                stroke={COLORS[0]}
-                strokeWidth={3}
-                dot={{ r: 6 }}
-                activeDot={{ r: 8 }}
-                name="Total Sales"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
-      </Paper>
-    </Stack>
+      <ResponsiveContainer width="100%" height={350}>
+        <LineChart
+          data={collectionSalesData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        >
+          <XAxis dataKey="collection_name" />
+          <YAxis />
+          <Tooltip formatter={(value) => `₱${formatNumber(value)}`} />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="total_sales"
+            stroke={COLORS[0]}
+            strokeWidth={3}
+            dot={{ r: 6 }}
+            activeDot={{ r: 8 }}
+            name="Total Sales"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  </Paper>
+    </Stack >
   );
 }
 

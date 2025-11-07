@@ -217,22 +217,7 @@ export default function Collection() {
         addLabel="New Collection"
         onAdd={() => setAddModalOpen(true)}
       />
-      {/* <Button
-        onClick={() => {
-          Array(10)
-            .fill(0)
-            .forEach((_, index) => {
-              notifications.show({
-                title: `Notification ${index + 1}`,
-                message: 'Most notifications are added to queue',
-                autoClose: false,
-              });
-            });
-        }}
-      >
-        Show 10 notifications
-      </Button> */}
-
+    
       <Paper
         radius="md"
         p="xl"
@@ -248,7 +233,7 @@ export default function Collection() {
           <Table
             highlightOnHover
             styles={{
-              tr: { borderBottom: "1px solid #D8CBB8" },
+              tr: { borderBottom: "1px solid #D8CBB8", fontSize: "20px"  },
               th: { fontFamily: "'League Spartan', sans-serif", fontSize: "16px" },
               td: { fontFamily: "'League Spartan', sans-serif" },
             }}
