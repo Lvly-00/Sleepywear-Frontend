@@ -17,7 +17,7 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
-import NotifySuccess from "../components/NotifySuccess";
+import NotifySuccess from "../components/notifysuccess";
 
 const rowVariants = {
   hidden: { opacity: 0, y: -10 },

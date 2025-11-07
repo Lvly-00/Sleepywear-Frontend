@@ -12,7 +12,7 @@ import {
   Skeleton,
   Transition,
 } from "@mantine/core";
-import NotifySuccess from "../components/NotifySuccess";
+import NotifySuccess from "../components/notifysuccess";
 import PageHeader from "../components/PageHeader";
 import SubmitButton from "../components/SubmitButton";
 import { Icons } from "../components/Icons";
