@@ -8,7 +8,7 @@ const NotifySuccess = {
             title: "Success",
             message: "Item added successfully!",
             color: "teal",
-            icon: < IconCheck size = { 20 }
+            icon: < IconCheck size={20}
             />,
             autoClose: 4000,
             radius: "md",
@@ -40,7 +40,7 @@ const NotifySuccess = {
             title: "Updated",
             message: "Item updated successfully!",
             color: "blue",
-            icon: < IconCheck size = { 20 }
+            icon: < IconCheck size={20}
             />,
             autoClose: 4000,
             radius: "md",
@@ -72,7 +72,7 @@ const NotifySuccess = {
             title: "Success",
             message: "Collection added successfully!",
             color: "teal",
-            icon: < IconCheck size = { 20 }
+            icon: < IconCheck size={20}
             />,
             radius: "md",
             disallowClose: false,
@@ -103,7 +103,7 @@ const NotifySuccess = {
             title: "Updated",
             message: "Collection updated successfully!",
             color: "blue",
-            icon: < IconCheck size = { 20 }
+            icon: < IconCheck size={20}
             />,
             autoClose: 4000,
             radius: "md",
@@ -140,8 +140,8 @@ const NotifySuccess = {
             loading: true,
             autoClose: false,
             disallowClose: true,
-            icon: < IconLoader size = { 20 }
-            className = "rotate" / > ,
+            icon: < IconLoader size={20}
+                className="rotate" />,
             radius: "md",
             styles: (theme) => ({
                 root: {
@@ -172,7 +172,7 @@ const NotifySuccess = {
             title: "Success",
             message: "Order added successfully!",
             color: "teal",
-            icon: < IconCheck size = { 20 }
+            icon: < IconCheck size={20}
             />,
             autoClose: 4000,
             loading: false,
@@ -205,7 +205,7 @@ const NotifySuccess = {
             title: "Success",
             message: "Payment added successfully!",
             color: "teal",
-            icon: < IconCheck size = { 20 }
+            icon: < IconCheck size={20}
             />,
             autoClose: 4000,
             radius: "md",
@@ -237,7 +237,7 @@ const NotifySuccess = {
             title: "Deleted",
             message: "Deleted successfully!",
             color: "red",
-            icon: < IconCheck size = { 20 }
+            icon: < IconCheck size={20}
             />,
             autoClose: 4000,
             radius: "md",
@@ -269,7 +269,7 @@ const NotifySuccess = {
             title: "Weak Password",
             message: "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.",
             color: "red",
-            icon: < IconX size = { 20 }
+            icon: < IconX size={20}
             />,
             autoClose: 4000,
             radius: "md",
@@ -302,7 +302,7 @@ const NotifySuccess = {
             title: "Password Mismatch",
             message: "New password and confirmation do not match.",
             color: "red",
-            icon: < IconX size = { 20 }
+            icon: < IconX size={20}
             />,
             autoClose: 4000,
             radius: "md",
@@ -333,7 +333,7 @@ const NotifySuccess = {
             title: "Incorrect Password",
             message: "The current password you entered is incorrect.",
             color: "red",
-            icon: < IconX size = { 20 }
+            icon: < IconX size={20}
             />,
             autoClose: 4000,
             radius: "md",
