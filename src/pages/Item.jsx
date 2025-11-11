@@ -84,16 +84,6 @@ function Item() {
 
   const collection = collections.find((c) => String(c.id) === String(id));
 
-  if (!collection && !loading)
-    return (
-      <Center style={{ height: "80vh", flexDirection: "column" }}>
-        <Text size="xl" mb="md">
-          Collection not found.
-        </Text>
-        <Button onClick={() => navigate("/collections")}>Back to Collections</Button>
-      </Center>
-    );
-
   return (
     <>
       <TopLoadingBar loading={loading} />

@@ -29,7 +29,8 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
       return;
     }
 
-    const rawItems =
+    // Extract items robustly
+    const items =
       Array.isArray(invoiceData.items) && invoiceData.items.length > 0
         ? invoiceData.items
         : Array.isArray(invoiceData.orders)
@@ -43,14 +44,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
           )
         : [];
 
-    // Normalize each item to ensure code and item_name exist
-    const items = rawItems.map((item) => ({
-      ...item,
-      code: item.item?.code || item.code || "-",
-      item_name:
-        item.item?.name || item.item_name || item.name || "Unnamed Item",
-    }));
-
+    // Compute display_name safely
     const display_name =
       invoiceData.customer_name ||
       [invoiceData.first_name, invoiceData.last_name]
@@ -59,6 +53,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
         .trim() ||
       "Customer";
 
+    // Normalize invoice object with defaults
     const normalizedInvoice = {
       ...invoiceData,
       display_name,
@@ -288,7 +283,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                         }}
                       >
                         <span style={{ textAlign: "left" }}>
-                          {item.code}
+                          {item.item?.code || item.code || "-"}
                         </span>
                         <span style={{ textAlign: "left" }}>
                           {item.item_name}

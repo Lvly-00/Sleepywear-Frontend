@@ -22,7 +22,6 @@ const Settings = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // No preloadedProfile fallback anymore, always fetch fresh
   const [profile, setProfile] = useState({ business_name: "", email: "" });
   const [passwords, setPasswords] = useState({
     current_password: "",
@@ -39,7 +38,7 @@ const Settings = () => {
     return regex.test(password);
   };
 
-  // Fetch user settings fresh on mount and after profile updates
+  // Fetch user settings
   const fetchProfile = async () => {
     try {
       setLoading(true);
@@ -61,17 +60,13 @@ const Settings = () => {
   }, []);
 
   // Generic update handler
-  const handleUpdate = async (data, url, successMessage, refresh = false) => {
+  const handleUpdate = async (data, url, refresh = false) => {
     try {
       setUpdating(true);
       await api.put(url, data);
-
       NotifySuccess.editedItem();
 
-      if (refresh) {
-        // Refetch profile after profile update to refresh UI
-        await fetchProfile();
-      }
+      if (refresh) await fetchProfile();
     } catch (err) {
       NotifySuccess.deleted();
       console.error("Update error:", err.response?.data);
@@ -80,13 +75,13 @@ const Settings = () => {
     }
   };
 
-  // Update Profile handler
+  // Update Profile
   const updateProfile = (e) => {
     e.preventDefault();
-    handleUpdate(profile, "/user/settings", "Profile updated successfully", true);
+    handleUpdate(profile, "/user/settings", true);
   };
 
-  // Update Password handler with validation and logout redirect
+  // Update Password
   const updatePassword = async (e) => {
     e.preventDefault();
 
@@ -104,7 +99,8 @@ const Settings = () => {
       setUpdating(true);
       await api.put("/user/settings/password", passwords);
 
-      NotifySuccess.editedItem();
+      // ✅ Success notification
+      NotifySuccess.passwordUpdated();
 
       setPasswords({
         current_password: "",
@@ -112,21 +108,24 @@ const Settings = () => {
         new_password_confirmation: "",
       });
 
-      // Clear auth info here (localStorage, cookies, context, etc.)
-      // Example if using localStorage token:
+      // Example logout (if using token auth)
       localStorage.removeItem("authToken");
-
       navigate("/");
     } catch (err) {
-      if (
+      const errorMsg = err.response?.data?.message;
+      const currentPasswordError =
         err.response?.data?.errors?.current_password?.includes(
           "Current password is incorrect."
-        )
-      ) {
-        NotifySuccess.incorrectPassword(); // Make sure this notification exists in NotifySuccess
+        );
+
+      if (currentPasswordError) {
+        NotifySuccess.incorrectPassword();
+      } else if (errorMsg === "Failed to update password.") {
+        NotifySuccess.deleted();
       } else {
         NotifySuccess.deleted();
       }
+
       console.error("Password update error:", err.response?.data);
     } finally {
       setUpdating(false);
@@ -180,20 +179,14 @@ const Settings = () => {
                         label="Business Name"
                         value={profile.business_name}
                         onChange={(e) =>
-                          setProfile({
-                            ...profile,
-                            business_name: e.target.value,
-                          })
+                          setProfile({ ...profile, business_name: e.target.value })
                         }
                         radius="md"
                         size="md"
                         disabled={updating}
                         styles={{
                           label: { color: "#232D80" },
-                          input: {
-                            borderColor: "#232D80",
-                            color: "#232c808f",
-                          },
+                          input: { borderColor: "#232D80", color: "#232c808f" },
                         }}
                       />
                       <TextInput
@@ -205,10 +198,7 @@ const Settings = () => {
                         disabled={updating}
                         styles={{
                           label: { color: "#232D80" },
-                          input: {
-                            borderColor: "#232D80",
-                            color: "#232c808f",
-                          },
+                          input: { borderColor: "#232D80", color: "#232c808f" },
                         }}
                       />
                       <Group justify="flex-end">
@@ -268,10 +258,7 @@ const Settings = () => {
                         label="Current Password"
                         value={passwords.current_password}
                         onChange={(e) =>
-                          setPasswords({
-                            ...passwords,
-                            current_password: e.target.value,
-                          })
+                          setPasswords({ ...passwords, current_password: e.target.value })
                         }
                         visibilityToggleIcon={({ reveal }) =>
                           reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
@@ -281,20 +268,14 @@ const Settings = () => {
                         disabled={updating}
                         styles={{
                           label: { color: "#232D80" },
-                          input: {
-                            borderColor: "#232D80",
-                            color: "#232c808f",
-                          },
+                          input: { borderColor: "#232D80", color: "#232c808f" },
                         }}
                       />
                       <PasswordInput
                         label="New Password"
                         value={passwords.new_password}
                         onChange={(e) =>
-                          setPasswords({
-                            ...passwords,
-                            new_password: e.target.value,
-                          })
+                          setPasswords({ ...passwords, new_password: e.target.value })
                         }
                         visibilityToggleIcon={({ reveal }) =>
                           reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
@@ -304,10 +285,7 @@ const Settings = () => {
                         disabled={updating}
                         styles={{
                           label: { color: "#232D80" },
-                          input: {
-                            borderColor: "#232D80",
-                            color: "#232c808f",
-                          },
+                          input: { borderColor: "#232D80", color: "#232c808f" },
                         }}
                       />
                       <PasswordInput
@@ -327,10 +305,7 @@ const Settings = () => {
                         disabled={updating}
                         styles={{
                           label: { color: "#232D80" },
-                          input: {
-                            borderColor: "#232D80",
-                            color: "#232c808f",
-                          },
+                          input: { borderColor: "#232D80", color: "#232c808f" },
                         }}
                       />
                       <Group justify="flex-end">

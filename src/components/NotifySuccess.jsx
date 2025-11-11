@@ -360,6 +360,38 @@ const NotifySuccess = {
             }),
         }),
 
+    passwordUpdated: () =>
+        showNotification({
+            title: "Password Updated",
+            message: "Your password has been changed successfully!",
+            color: "blue",
+            icon: <IconCheck size={20} />,
+            autoClose: 4000,
+            radius: "md",
+            disallowClose: false,
+            styles: (theme) => ({
+                root: {
+                    boxShadow: theme.shadows.md,
+                    borderColor: theme.colors.blue[6],
+                    fontWeight: 600,
+                    fontFamily: "'League Spartan', sans-serif",
+                },
+                title: {
+                    color: theme.colors.blue[9],
+                    fontWeight: 700,
+                    fontSize: 20,
+                },
+                description: {
+                    color: theme.colors.blue[7],
+                    fontWeight: 400,
+                },
+                closeButton: {
+                    color: theme.colors.blue[6],
+                },
+            }),
+        }),
+
+
 };
 
 

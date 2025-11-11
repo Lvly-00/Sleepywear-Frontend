@@ -213,13 +213,13 @@ const AddOrder = () => {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              height: "60vh",
-              width: "60vh",
+              marginTop: "250px",
+              height: "100%", 
               flexDirection: "column",
               textAlign: "center",
             }}
           >
-            <Text color="#62626279" size="50px" style={{ marginBottom: 32, fontWeight: "400" }}>
+            <Text color="#62626279" size="50px" style={{ marginBottom: 32, fontWeight: 400 }}>
               No items available in this collection
             </Text>
             <Button
@@ -231,6 +231,8 @@ const AddOrder = () => {
               Add Collection
             </Button>
           </div>
+
+
         ) : (
           <Grid gutter="md" mt="lg">
             {availableItems.length === 0 ? (

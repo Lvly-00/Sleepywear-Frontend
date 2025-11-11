@@ -5,7 +5,7 @@ import "boxicons/css/boxicons.min.css";
 
 import MainLayout from "./layouts/Layout";
 import PrivateRoute from "./components/PrivateRoute";
-import SleepyLoader from "./components/TopLoadingBar";
+import TopLoadingBar from "./components/TopLoadingBar";
 import NotFound from "./pages/NotFound";
 
 
@@ -29,7 +29,7 @@ function App() {
   return (
     <Router>
       {/* Suspense shows a fallback while each page loads */}
-      <Suspense fallback={<SleepyLoader />}>
+      <Suspense fallback={<TopLoadingBar />}>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Login />} />
