@@ -29,20 +29,19 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
       return;
     }
 
-    // Extract items robustly
     const items =
       Array.isArray(invoiceData.items) && invoiceData.items.length > 0
         ? invoiceData.items
         : Array.isArray(invoiceData.orders)
-        ? invoiceData.orders.flatMap((order) =>
+          ? invoiceData.orders.flatMap((order) =>
             Array.isArray(order.items)
               ? order.items.map((orderItem) => ({
-                  ...orderItem,
-                  item: orderItem.item || null,
-                }))
+                ...orderItem,
+                item: orderItem.item || null,
+              }))
               : []
           )
-        : [];
+          : [];
 
     // Compute display_name safely
     const display_name =
@@ -73,32 +72,19 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
   const downloadInvoiceImage = async () => {
     if (!invoiceRef.current) return;
 
-    const originalStyles = {
-      maxHeight: invoiceRef.current.style.maxHeight,
-      overflow: invoiceRef.current.style.overflow,
-      padding: invoiceRef.current.style.padding,
-    };
+    // Save original padding
+    const originalPadding = invoiceRef.current.style.padding;
 
-    invoiceRef.current.style.maxHeight = "none";
-    invoiceRef.current.style.overflow = "visible";
-    invoiceRef.current.style.padding = "40px";
-
-    const contentWidth = invoiceRef.current.scrollWidth;
-    const contentHeight = invoiceRef.current.scrollHeight;
-    const dynamicScale =
-      contentHeight > 2000 ? Math.max(1.5, 2.5 - contentHeight / 4000) : 2;
+    // Apply padding (e.g., 20px)
+    invoiceRef.current.style.padding = "50px";
 
     const canvas = await html2canvas(invoiceRef.current, {
-      scale: dynamicScale,
       useCORS: true,
       backgroundColor: "#ffffff",
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: contentWidth,
-      windowHeight: contentHeight,
     });
 
-    Object.assign(invoiceRef.current.style, originalStyles);
+    // Revert padding back to original
+    invoiceRef.current.style.padding = originalPadding;
 
     const image = canvas.toDataURL("image/png");
     const link = document.createElement("a");
@@ -107,17 +93,6 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
     link.click();
   };
 
-  // Helper to format date safely
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "Not provided";
-    const d = new Date(dateStr);
-    if (isNaN(d)) return "Invalid date";
-    return d.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
 
   return (
     <Modal
@@ -130,7 +105,6 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
       styles={{
         content: {
           borderRadius: "26px",
-          overflow: "hidden",
           fontFamily: "Fredoka, sans-serif",
         },
       }}
@@ -230,9 +204,7 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
             <Text fw={500}>Social Media:</Text>
             <Text
               style={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+                whiteSpace: "normal",
                 wordBreak: "break-word",
               }}
               title={invoice.social_handle}
@@ -358,13 +330,13 @@ const InvoicePreview = ({ opened, onClose, invoiceData }) => {
                 <Text>
                   {invoice.payment?.payment_date
                     ? new Date(invoice.payment.payment_date).toLocaleString(
-                        "en-US",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      }
+                    )
                     : "Not provided"}
                 </Text>
               </>

@@ -38,9 +38,16 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
   };
 
   const handleCapitalChange = (value) => {
-    setForm((f) => ({ ...f, capital: value }));
+    let strValue = value?.toString() || "";
+
+    if (strValue.length > 1) {
+      strValue = strValue.replace(/^0+/, "");
+    }
+
+    setForm((f) => ({ ...f, capital: strValue }));
     setErrors((e) => ({ ...e, capital: "" }));
   };
+
 
   const handleDateChange = (value) => {
     setForm((f) => ({ ...f, release_date: value }));
@@ -120,11 +127,18 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
                 label="Collection Number"
                 name="name"
                 value={form.name}
-                onChange={handleChange}
+                onChange={(e) => {
+                  // Allow only digits in the input
+                  const value = e.target.value;
+                  const digitsOnly = value.replace(/\D/g, ""); // remove non-digits
+                  setForm((f) => ({ ...f, name: digitsOnly }));
+                  setErrors((e) => ({ ...e, name: "" }));
+                }}
                 error={errors.name}
                 placeholder="Enter collection number"
                 required
               />
+
 
               <NumberInput
                 label="Capital"
@@ -140,6 +154,7 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
                 }
                 error={errors.capital}
                 required
+
               />
 
               <DateInput

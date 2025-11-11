@@ -203,7 +203,19 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
                 withAsterisk
                 placeholder="Enter price"
                 value={form.price}
-                onChange={(value) => setForm({ ...form, price: value })}
+                onChange={(value) => {
+                  // Convert to string to remove leading zeros (except if value is 0)
+                  let valStr = value?.toString() || "";
+
+                  if (valStr.length > 1) {
+                    valStr = valStr.replace(/^0+/, "");
+                  }
+
+                  // Convert back to number or 0 if empty
+                  const cleanedValue = valStr === "" ? 0 : Number(valStr);
+
+                  setForm({ ...form, price: cleanedValue });
+                }}
                 min={0}
                 parser={(value) => value.replace(/\₱\s?|(,*)/g, "")}
                 formatter={(value) =>
@@ -213,6 +225,7 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
                 }
                 error={errors.price}
               />
+
             </div>
 
             <Group mt="30px" justify="flex-end">
