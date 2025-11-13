@@ -144,13 +144,11 @@ export default function CustomerLogs() {
               <SkeletonRows />
             </Table>
           ) : customers.length === 0 ? (
-            <Table.Tr style={{ borderBottom: "1px solid #D8CBB8" }}>
-              <Table.Td colSpan={8} style={{ textAlign: "center", padding: "1.5rem" }}>
+            
                 <Text c="dimmed" size="20px">
                   No Customers found
                 </Text>
-              </Table.Td>
-            </Table.Tr>
+             
           ) : (
             <Table highlightOnHover styles={{ tr: { borderBottom: "1px solid #D8CBB8", fontSize: "18px" } }}>
               <Table.Thead>

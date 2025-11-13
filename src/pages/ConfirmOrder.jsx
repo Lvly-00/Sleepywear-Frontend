@@ -18,7 +18,6 @@ import InvoicePreview from "../components/InvoicePreview";
 import PageHeader from "../components/PageHeader";
 import NotifySuccess from "../components/NotifySuccess.jsx";
 
-
 const ConfirmOrder = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -35,12 +34,12 @@ const ConfirmOrder = () => {
     return savedForm
       ? JSON.parse(savedForm)
       : {
-        first_name: "",
-        last_name: "",
-        address: "",
-        contact_number: "",
-        social_handle: "",
-      };
+          first_name: "",
+          last_name: "",
+          address: "",
+          contact_number: "",
+          social_handle: "",
+        };
   });
 
   const [customers, setCustomers] = useState([]);
@@ -49,24 +48,33 @@ const ConfirmOrder = () => {
   const [invoiceData, setInvoiceData] = useState(null);
   const [errors, setErrors] = useState({});
   const [createdOrder, setCreatedOrder] = useState(null);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
 
-  const total = orderItems.reduce(
-    (sum, item) => sum + parseFloat(item.price),
-    0
-  );
+  const total = orderItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
 
-  // Fetch customers once
+  // Fetch customers when search changes
   useEffect(() => {
     const fetchCustomers = async () => {
+      setLoadingCustomers(true);
       try {
-        const res = await api.get("/customers");
-        setCustomers(res.data);
+        const res = await api.get("/customers", {
+          params: { search: customerSearch, per_page: 50 },
+        });
+
+        // Laravel pagination returns {data: [...], meta: {...}}
+        setCustomers(Array.isArray(res.data.data) ? res.data.data : []);
       } catch (err) {
         console.error("Error fetching customers:", err);
+        setCustomers([]);
+      } finally {
+        setLoadingCustomers(false);
       }
     };
+
+    // Only fetch if search is non-empty or initial load
     fetchCustomers();
-  }, []);
+  }, [customerSearch]);
 
   useEffect(() => {
     sessionStorage.setItem("orderItems", JSON.stringify(orderItems));
@@ -99,34 +107,18 @@ const ConfirmOrder = () => {
     }
   };
 
-  // NEW: Update item by fetching current item then PUT full updated data
+  // Update item status
   const updateItemStatus = async (itemId, newStatus) => {
     try {
       const { data: currentItem } = await api.get(`/items/${itemId}`);
-
-      // Remove fields that backend expects to be files or immutable
-      const {
-        image,
-        image_url,
-        created_at,
-        updated_at,
-        collection,
-        collection_name,
-        ...rest
-      } = currentItem;
-
-      const updatedItem = {
-        ...rest,
-        status: newStatus,
-      };
-
-      await api.put(`/items/${itemId}`, updatedItem);
+      const { image, image_url, created_at, updated_at, collection, collection_name, ...rest } =
+        currentItem;
+      await api.put(`/items/${itemId}`, { ...rest, status: newStatus });
     } catch (error) {
       console.error(`Failed to update item ${itemId}:`, error.response?.data || error.message);
       throw error;
     }
   };
-
 
   const handlePlaceOrder = async () => {
     const newErrors = {};
@@ -139,13 +131,12 @@ const ConfirmOrder = () => {
       (field) => {
         const value = form[field];
         if (!value) {
-          newErrors[field] = `${field
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase())} is required`;
+          newErrors[field] = `${field.replace(/_/g, " ").replace(/\b\w/g, (c) =>
+            c.toUpperCase()
+          )} is required`;
         }
         if (field === "social_handle" && !/^https?:\/\/.+/.test(value)) {
-          newErrors[field] =
-            "Social handle must be a valid URL starting with http or https";
+          newErrors[field] = "Social handle must be a valid URL starting with http or https";
         }
       }
     );
@@ -155,12 +146,9 @@ const ConfirmOrder = () => {
       return;
     }
 
-    // Show loading notification with fixed ID
     NotifySuccess.addedOrderLoading();
 
-    // Check stock
     const unavailableItems = orderItems.filter((item) => item.status !== "Available");
-
     if (unavailableItems.length > 0) {
       updateNotification({
         id: "order-submit",
@@ -177,7 +165,6 @@ const ConfirmOrder = () => {
     }
 
     try {
-      // Save or update customer
       const customerPayload = { ...form };
       let customerId = selectedCustomer;
 
@@ -188,12 +175,8 @@ const ConfirmOrder = () => {
         customerId = res.data.id;
       }
 
-      // Create order payload
       const payload = {
-        customer: {
-          id: customerId,
-          ...customerPayload,
-        },
+        customer: { id: customerId, ...customerPayload },
         items: orderItems.map((item) => ({
           item_id: item.id,
           item_name: item.name,
@@ -202,43 +185,31 @@ const ConfirmOrder = () => {
         })),
       };
 
-      // Create order
       const response = await api.post("/orders", payload);
 
       if (response.status === 200 || response.status === 201) {
         const createdOrder = response.data;
         setCreatedOrder(createdOrder);
 
-        // Update inventory (mark items Sold Out)
         try {
-          await Promise.all(
-            orderItems.map(async (item) => {
-              await updateItemStatus(item.id, "Sold Out");
-            })
-          );
+          await Promise.all(orderItems.map((item) => updateItemStatus(item.id, "Sold Out")));
         } catch (inventoryErr) {
           console.error("Failed to update inventory:", inventoryErr);
           alert("Warning: Order placed but failed to update some item statuses.");
         }
 
-        // Prepare invoice data
         const invoice = {
           customer_name: `${form.first_name} ${form.last_name}`,
           address: form.address,
           contact_number: form.contact_number,
           social_handle: form.social_handle,
-          items: orderItems.map((i) => ({
-            item_name: i.name,
-            quantity: 1,
-            price: i.price,
-          })),
+          items: orderItems.map((i) => ({ item_name: i.name, quantity: 1, price: i.price })),
           total,
         };
 
         setInvoiceData(invoice);
         setInvoiceModal(true);
 
-        // Clear order items and storage
         setOrderItems([]);
         sessionStorage.removeItem("orderItems");
         sessionStorage.removeItem("customerForm");
@@ -247,9 +218,7 @@ const ConfirmOrder = () => {
         localStorage.removeItem("collections_cache_time");
         window.dispatchEvent(new Event("collectionsUpdated"));
 
-        // Update notification to success
         NotifySuccess.addedOrder();
-
       } else {
         updateNotification({
           id: "order-submit",
@@ -275,56 +244,32 @@ const ConfirmOrder = () => {
     }
   };
 
-
   return (
     <div style={{ padding: 20 }}>
       <PageHeader title="Confirm Order" showBack />
 
       <Grid gutter="xl" align="flex-start" mt="md">
-        {/* LEFT SIDE - Summary Order */}
+        {/* LEFT SIDE */}
         <Grid.Col span={{ base: 12, md: 6 }}>
           <Card
             shadow="sm"
             padding="xl"
             radius="lg"
             withBorder
-            style={{
-              height: "580px",
-              display: "flex",
-              flexDirection: "column",
-              backgroundColor: "#FFFFFF",
-            }}
+            style={{ height: "580px", display: "flex", flexDirection: "column", backgroundColor: "#FFF" }}
           >
             <Group justify="space-between" mb="sm">
-              <Text
-                fw={500}
-                color="#0D0F66"
-                style={{
-                  fontSize: "30px",
-                }}
-              >
+              <Text fw={500} color="#0D0F66" style={{ fontSize: "30px" }}>
                 Summary Order
               </Text>
-
               <Button
                 variant="filled"
                 size="md"
-                style={{
-                  backgroundColor: "#B59276",
-                  borderRadius: "10px",
-                  color: "white",
-                  fontWeight: 600,
-                  width: "80px",
-                  height: "28px",
-                }}
+                style={{ backgroundColor: "#B59276", borderRadius: "10px", color: "white", fontWeight: 600, width: "80px", height: "28px" }}
                 onClick={() => {
                   sessionStorage.setItem("orderItems", JSON.stringify(orderItems));
                   sessionStorage.setItem("customerForm", JSON.stringify(form));
-                  navigate("/add-order", {
-                    state: {
-                      selectedItems: orderItems,
-                    },
-                  });
+                  navigate("/add-order", { state: { selectedItems: orderItems } });
                 }}
               >
                 Edit
@@ -337,52 +282,18 @@ const ConfirmOrder = () => {
               {orderItems.length === 0 ? (
                 <Text color="dimmed">No items in this order.</Text>
               ) : (
-                <Table
-                  highlightOnHover={false}
-                  style={{
-                    borderCollapse: "separate",
-                    borderSpacing: "0 8px",
-                    width: "100%",
-                  }}
-                >
+                <Table highlightOnHover={false} style={{ borderCollapse: "separate", borderSpacing: "0 8px", width: "100%" }}>
                   <tbody>
                     {orderItems.map((item) => (
-                      <tr
-                        key={item.id}
-                        style={{
-                          backgroundColor: "#FAF8F3",
-                          borderRadius: "12px",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <td
-                          style={{
-                            padding: "10px 14px",
-                            border: "none",
-                            borderTopLeftRadius: "12px",
-                            borderBottomLeftRadius: "12px",
-                          }}
-                        >
+                      <tr key={item.id} style={{ backgroundColor: "#FAF8F3", borderRadius: "12px", overflow: "hidden" }}>
+                        <td style={{ padding: "10px 14px", border: "none", borderTopLeftRadius: "12px", borderBottomLeftRadius: "12px" }}>
                           <Text fw={400}>
-                            {item.code && (
-                              <span style={{ fontWeight: 400 }}>{item.code}</span>
-                            )}
+                            {item.code && <span style={{ fontWeight: 400 }}>{item.code}</span>}
                             <span style={{ marginLeft: "25px" }}>{item.name}</span>
                           </Text>
                         </td>
-                        <td
-                          style={{
-                            textAlign: "right",
-                            border: "none",
-                            borderTopRightRadius: "12px",
-                            borderBottomRightRadius: "12px",
-                            padding: "10px 14px",
-                          }}
-                        >
-                          ₱
-                          {Number(item.price).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                          })}
+                        <td style={{ textAlign: "right", border: "none", borderTopRightRadius: "12px", borderBottomRightRadius: "12px", padding: "10px 14px" }}>
+                          ₱{Number(item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
                     ))}
@@ -403,50 +314,27 @@ const ConfirmOrder = () => {
           </Card>
         </Grid.Col>
 
-        {/* RIGHT SIDE - Customer Info */}
+        {/* RIGHT SIDE */}
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <Paper
-            shadow="sm"
-            p="xl"
-            radius="md"
-            withBorder
-            style={{
-              height: "580px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              backgroundColor: "#FFFFFF",
-            }}
-          >
+          <Paper shadow="sm" p="xl" radius="md" withBorder style={{ height: "580px", display: "flex", flexDirection: "column", justifyContent: "space-between", backgroundColor: "#FFF" }}>
             <div>
-              <Text
-                fw={500}
-                mb="md"
-                color="#0D0F66"
-                style={{
-                  fontSize: "30px",
-                }}
-              >
+              <Text fw={500} mb="md" color="#0D0F66" style={{ fontSize: "30px" }}>
                 Customer Information
               </Text>
 
               <Select
                 placeholder="Search Customer"
-                data={customers.map((c) => ({
-                  value: c.id.toString(),
-                  label: `${c.first_name} ${c.last_name}`,
-                }))}
+                searchable
+                nothingFound="No customer found"
+                data={customers.map((c) => ({ value: c.id.toString(), label: c.full_name || `${c.first_name} ${c.last_name}` }))}
+                onSearchChange={setCustomerSearch}
                 onChange={handleCustomerSelect}
-                clearable
-                rightSectionPointerEvents="none"
-                mb="md"
-                styles={{
-                  input: {
-                    height: 42,
-                    borderRadius: 8,
-                  },
-                }}
+                searchValue={customerSearch}
                 value={selectedCustomer ? selectedCustomer.toString() : ""}
+                clearable
+                loading={loadingCustomers}
+                mb="md"
+                styles={{ input: { height: 42, borderRadius: 8 } }}
               />
 
               <Grid pb={20}>
@@ -514,15 +402,7 @@ const ConfirmOrder = () => {
 
             <Group justify="flex-end" mt="md">
               <Button
-                style={{
-                  backgroundColor: "#B59276",
-                  borderRadius: "10px",
-                  color: "white",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  height: "42px",
-                  width: "120px",
-                }}
+                style={{ backgroundColor: "#B59276", borderRadius: "10px", color: "white", fontSize: "16px", fontWeight: 600, height: "42px", width: "120px" }}
                 onClick={handlePlaceOrder}
               >
                 Generate
@@ -534,9 +414,7 @@ const ConfirmOrder = () => {
               onClose={() => {
                 setInvoiceModal(false);
                 if (createdOrder) {
-                  navigate("/orders", {
-                    state: { reloadOrders: true, newOrder: createdOrder },
-                  });
+                  navigate("/orders", { state: { reloadOrders: true, newOrder: createdOrder } });
                   setCreatedOrder(null);
                 }
               }}
