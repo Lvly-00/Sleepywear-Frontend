@@ -70,10 +70,15 @@ export default function Item() {
   // Fetch collections
   useEffect(() => {
     api.get("/collections")
-      .then((res) => setCollections(res.data))
+      .then((res) => {
+        const data = Array.isArray(res.data)
+          ? res.data
+          : res.data.data || []; // ✅ fallback if API wraps the array
+        setCollections(data);
+      })
       .catch((err) => console.error("Error fetching collections:", err));
   }, []);
-
+  
   // Fetch items
   const fetchItems = async () => {
     try {
