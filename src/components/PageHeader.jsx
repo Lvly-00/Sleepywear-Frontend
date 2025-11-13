@@ -18,12 +18,13 @@ const PageHeader = ({
   showSearch,
   search,
   setSearch,
+  onSearchEnter, // ✅ new optional prop
   addLabel,
   addLink,
   onAdd,
   showBack,
-  resetOrder, // optional prop to reset local order state
-  selectedItems, // array of selected order items to delete
+  resetOrder,
+  selectedItems,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,10 +46,8 @@ const PageHeader = ({
         );
       }
 
-      // Reset local order state (if provided)
       if (resetOrder) resetOrder();
 
-      // Fetch updated orders and navigate
       const res = await api.get("/orders");
       navigate("/orders", { state: { preloadedOrders: res.data } });
     } catch (err) {
@@ -58,20 +57,18 @@ const PageHeader = ({
       setLoading(false);
     }
   };
+
   const handleBack = async () => {
-    // 🧾 If in CONFIRM ORDER → just go back to Add Order (no modal)
     if (location.pathname.includes("/confirm-order")) {
       navigate("/add-order");
       return;
     }
 
-    // ❌ If in ADD ORDER → show cancel modal
     if (location.pathname.includes("/add-order")) {
       setShowCancelModal(true);
       return;
     }
 
-    // 🔁 Normal back navigation for other pages
     setLoading(true);
     try {
       if (location.pathname.includes("/items")) {
@@ -97,6 +94,12 @@ const PageHeader = ({
     }
   };
 
+  // ✅ Handle Enter press in search
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && onSearchEnter) {
+      onSearchEnter();
+    }
+  };
 
   return (
     <>
@@ -150,6 +153,7 @@ const PageHeader = ({
               placeholder={`Search ${title}...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={handleKeyDown} // ✅ only triggers on Enter
               leftSection={<Icons.Search style={{ color: "#444444" }} size={18} />}
               radius="md"
               style={{ maxWidth: 250, width: 250 }}

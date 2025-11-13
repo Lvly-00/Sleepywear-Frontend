@@ -13,7 +13,7 @@ import {
   Pagination,
   Center,
 } from "@mantine/core";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 import NotifySuccess from "@/components/NotifySuccess";
 import PageHeader from "../components/PageHeader";
@@ -31,7 +31,6 @@ export default function Collection() {
   const preloadedCollections = location.state?.preloadedCollections || [];
 
   const [collections, setCollections] = useState(Array.isArray(preloadedCollections) ? preloadedCollections : []);
-  const [filteredCollections, setFilteredCollections] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(!preloadedCollections || preloadedCollections.length === 0);
   const [page, setPage] = useState(1);
@@ -43,44 +42,49 @@ export default function Collection() {
   const [collectionToDelete, setCollectionToDelete] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
-  const collectionsRef = useRef(collections);
-  collectionsRef.current = collections;
   const hasFetchedRef = useRef(false);
 
-  // Fetch collections from API
-  const fetchCollections = useCallback(async (targetPage = 1, showLoader = false) => {
-    if (showLoader) setLoading(true);
-    try {
-      const res = await api.get(`/collections?page=${targetPage}&per_page=10`);
-      const data = Array.isArray(res.data?.data) ? res.data.data : [];
-      setCollections(data);
-      setTotalPages(res.data?.last_page || 1);
-      setPage(res.data?.current_page || 1);
-    } catch (err) {
-      console.error("Error fetching collections:", err);
-      setCollections([]);
-    } finally {
-      setLoading(false);
-      hasFetchedRef.current = true;
-    }
-  }, []);
+  // ✅ Fetch collections from API with pagination + backend search
+  const fetchCollections = useCallback(
+    async (targetPage = 1, showLoader = false) => {
+      if (showLoader) setLoading(true);
+      try {
+        const res = await api.get("/collections", {
+          params: {
+            page: targetPage,
+            per_page: 10,
+            search: search.trim() || undefined, // 👈 include search term if exists
+          },
+        });
 
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        setCollections(data);
+        setTotalPages(res.data?.last_page || 1);
+        setPage(res.data?.current_page || 1);
+      } catch (err) {
+        console.error("Error fetching collections:", err);
+        setCollections([]);
+      } finally {
+        setLoading(false);
+        hasFetchedRef.current = true;
+      }
+    },
+    [search]
+  );
+
+  // Initial and paginated fetch
   useEffect(() => {
     fetchCollections(page, true);
   }, [page, fetchCollections]);
 
-  // Filter collections based on search
-  useEffect(() => {
-    const safeCollections = Array.isArray(collections) ? collections : [];
-    if (!search.trim()) {
-      setFilteredCollections(safeCollections);
-    } else {
-      const lower = search.toLowerCase();
-      setFilteredCollections(
-        safeCollections.filter((col) => col?.name?.toLowerCase().includes(lower))
-      );
+  ///  Trigger search only when Enter is pressed
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter") {
+      setPage(1);
+      fetchCollections(1, true);
     }
-  }, [search, collections]);
+  };
+
 
   // Delete collection
   const handleDelete = async () => {
@@ -96,7 +100,7 @@ export default function Collection() {
     }
   };
 
-  // Add collection success
+  // Add success
   const handleAddSuccess = async () => {
     setAddModalOpen(false);
     NotifySuccess.addedCollection();
@@ -104,7 +108,7 @@ export default function Collection() {
     fetchCollections(1, true);
   };
 
-  // Edit collection success
+  // Edit success
   const handleEditSuccess = async () => {
     setOpenedEdit(false);
     setSelectedCollection(null);
@@ -112,7 +116,6 @@ export default function Collection() {
     fetchCollections(page, true);
   };
 
-  // Skeleton rows
   const skeletonRowCount = Math.max(collections.length, MIN_SKELETON_ROWS);
   const renderSkeletonRows = (rows = 5) =>
     Array.from({ length: rows }).map((_, i) => (
@@ -127,7 +130,6 @@ export default function Collection() {
       </Table.Tr>
     ));
 
-  // Open Add modal from route state
   useEffect(() => {
     if (location.state?.openAddModal) {
       setAddModalOpen(true);
@@ -142,9 +144,14 @@ export default function Collection() {
         showSearch
         search={search}
         setSearch={setSearch}
-        addLabel="New Collection"
-        onAdd={() => setAddModalOpen(true)}
+        onSearchEnter={() => {
+          setPage(1);
+          fetchCollections(1, true);
+        }}
+        addLabel="Add Collection"
+        onAdd={() => setAddModal(true)}
       />
+
 
       <Paper
         radius="md"
@@ -159,19 +166,12 @@ export default function Collection() {
           fontFamily: "'League Spartan', sans-serif",
         }}
       >
-        {/* Table + ScrollArea */}
-        <ScrollArea
-          scrollbarSize={8}
-          style={{ flex: 1, minHeight: "0" }} // flex:1 makes it take remaining space
-        >
+        <ScrollArea scrollbarSize={8} style={{ flex: 1, minHeight: "0" }}>
           <Table
             highlightOnHover
             styles={{
               tr: { borderBottom: "1px solid #D8CBB8", fontSize: "20px" },
-              th: {
-                fontFamily: "'League Spartan', sans-serif",
-                fontSize: "20px",
-              },
+              th: { fontFamily: "'League Spartan', sans-serif", fontSize: "20px" },
               td: { fontFamily: "'League Spartan', sans-serif" },
             }}
           >
@@ -191,8 +191,8 @@ export default function Collection() {
             <Table.Tbody key={page}>
               {loading
                 ? renderSkeletonRows(skeletonRowCount)
-                : Array.isArray(filteredCollections) && filteredCollections.length > 0
-                  ? filteredCollections.map((col, i) => (
+                : Array.isArray(collections) && collections.length > 0
+                  ? collections.map((col, i) => (
                     <motion.tr
                       key={col.id}
                       initial={{ opacity: 0, y: -25 }}
@@ -298,7 +298,6 @@ export default function Collection() {
           </Table>
         </ScrollArea>
 
-        {/* Mantine Pagination */}
         <Center mt="md" style={{ marginTop: "auto" }}>
           <Pagination
             total={totalPages}
@@ -311,7 +310,6 @@ export default function Collection() {
         </Center>
       </Paper>
 
-      {/* Modals */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
@@ -321,16 +319,14 @@ export default function Collection() {
 
       <AddCollectionModal opened={addModalOpen} onClose={() => setAddModalOpen(false)} onSuccess={handleAddSuccess} />
 
-      {
-        selectedCollection && (
-          <EditCollectionModal
-            opened={openedEdit}
-            onClose={() => setOpenedEdit(false)}
-            collection={selectedCollection}
-            onSuccess={handleEditSuccess}
-          />
-        )
-      }
-    </Stack >
+      {selectedCollection && (
+        <EditCollectionModal
+          opened={openedEdit}
+          onClose={() => setOpenedEdit(false)}
+          collection={selectedCollection}
+          onSuccess={handleEditSuccess}
+        />
+      )}
+    </Stack>
   );
 }
