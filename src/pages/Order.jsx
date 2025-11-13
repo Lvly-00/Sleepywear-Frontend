@@ -58,32 +58,47 @@ export default function Order() {
   const ordersRef = useRef(ordersCache);
   ordersRef.current = ordersCache;
 
-  const fetchOrdersPage = useCallback(
-    async (page) => {
-      if (ordersCache[page]) return; // already cached
+const fetchOrdersPage = useCallback(
+  async (page) => {
+    setLoading(true);
+    try {
+      const res = await api.get("/orders", {
+        params: {
+          page,
+          per_page: ORDERS_PER_PAGE,
+          search: search.trim() || undefined, // pass search term
+        },
+      });
 
-      setLoading(true);
-      try {
-        const res = await api.get("/orders", {
-          params: { page, per_page: ORDERS_PER_PAGE },
-        });
+      setOrdersCache((prev) => ({
+        ...prev,
+        [page]: res.data.data,
+      }));
 
-        // store page data in cache
-        setOrdersCache((prev) => ({
-          ...prev,
-          [page]: res.data.data,
-        }));
+      setTotalPages(res.data.last_page || 1);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  },
+  [search]
+);
 
-        // calculate total pages
-        setTotalPages(res.data.last_page || 1);
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [ordersCache]
-  );
+
+  const handleSearchEnter = () => {
+    setCurrentPage(1);
+    fetchOrdersPage(1);
+  };
+
+const handleSearchKeyPress = (e) => {
+  if (e.key === "Enter") {
+    setCurrentPage(1);        
+    fetchOrdersPage(1);      
+  }
+};
+
+
 
   // Load initial page
   useEffect(() => {
@@ -128,9 +143,11 @@ export default function Order() {
         showSearch
         search={search}
         setSearch={setSearch}
+        onSearchEnter={handleSearchEnter}
         addLabel="Add Order"
         addLink="/add-order"
       />
+
 
       <Paper
         radius="md"
@@ -262,7 +279,7 @@ export default function Order() {
             color="#0A0B32"
             size="md"
             radius="md"
-             />
+          />
         </Center>
       </Paper>
 
