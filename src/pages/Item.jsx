@@ -67,12 +67,20 @@ export default function Item() {
     return `${base}/storage/${url.replace(/^public\//, "")}`;
   };
 
-  // Fetch collections
+  // Fetch collections (safe & normalized)
   useEffect(() => {
     api.get("/collections")
-      .then((res) => setCollections(res.data))
+      .then((res) => {
+        const data = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.data)
+            ? res.data.data
+            : [];
+        setCollections(data);
+      })
       .catch((err) => console.error("Error fetching collections:", err));
   }, []);
+
 
   // Fetch items
   const fetchItems = async () => {
@@ -125,10 +133,9 @@ export default function Item() {
             <Text>No items found for this collection.</Text>
           </Center>
         ) : (
-          <Grid gutter="md" mt="lg">
+          <Grid>
             {items.map((item) => (
               <Grid.Col key={item.id} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
-                {/* same card layout */}
                 <Card
                   shadow="sm"
                   radius="lg"
@@ -137,6 +144,10 @@ export default function Item() {
                     opacity: item.status === "Available" ? 1 : 0.6,
                     filter: item.status === "Available" ? "none" : "grayscale(0.7)",
                     transition: "all 0.2s ease",
+                    height: "100%", // makes all cards equal height per row
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
                     position: "relative",
                   }}
                 >
@@ -144,33 +155,42 @@ export default function Item() {
                     <div
                       style={{
                         position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 100,
-                        background: "#faf8f377",
+                        inset: 0,
+                        background: "#faf8f366",
                         zIndex: 2,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <Text fw={700} transform="uppercase" style={{
-                        fontSize: "clamp(16px, 4vw, 52px)",
-                        color: "#641212ff",
-                      }}>
+                      <Text
+                        fw={700}
+                        transform="uppercase"
+                        style={{
+                          fontSize: "clamp(20px, 5vw, 48px)",
+                          color: "#641212ff",
+                          textAlign: "center",
+                        }}
+                      >
                         Sold Out
                       </Text>
                     </div>
                   )}
 
+                  {/*  Responsive image section */}
                   <Card.Section>
-                    <AspectRatio ratio={1080 / 1350}>
+                    <AspectRatio ratio={1 / 1}>
                       {item.image_url ? (
                         <img
                           src={item.image_url}
                           alt={item.name}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderTopLeftRadius: "12px",
+                            borderTopRightRadius: "12px",
+                          }}
                         />
                       ) : (
                         <Skeleton height="100%" />
@@ -178,34 +198,34 @@ export default function Item() {
                     </AspectRatio>
                   </Card.Section>
 
-                  <Stack style={{ textAlign: "center", padding: "8px 0" }}>
-                    <Group gap="xs" justify="center">
-                      <Text fw={600} style={{ fontSize: "clamp(12px, 2vw, 24px)" }}>
+                  {/*  Responsive text & actions */}
+                  <Stack p="sm" spacing="xs" style={{ textAlign: "center", flexGrow: 1 }}>
+                    <Group gap="xs" justify="center" wrap="wrap">
+                      <Text fw={600} style={{ fontSize: "clamp(12px, 2vw, 18px)" }}>
                         {item.item_code || item.code}
                       </Text>
                       <Text c="dimmed">|</Text>
-                      <Text fw={500} style={{ fontSize: "clamp(12px, 2vw, 24px)" }}>
+                      <Text fw={500} style={{ fontSize: "clamp(12px, 2vw, 18px)" }}>
                         {item.name}
                       </Text>
                     </Group>
 
-                    <Group justify="space-between" align="center" mt="xs">
+                    <Group justify="space-between" align="center" mt="xs" wrap="nowrap">
                       <Text
                         color="#A6976B"
+                        fw={500}
                         style={{
-                          paddingLeft: "clamp(2rem, 5vw, 8rem)",
-                          fontSize: "clamp(16px, 3vw, 20px)",
-                          fontWeight: 400,
-                          textAlign: "center",
+                          fontSize: "clamp(14px, 2.5vw, 20px)",
                           flex: 1,
+                          textAlign: "center",
                         }}
                       >
                         ₱{Number(item.price).toString().replace(/^0+/, "")}
                       </Text>
 
-                      <Group gap="0" align="center">
+                      <Group gap="xs">
                         <Button
-                          size="xs"
+                          size="compact-sm"
                           color="#276D58"
                           variant="subtle"
                           onClick={() => {
@@ -213,10 +233,10 @@ export default function Item() {
                             setEditModal(true);
                           }}
                         >
-                          <Icons.Edit size="clamp(18px, 2.5vw, 26px)" />
+                          <Icons.Edit size={18} />
                         </Button>
                         <Button
-                          size="xs"
+                          size="compact-sm"
                           color="red"
                           variant="subtle"
                           onClick={() => {
@@ -224,13 +244,14 @@ export default function Item() {
                             setDeleteModalOpen(true);
                           }}
                         >
-                          <Icons.Trash size="clamp(18px, 2.5vw, 26px)" />
+                          <Icons.Trash size={18} />
                         </Button>
                       </Group>
                     </Group>
                   </Stack>
                 </Card>
               </Grid.Col>
+
             ))}
           </Grid>
         )}
