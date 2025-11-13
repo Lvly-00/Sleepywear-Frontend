@@ -130,7 +130,7 @@ export default function Collection() {
       </Table.Tr>
     ));
 
-  useEffect(() => {
+   useEffect(() => {
     if (location.state?.openAddModal) {
       setAddModalOpen(true);
       navigate(location.pathname, { replace: true });
@@ -149,7 +149,7 @@ export default function Collection() {
           fetchCollections(1, true);
         }}
         addLabel="Add Collection"
-        onAdd={() => setAddModal(true)}
+        onAdd={() => setAddModalOpen(true)}
       />
 
 

@@ -35,14 +35,14 @@ const rowVariants = {
   exit: { opacity: 0, y: 10 },
 };
 
-const ORDERS_PER_PAGE = 10;
+const ORDERS_PER_PAGE = 2;
 
 export default function Order() {
   const navigate = useNavigate();
   const location = useLocation();
   const preloadedOrders = location.state?.preloadedOrders || null;
 
-  const [ordersCache, setOrdersCache] = useState({}); // cache per page
+  const [ordersCache, setOrdersCache] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(!preloadedOrders);
@@ -58,57 +58,71 @@ export default function Order() {
   const ordersRef = useRef(ordersCache);
   ordersRef.current = ordersCache;
 
-const fetchOrdersPage = useCallback(
-  async (page) => {
-    setLoading(true);
-    try {
-      const res = await api.get("/orders", {
-        params: {
-          page,
-          per_page: ORDERS_PER_PAGE,
-          search: search.trim() || undefined, // pass search term
-        },
-      });
+  const fetchOrdersPage = useCallback(
+    async (page) => {
+      setLoading(true);
+      try {
+        const res = await api.get("/orders", {
+          params: {
+            page,
+            per_page: ORDERS_PER_PAGE,
+            search: search.trim() || undefined,
+          },
+        });
 
-      setOrdersCache((prev) => ({
-        ...prev,
-        [page]: res.data.data,
-      }));
+        setOrdersCache((prev) => ({
+          ...prev,
+          [page]: res.data.data,
+        }));
 
-      setTotalPages(res.data.last_page || 1);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-    } finally {
-      setLoading(false);
-    }
-  },
-  [search]
-);
-
+        setTotalPages(res.data.last_page || 1);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [search]
+  );
 
   const handleSearchEnter = () => {
     setCurrentPage(1);
     fetchOrdersPage(1);
   };
 
-const handleSearchKeyPress = (e) => {
-  if (e.key === "Enter") {
-    setCurrentPage(1);        
-    fetchOrdersPage(1);      
-  }
-};
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter") {
+      setCurrentPage(1);
+      fetchOrdersPage(1);
+    }
+  };
 
-
-
-  // Load initial page
   useEffect(() => {
     fetchOrdersPage(currentPage);
   }, [currentPage, fetchOrdersPage]);
 
-  // Merge cached pages for display (filter/search only applies to current page)
   const currentOrders = ordersCache[currentPage] || [];
 
-  const filteredOrders = currentOrders.filter((order) => {
+  // SORT: unpaid first (recent first), paid last (oldest first)
+  const sortedOrders = [...currentOrders].sort((a, b) => {
+    const aPaid = a.payment?.payment_status === "Paid";
+    const bPaid = b.payment?.payment_status === "Paid";
+
+    if (aPaid !== bPaid) {
+      return aPaid ? 1 : -1; // unpaid first
+    }
+
+    const aDate = new Date(a.order_date);
+    const bDate = new Date(b.order_date);
+
+    if (!aPaid) {
+      return bDate - aDate; // unpaid: recent first
+    } else {
+      return aDate - bDate; // paid: recent last
+    }
+  });
+
+  const filteredOrders = sortedOrders.filter((order) => {
     const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
     return fullName.includes(search.toLowerCase());
   });
@@ -118,12 +132,24 @@ const handleSearchKeyPress = (e) => {
   const renderSkeletonRows = (rows = 5) =>
     Array.from({ length: rows }).map((_, i) => (
       <Table.Tr key={i}>
-        <Table.Td><Skeleton height={20} width="40%" /></Table.Td>
-        <Table.Td><Skeleton height={20} width="70%" /></Table.Td>
-        <Table.Td style={{ textAlign: "center" }}><Skeleton height={20} width="30%" /></Table.Td>
-        <Table.Td style={{ textAlign: "center" }}><Skeleton height={20} width="40%" /></Table.Td>
-        <Table.Td style={{ textAlign: "center" }}><Skeleton height={20} width="30%" /></Table.Td>
-        <Table.Td style={{ textAlign: "center" }}><Skeleton height={30} width="80px" radius="xl" /></Table.Td>
+        <Table.Td>
+          <Skeleton height={20} width="40%" />
+        </Table.Td>
+        <Table.Td>
+          <Skeleton height={20} width="70%" />
+        </Table.Td>
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={20} width="30%" />
+        </Table.Td>
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={20} width="40%" />
+        </Table.Td>
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={20} width="30%" />
+        </Table.Td>
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={30} width="80px" radius="xl" />
+        </Table.Td>
         <Table.Td style={{ textAlign: "center" }}>
           <Group justify="center">
             <Skeleton height={24} circle />
@@ -133,7 +159,6 @@ const handleSearchKeyPress = (e) => {
       </Table.Tr>
     ));
 
-  // Handle page change
   const handlePageChange = (page) => setCurrentPage(page);
 
   return (
@@ -148,7 +173,6 @@ const handleSearchKeyPress = (e) => {
         addLink="/add-order"
       />
 
-
       <Paper
         radius="md"
         p="xl"
@@ -162,20 +186,15 @@ const handleSearchKeyPress = (e) => {
           fontFamily: "'League Spartan', sans-serif",
         }}
       >
-        {/* Table + ScrollArea */}
-        <ScrollArea
-          scrollbarSize={8}
-          style={{ flex: 1, minHeight: "0" }} // flex:1 makes it take remaining space
-        >
-          <Table highlightOnHover
+        <ScrollArea scrollbarSize={8} style={{ flex: 1, minHeight: "0" }}>
+          <Table
+            highlightOnHover
             styles={{
               tr: { borderBottom: "1px solid #D8CBB8", fontSize: "20px" },
-              th: {
-                fontFamily: "'League Spartan', sans-serif",
-                fontSize: "20px",
-              },
+              th: { fontFamily: "'League Spartan', sans-serif", fontSize: "20px" },
               td: { fontFamily: "'League Spartan', sans-serif" },
-            }}>
+            }}
+          >
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Order ID</Table.Th>
@@ -194,7 +213,9 @@ const handleSearchKeyPress = (e) => {
               ) : filteredOrders.length === 0 ? (
                 <Table.Tr>
                   <Table.Td colSpan={7} style={{ textAlign: "center", padding: "1.5rem" }}>
-                    <Text c="dimmed" size="20px">No orders found</Text>
+                    <Text c="dimmed" size="20px">
+                      No orders found
+                    </Text>
                   </Table.Td>
                 </Table.Tr>
               ) : (
@@ -202,7 +223,10 @@ const handleSearchKeyPress = (e) => {
                   {filteredOrders.map((order, i) => {
                     const fullName = `${order.first_name} ${order.last_name}`;
                     const totalQty = order.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
-                    const totalPrice = order.total || order.items?.reduce((sum, i) => sum + i.price * i.quantity, 0) || 0;
+                    const totalPrice =
+                      order.total ||
+                      order.items?.reduce((sum, i) => sum + i.price * i.quantity, 0) ||
+                      0;
 
                     return (
                       <motion.tr
@@ -213,31 +237,44 @@ const handleSearchKeyPress = (e) => {
                         animate="visible"
                         exit="exit"
                         layout
-                        onClick={() => { setInvoiceData(order); setInvoiceModal(true); }}
+                        onClick={() => {
+                          setInvoiceData(order);
+                          setInvoiceModal(true);
+                        }}
                         style={{ cursor: "pointer", borderBottom: "1px solid #D8CBB8" }}
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "transparent")
+                        }
                       >
                         <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
-                          {order.id}</Table.Td>
-                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
-                          {fullName}</Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                          {totalQty}</Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-
-                          {new Date(order.order_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                          {order.id}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                          ₱{Math.round(totalPrice).toLocaleString()}</Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-
+                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
+                          {fullName}
+                        </Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
+                          {totalQty}
+                        </Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
+                          {new Date(order.order_date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
+                          ₱{Math.round(totalPrice).toLocaleString()}
+                        </Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
                           <Badge
                             size="27"
                             variant="filled"
                             style={{
-                              backgroundColor: order.payment?.payment_status === "Paid" ? "#A5BDAE" : "#D9D9D9",
-                              color: order.payment?.payment_status === "Paid" ? "#FFF" : "#7A7A7A",
+                              backgroundColor:
+                                order.payment?.payment_status === "Paid" ? "#A5BDAE" : "#D9D9D9",
+                              color:
+                                order.payment?.payment_status === "Paid" ? "#FFF" : "#7A7A7A",
                               width: "115px",
                               fontWeight: 400,
                               paddingTop: "5px",
@@ -248,17 +285,34 @@ const handleSearchKeyPress = (e) => {
                             {order.payment?.payment_status || "Unpaid"}
                           </Badge>
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
                           <Group gap="4" justify="center">
                             {order.payment?.payment_status !== "Paid" && (
-                              <Button size="xs" color="#276D58" variant="subtle" p={3}
-                                onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setAddPaymentOpen(true); }}>
+                              <Button
+                                size="xs"
+                                color="#276D58"
+                                variant="subtle"
+                                p={3}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedOrder(order);
+                                  setAddPaymentOpen(true);
+                                }}
+                              >
                                 <Icons.AddPayment size={26} />
                               </Button>
                             )}
-                            <Button size="xs" variant="subtle" color="red" p={3}
-                              onClick={(e) => { e.stopPropagation(); setOrderToDelete(order); setDeleteModalOpen(true); }}>
+                            <Button
+                              size="xs"
+                              variant="subtle"
+                              color="red"
+                              p={3}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOrderToDelete(order);
+                                setDeleteModalOpen(true);
+                              }}
+                            >
                               <Icons.Trash size={26} />
                             </Button>
                           </Group>
@@ -271,7 +325,8 @@ const handleSearchKeyPress = (e) => {
             </Table.Tbody>
           </Table>
         </ScrollArea>
-        <Center>
+
+        <Center mt="md">
           <Pagination
             total={totalPages}
             page={currentPage}
@@ -283,8 +338,7 @@ const handleSearchKeyPress = (e) => {
         </Center>
       </Paper>
 
-
-      {/*  Delete Confirmation */}
+      {/* Delete Confirmation */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
@@ -296,7 +350,7 @@ const handleSearchKeyPress = (e) => {
             setOrdersCache((prev) => {
               const newCache = { ...prev };
               Object.keys(newCache).forEach((page) => {
-                newCache[page] = newCache[page].filter(o => o.id !== orderToDelete.id);
+                newCache[page] = newCache[page].filter((o) => o.id !== orderToDelete.id);
               });
               return newCache;
             });
@@ -308,7 +362,7 @@ const handleSearchKeyPress = (e) => {
         }}
       />
 
-      {/*  Add Payment */}
+      {/* Add Payment Modal */}
       {addPaymentOpen && selectedOrder && (
         <AddPaymentModal
           opened={addPaymentOpen}
@@ -318,7 +372,7 @@ const handleSearchKeyPress = (e) => {
             setOrdersCache((prev) => {
               const newCache = { ...prev };
               Object.keys(newCache).forEach((page) => {
-                newCache[page] = newCache[page].map(o =>
+                newCache[page] = newCache[page].map((o) =>
                   o.id === updatedOrder.id ? updatedOrder : o
                 );
               });
