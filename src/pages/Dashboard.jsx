@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Stack, Card, Text, Grid, Paper, Skeleton } from "@mantine/core";
 import {
   ResponsiveContainer,
@@ -9,32 +9,84 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import api from "../api/axios";
 import PageHeader from "../components/PageHeader";
-import TopLoadingBar from "../components/TopLoadingBar";
 import { Icons } from "../components/Icons";
+import api from "../api/axios";
 
 function Dashboard() {
-  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState({
+    totalRevenue: 0,
+    grossIncome: 0,
+    netIncome: 0,
+    totalItemsSold: 0,
+    totalCustomers: 0,
+    collectionSales: [],
+  });
+  const [dailySales, setDailySales] = useState([]);
+  const [collections, setCollections] = useState([]);
 
   useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get("/dashboard-summary");
-        setSummary(response.data);
-      } catch (error) {
-        console.error("Failed to fetch dashboard summary:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSummary();
+    fetchDashboardData();
   }, []);
 
-  
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/dashboard-summary");
+      const data = res.data;
+
+      setSummary({
+        totalRevenue: data.totalRevenue,
+        grossIncome: data.grossIncome,
+        netIncome: data.netIncome,
+        totalItemsSold: data.totalItemsSold,
+        totalCustomers: data.totalCustomers,
+        collectionSales: data.collectionSales,
+      });
+
+      // Transform dailySales to have numeric day only for current month
+      const today = new Date();
+      const currentMonth = today.toLocaleString("default", { month: "long" });
+      const monthDays = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+      let chartData = [];
+      if (data.dailySales && data.dailySales.length > 0) {
+        chartData = data.dailySales.map((d) => {
+
+          // extract day number from date string if available
+          // assume backend sends date like "2025-11-01"
+          const day = new Date(d.date).getDate();
+          let obj = { date: day };
+          Object.keys(d).forEach((key) => {
+            if (key !== "date") obj[key] = d[key];
+          });
+          return obj;
+        });
+      } else {
+        // fallback: generate placeholder data if backend doesn't provide dailySales
+        chartData = Array.from({ length: monthDays }, (_, i) => {
+          const day = i + 1;
+          const obj = { date: day };
+          summary.collectionSales.forEach((c) => (obj[c.collection_name] = 0));
+          return obj;
+        });
+      }
+
+      setDailySales(chartData);
+      setCollections(data.collectionSales.map((c) => c.collection_name));
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatNumber = (num) => {
+    if (!num || isNaN(num)) return "0";
+    return Math.round(num).toLocaleString();
+  };
+
   const cardStyle = {
     borderRadius: "28px",
     border: "1px solid #C2C2C2",
@@ -50,42 +102,10 @@ function Dashboard() {
     margin: "0 auto",
   };
 
-  const formatNumber = (num) => {
-    if (num === null || num === undefined || isNaN(num)) return "0";
-    return Math.round(num).toLocaleString();
-  };
+  const COLORS = ["#944E1B", "#54361C", "#F0BB78", "#AB8262", "#232D80"];
 
-  if (loading)
-    return (
-      <Stack p="xs" spacing="lg">
-        <PageHeader title="Dashboard" />
-        <Grid gutter="xl" justify="center">
-          {[...Array(4)].map((_, idx) => (
-            <Grid.Col key={idx} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
-              <Card style={cardStyle}>
-                <Skeleton height={25} width="60%" mb="sm" />
-                <Skeleton height={66} circle mb="sm" />
-                <Skeleton height={45} width="50%" mb="sm" />
-                <Skeleton height={30} width="40%" />
-              </Card>
-            </Grid.Col>
-          ))}
-        </Grid>
-
-        <Paper p="xl" style={{ backgroundColor: "#FAF8F3" }}>
-          <Card p="lg" style={{ height: 400 }}>
-            <Skeleton height="100%" />
-          </Card>
-        </Paper>
-      </Stack>
-    );
-
-  const collectionSalesData = summary.collectionSales.map((collection) => ({
-    collection_name: collection.collection_name,
-    total_sales: collection.total_sales,
-  }));
-
-  const COLORS = ["#944E1B", "#54361C", "#F0BB78", "#8B4513", "#B5651D"];
+  // Get current month name for title
+  const monthName = new Date().toLocaleString("default", { month: "long" });
 
   return (
     <Stack p="xs" spacing="lg">
@@ -109,100 +129,105 @@ function Dashboard() {
             {
               label: "Net Income",
               icon: <Icons.Coins size={66} />,
-              value: `₱${formatNumber(summary.netIncome)}`,
-              extraText: null,
+              value: `₱${formatNumber(summary.netIncome)}`, // peso sign
             },
             {
               label: "Gross Income",
               icon: <Icons.Coin size={66} />,
-              value: `₱${formatNumber(summary.grossIncome)}`,
-              extraText: null,
+              value: `₱${formatNumber(summary.grossIncome)}`, // peso sign
             },
             {
               label: "Total Items Sold",
               icon: <Icons.Tag size={66} />,
               value: formatNumber(summary.totalItemsSold),
-              extraText: "pieces",
+              extraText: "pieces", // added
             },
             {
               label: "Customers",
               icon: <Icons.Customers size={66} />,
               value: formatNumber(summary.totalCustomers),
-              extraText: "total",
+              extraText: "total", // added
             },
           ].map(({ label, icon, value, extraText }, idx) => (
             <Grid.Col key={idx} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
-              <Card style={{ ...cardStyle, maxWidth: 300, width: "100%" }}>
-                <Text
-                  weight={400}
-                  style={{ fontSize: "clamp(18px, 2.5vw, 20px)", marginBottom: 6 }}
-                >
-                  {label}
-                </Text>
-                {icon}
-                <Text
-                  color="#5D4324"
-                  style={{
-                    fontSize: "clamp(32px, 2vw, 50px)",
-                    fontWeight: 500,
-                    marginTop: 6,
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {value}
-                </Text>
-                {extraText && (
-                  <Text
-                    color="#7a6f58"
-                    style={{
-                      fontSize: "clamp(18px, 3vw, 25px)",
-                      marginTop: 1,
-                      fontWeight: 400,
-                    }}
-                  >
-                    {extraText}
+              <Skeleton visible={loading} height={250} radius="xl">
+                <Card style={{ ...cardStyle, maxWidth: 300, width: "100%" }}>
+                  <Text weight={400} style={{
+                    fontSize: "clamp(18px,2.5vw,26px)", marginBottom: 6, fontFamily: "'League Spartan', sans-serif",
+                  }}>
+                    {label}
                   </Text>
-                )}
-              </Card>
+                  {icon}
+                  <Text
+                    color="#5D4324"
+                    style={{ fontSize: "clamp(32px,2vw,50px)", fontWeight: 500, marginTop: 6, fontFamily: "'League Spartan', sans-serif", }}
+                  >
+                    {value}
+                  </Text>
+                  {extraText && (
+                    <Text
+                      color="#7a6f58"
+                      style={{
+                        fontSize: "clamp(18px,2vw,26px)", marginTop: 2, fontWeight: 400, fontFamily: "'League Spartan', sans-serif",
+                      }}
+                    >
+                      {extraText}
+                    </Text>
+                  )}
+                </Card>
+              </Skeleton>
             </Grid.Col>
           ))}
         </Grid>
+
       </Paper>
 
       {/* Collection Sales Line Chart */}
       <Paper p="xl" style={{ backgroundColor: "#FAF8F3" }}>
-        <Card p="lg">
-          <Text fw={700} mb="sm" align="center" fz={20} style={{ color: "#05004E" }}>
-            Collection Sales Totals
-          </Text>
+        <Skeleton visible={loading} height={400} radius="xl">
+          <Card p="lg">
+            <Text fw={700} mb="sm" align="center" fz={20} style={{ color: "#05004E" }}>
+              Collection Sales for the Month of {monthName}
+            </Text>
 
-          <ResponsiveContainer width="100%" height={350}>
-            <LineChart
-              data={collectionSalesData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <XAxis dataKey="collection_name" />
-              <YAxis />
-              <Tooltip formatter={(value) => `₱${formatNumber(value)}`} />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="total_sales"
-                stroke={COLORS[0]}
-                strokeWidth={3}
-                dot={{ r: 6 }}
-                activeDot={{ r: 8 }}
-                name="Total Sales"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={dailySales} curveType="natural" strokeDasharray="20 15 "
+                withPointLabels margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <XAxis dataKey="date" interval={0} height={60} tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={(value) => `₱${(value / 1000).toFixed(0)}k`} width={70} />
+                <Tooltip
+                  formatter={(value) => `₱${formatNumber(value)}`}
+                  contentStyle={{
+                    borderRadius: "12px",      
+                    border: "1px solid #C2C2C2", 
+                    backgroundColor: "#fff",    
+                    padding: "10px",            
+                    fontFamily: "'League Spartan', sans-serif", 
+                  }}
+                />
+                <Legend verticalAlign="bottom" height={36} />
+                {collections.map((col, idx) => (
+                  <Line
+                    key={col}
+                    type="monotone"
+                    dataKey={col}
+                    stroke={COLORS[idx % COLORS.length]}
+                    strokeWidth={2.5}
+                    dot={false}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+        </Skeleton>
       </Paper>
     </Stack>
   );
 }
 
 export default Dashboard;
+
+
 
 //------------------------------------
 //---------Dummy Data Ver. -----------

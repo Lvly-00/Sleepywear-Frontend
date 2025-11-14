@@ -44,7 +44,6 @@ export default function Collection() {
 
   const hasFetchedRef = useRef(false);
 
-  // ✅ Fetch collections from API with pagination + backend search
   const fetchCollections = useCallback(
     async (targetPage = 1, showLoader = false) => {
       if (showLoader) setLoading(true);
@@ -59,7 +58,6 @@ export default function Collection() {
 
         let data = Array.isArray(res.data?.data) ? res.data.data : [];
 
-        // ✅ Sort Active first, Sold Out last
         data.sort((a, b) => {
           const order = { Active: 0, "Sold Out": 1 };
           return order[a.status] - order[b.status];
