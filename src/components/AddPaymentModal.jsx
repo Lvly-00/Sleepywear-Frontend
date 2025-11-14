@@ -15,11 +15,13 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
     additionalFee: 0,
   });
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false); // <-- Add loading state
 
   useEffect(() => {
     if (opened) {
       setPayment({ method: "", additionalFee: 0 });
       setErrors({});
+      setLoading(false); // reset loading when modal opens
     }
   }, [opened, order]);
 
@@ -32,10 +34,11 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
       return;
     }
 
+    setLoading(true); // <-- disable button
+
     try {
       const totalAmount = Number(order?.total || 0) + Number(payment.additionalFee || 0);
 
-      // Use JSON instead of FormData for simplicity
       const payload = {
         payment_method: payment.method,
         total: totalAmount,
@@ -55,6 +58,7 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
     } catch (err) {
       console.error("Error saving payment:", err);
       alert("Failed to save payment. Check console for details.");
+      setLoading(false); // <-- re-enable button if error occurs
     }
   };
 
@@ -93,8 +97,9 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
                 color="#AB8262"
                 style={{ borderRadius: "15px", width: "110px", fontSize: "16px" }}
                 onClick={savePayment}
+                disabled={loading} // <-- disable while loading
               >
-                Submit
+                {loading ? "Submitting..." : "Submit"} {/* optional text change */}
               </Button>
             </Group>
           </Stack>

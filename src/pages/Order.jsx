@@ -260,18 +260,20 @@ export default function Order() {
                           (e.currentTarget.style.backgroundColor = "transparent")
                         }
                       >
-                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>{order.id}</Table.Td>
+                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
+                          {order.formatted_id}
+                        </Table.Td>
                         <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>{fullName}</Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>{totalQty}</Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>{totalQty}</Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                           {new Date(order.order_date).toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",
                             day: "numeric",
                           })}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>₱{Math.round(totalPrice).toLocaleString()}</Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>₱{Math.round(totalPrice).toLocaleString()}</Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                           <Badge
                             size="27"
                             variant="filled"
@@ -290,7 +292,7 @@ export default function Order() {
                             {order.payment?.payment_status || "Unpaid"}
                           </Badge>
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                           <Group gap="4" justify="center">
                             {order.payment?.payment_status !== "Paid" && (
                               <Button

@@ -88,13 +88,13 @@ const AddOrder = () => {
     try {
       const res = await api.get("/collections");
 
-      // Filter active collections and only include collections with items available or selected
       const dataArray = Array.isArray(res.data) ? res.data : res.data.data || [];
+
       const activeCollections = dataArray
-        .filter((c) => c.status === "Active")
+        .filter((c) => c.status === "Active") // only active collections
         .map((c) => {
           const filteredItems = (c.items || []).filter(
-            (i) => i.status === "Available" || selectedItems.some((si) => si.id === i.id)
+            (i) => i.status === "Available" // only items available
           );
 
           const itemsWithUrls = filteredItems.map((i) => ({
@@ -107,22 +107,13 @@ const AddOrder = () => {
 
           return { ...c, items: itemsWithUrls };
         })
-        .filter((c) => c.items.length > 0);
-
-
+        .filter((c) => c.items.length > 0); // remove collections with no available items
 
       setCollections(activeCollections);
 
       // Set default selectedCollection if none selected
-      if (!selectedCollection) {
-        if (selectedItems.length > 0) {
-          const firstCollectionId =
-            selectedItems[0].collection_id?.toString() ||
-            activeCollections[0]?.id.toString();
-          setSelectedCollection(firstCollectionId);
-        } else if (activeCollections.length > 0) {
-          setSelectedCollection(activeCollections[0].id.toString());
-        }
+      if (!selectedCollection && activeCollections.length > 0) {
+        setSelectedCollection(activeCollections[0].id.toString());
       }
     } catch (err) {
       console.error("Error fetching collections:", err);
@@ -130,6 +121,7 @@ const AddOrder = () => {
       setLoading(false);
     }
   };
+
 
   const handleItemToggle = (item) => {
     if (selectedItems.some((i) => i.id === item.id)) {

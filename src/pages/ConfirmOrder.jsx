@@ -189,8 +189,8 @@ const ConfirmOrder = () => {
         sessionStorage.removeItem("orderItems");
         sessionStorage.removeItem("customerForm");
         localStorage.removeItem("orderItemsCache");
-        localStorage.removeItem("collections_cache");
-        localStorage.removeItem("collections_cache_time");
+        localStorage.removeItem("collectionsCache");
+        localStorage.removeItem("selectedCollectionCache");
         window.dispatchEvent(new Event("collectionsUpdated"));
 
         NotifySuccess.addedOrder();
