@@ -35,7 +35,7 @@ const rowVariants = {
   exit: { opacity: 0, y: 10 },
 };
 
-const ORDERS_PER_PAGE = 2;
+const ORDERS_PER_PAGE = 10;
 
 export default function Order() {
   const navigate = useNavigate();

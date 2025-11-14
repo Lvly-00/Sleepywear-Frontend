@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   Stack,
   Select,
-  NumberInput,
   Button,
   Modal,
   Text,
@@ -13,26 +12,20 @@ import api from "../api/axios";
 const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
   const [payment, setPayment] = useState({
     method: "",
-    image: null,
+    additionalFee: 0,
   });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (opened) {
-      setPayment({
-        method: "",
-            image: null,
-      });
+      setPayment({ method: "", additionalFee: 0 });
       setErrors({});
     }
   }, [opened, order]);
 
   const savePayment = async () => {
     const newErrors = {};
-
-    if (!payment.method) {
-      newErrors.paymentMethod = "Please select a payment method";
-    }
+    if (!payment.method) newErrors.paymentMethod = "Please select a payment method";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -40,23 +33,22 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
     }
 
     try {
-      const totalAmount =
-        Number(order?.total || 0) + Number(payment.additionalFee || 0);
+      const totalAmount = Number(order?.total || 0) + Number(payment.additionalFee || 0);
 
-      const formData = new FormData();
-      formData.append("payment_method", payment.method);
-      formData.append("total", totalAmount);
-      formData.append("payment_status", "Paid");
-      formData.append("additional_fee", payment.additionalFee || 0);
+      // Use JSON instead of FormData for simplicity
+      const payload = {
+        payment_method: payment.method,
+        total: totalAmount,
+        payment_status: "Paid",
+        additional_fee: payment.additionalFee || 0,
+      };
 
-      await api.post(`/orders/${order.id}/payment`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      await api.post(`/orders/${order.id}/payment`, payload, {
+        headers: { "Content-Type": "application/json" },
       });
 
-      // 🔹 REFRESH the order from backend
+      // Refresh order
       const updatedOrderRes = await api.get(`/orders/${order.id}`);
-
-      // Pass updated order back to parent
       if (onOrderUpdated) onOrderUpdated(updatedOrderRes.data);
 
       onClose();
@@ -69,57 +61,20 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
       <Modal.Overlay />
-      <Modal.Content
-        style={{
-          borderRadius: "16px",
-          padding: "20px",
-        }}
-      >
-        <Modal.Header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Modal.CloseButton
-            size={35}
-            style={{
-              order: 0,
-              marginRight: "1rem",
-              color: "#AB8262",
-            }}
-          />
-
+      <Modal.Content style={{ borderRadius: "16px", padding: "20px" }}>
+        <Modal.Header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Modal.CloseButton size={35} style={{ order: 0, marginRight: "1rem", color: "#AB8262" }} />
           <Modal.Title style={{ flex: 1 }}>
-            <Text
-              align="center"
-              color="black"
-              style={{
-                width: "100%",
-                fontSize: "26px",
-                fontWeight: "600",
-              }}
-            >
+            <Text align="center" color="black" style={{ width: "100%", fontSize: "26px", fontWeight: "600" }}>
               Add Payment
             </Text>
           </Modal.Title>
-
           <div style={{ width: 36 }} />
         </Modal.Header>
 
         <Modal.Body>
           <Stack spacing="sm">
-            <Text
-              weight={500}
-              align="center"
-              color="#5D4324"
-              style={{
-                width: "100%",
-                fontSize: "46px",
-                fontWeight: "600",
-              }}
-            >
+            <Text weight={500} align="center" color="#5D4324" style={{ width: "100%", fontSize: "46px", fontWeight: "600" }}>
               ₱{Math.floor(order?.total || 0).toLocaleString("en-PH")}
             </Text>
 
@@ -131,23 +86,12 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
               error={errors.paymentMethod}
               onChange={(value) => setPayment({ ...payment, method: value })}
               required
-            />  
+            />
 
-            <Group
-              mt="lg"
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                width: "100%",
-              }}
-            >
+            <Group mt="lg" style={{ display: "flex", justifyContent: "flex-end", width: "100%" }}>
               <Button
                 color="#AB8262"
-                style={{
-                  borderRadius: "15px",
-                  width: "110px",
-                  fontSize: "16px",
-                }}
+                style={{ borderRadius: "15px", width: "110px", fontSize: "16px" }}
                 onClick={savePayment}
               >
                 Submit
