@@ -84,7 +84,7 @@ function Dashboard() {
 
         chartData.push(row);
       }
-
+      
 
       setDailySales(chartData);
       setCollections(collectionNames);
