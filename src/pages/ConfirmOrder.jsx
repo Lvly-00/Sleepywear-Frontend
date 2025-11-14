@@ -14,7 +14,6 @@ import {
 } from "@mantine/core";
 import api from "../api/axios";
 import { useNavigate, useLocation } from "react-router-dom";
-import InvoicePreview from "../components/InvoicePreview";
 import PageHeader from "../components/PageHeader";
 import NotifySuccess from "../components/NotifySuccess.jsx";
 
@@ -44,10 +43,7 @@ const ConfirmOrder = () => {
 
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [invoiceModal, setInvoiceModal] = useState(false);
-  const [invoiceData, setInvoiceData] = useState(null);
   const [errors, setErrors] = useState({});
-  const [createdOrder, setCreatedOrder] = useState(null);
   const [customerSearch, setCustomerSearch] = useState("");
   const [loadingCustomers, setLoadingCustomers] = useState(false);
 
@@ -61,8 +57,6 @@ const ConfirmOrder = () => {
         const res = await api.get("/customers", {
           params: { search: customerSearch, per_page: 50 },
         });
-
-        // Laravel pagination returns {data: [...], meta: {...}}
         setCustomers(Array.isArray(res.data.data) ? res.data.data : []);
       } catch (err) {
         console.error("Error fetching customers:", err);
@@ -71,8 +65,6 @@ const ConfirmOrder = () => {
         setLoadingCustomers(false);
       }
     };
-
-    // Only fetch if search is non-empty or initial load
     fetchCustomers();
   }, [customerSearch]);
 
@@ -107,7 +99,6 @@ const ConfirmOrder = () => {
     }
   };
 
-  // Update item status
   const updateItemStatus = async (itemId, newStatus) => {
     try {
       const { data: currentItem } = await api.get(`/items/${itemId}`);
@@ -150,17 +141,11 @@ const ConfirmOrder = () => {
 
     const unavailableItems = orderItems.filter((item) => item.status !== "Available");
     if (unavailableItems.length > 0) {
-      updateNotification({
-        id: "order-submit",
-        title: "Stock Error",
-        message: `Cannot place order. Insufficient stock for: ${unavailableItems
+      alert(
+        `Cannot place order. Insufficient stock for: ${unavailableItems
           .map((i) => i.name)
-          .join(", ")}`,
-        color: "red",
-        autoClose: 4000,
-        loading: false,
-        disallowClose: false,
-      });
+          .join(", ")}`
+      );
       return;
     }
 
@@ -189,7 +174,6 @@ const ConfirmOrder = () => {
 
       if (response.status === 200 || response.status === 201) {
         const createdOrder = response.data;
-        setCreatedOrder(createdOrder);
 
         try {
           await Promise.all(orderItems.map((item) => updateItemStatus(item.id, "Sold Out")));
@@ -198,18 +182,7 @@ const ConfirmOrder = () => {
           alert("Warning: Order placed but failed to update some item statuses.");
         }
 
-        const invoice = {
-          customer_name: `${form.first_name} ${form.last_name}`,
-          address: form.address,
-          contact_number: form.contact_number,
-          social_handle: form.social_handle,
-          items: orderItems.map((i) => ({ item_name: i.name, quantity: 1, price: i.price })),
-          total,
-        };
-
-        setInvoiceData(invoice);
-        setInvoiceModal(true);
-
+        // Clear session storage
         setOrderItems([]);
         sessionStorage.removeItem("orderItems");
         sessionStorage.removeItem("customerForm");
@@ -219,28 +192,17 @@ const ConfirmOrder = () => {
         window.dispatchEvent(new Event("collectionsUpdated"));
 
         NotifySuccess.addedOrder();
-      } else {
-        updateNotification({
-          id: "order-submit",
-          title: "Error",
-          message: "Unexpected response from server.",
-          color: "red",
-          autoClose: 4000,
-          loading: false,
-          disallowClose: false,
+
+        // Redirect to Orders page and open invoice modal
+        navigate("/orders", {
+          state: { reloadOrders: true, newOrder: createdOrder, openInvoice: true },
         });
+      } else {
+        alert("Unexpected response from server.");
       }
     } catch (err) {
       console.error("Order creation failed:", err.response?.data || err.message);
-      updateNotification({
-        id: "order-submit",
-        title: "Order Failed",
-        message: err.response?.data?.message || "Check console for details.",
-        color: "red",
-        autoClose: 4000,
-        loading: false,
-        disallowClose: false,
-      });
+      alert("Failed to place order. Check console for details.");
     }
   };
 
@@ -408,18 +370,6 @@ const ConfirmOrder = () => {
                 Generate
               </Button>
             </Group>
-
-            <InvoicePreview
-              opened={invoiceModal}
-              onClose={() => {
-                setInvoiceModal(false);
-                if (createdOrder) {
-                  navigate("/orders", { state: { reloadOrders: true, newOrder: createdOrder } });
-                  setCreatedOrder(null);
-                }
-              }}
-              invoiceData={invoiceData}
-            />
           </Paper>
         </Grid.Col>
       </Grid>

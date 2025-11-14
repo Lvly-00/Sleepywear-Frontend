@@ -14,7 +14,7 @@ import {
 } from "@mantine/core";
 import NotifySuccess from "@/components/NotifySuccess";
 import PageHeader from "../components/PageHeader";
-import SubmitButton from "../components/SubmitButton";x`x`
+import SubmitButton from "../components/SubmitButton";
 import { Icons } from "../components/Icons";
 import { useLocation, useNavigate } from "react-router-dom";
 

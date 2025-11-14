@@ -41,6 +41,8 @@ export default function Order() {
   const navigate = useNavigate();
   const location = useLocation();
   const preloadedOrders = location.state?.preloadedOrders || null;
+  const newOrder = location.state?.newOrder || null;
+  const openInvoiceOnLoad = location.state?.openInvoice || false;
 
   const [ordersCache, setOrdersCache] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
@@ -161,6 +163,17 @@ export default function Order() {
 
   const handlePageChange = (page) => setCurrentPage(page);
 
+  // --- Open invoice modal automatically if redirected from ConfirmOrder ---
+  useEffect(() => {
+    if (newOrder && openInvoiceOnLoad) {
+      setInvoiceData(newOrder);
+      setInvoiceModal(true);
+
+      // Clear the location state so invoice does not reopen on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [newOrder, openInvoiceOnLoad]);
+
   return (
     <Stack p="xs" spacing="lg">
       <PageHeader
@@ -247,15 +260,9 @@ export default function Order() {
                           (e.currentTarget.style.backgroundColor = "transparent")
                         }
                       >
-                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
-                          {order.id}
-                        </Table.Td>
-                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
-                          {fullName}
-                        </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
-                          {totalQty}
-                        </Table.Td>
+                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>{order.id}</Table.Td>
+                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>{fullName}</Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>{totalQty}</Table.Td>
                         <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
                           {new Date(order.order_date).toLocaleDateString("en-US", {
                             year: "numeric",
@@ -263,9 +270,7 @@ export default function Order() {
                             day: "numeric",
                           })}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
-                          ₱{Math.round(totalPrice).toLocaleString()}
-                        </Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>₱{Math.round(totalPrice).toLocaleString()}</Table.Td>
                         <Table.Td style={{ textAlign: "center", fontSize: "16px"}}>
                           <Badge
                             size="27"
