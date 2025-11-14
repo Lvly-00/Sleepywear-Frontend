@@ -53,11 +53,18 @@ export default function Collection() {
           params: {
             page: targetPage,
             per_page: 10,
-            search: search.trim() || undefined, // 👈 include search term if exists
+            search: search.trim() || undefined,
           },
         });
 
-        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        let data = Array.isArray(res.data?.data) ? res.data.data : [];
+
+        // ✅ Sort Active first, Sold Out last
+        data.sort((a, b) => {
+          const order = { Active: 0, "Sold Out": 1 };
+          return order[a.status] - order[b.status];
+        });
+
         setCollections(data);
         setTotalPages(res.data?.last_page || 1);
         setPage(res.data?.current_page || 1);
@@ -71,6 +78,7 @@ export default function Collection() {
     },
     [search]
   );
+
 
   // Initial and paginated fetch
   useEffect(() => {
@@ -130,7 +138,7 @@ export default function Collection() {
       </Table.Tr>
     ));
 
-   useEffect(() => {
+  useEffect(() => {
     if (location.state?.openAddModal) {
       setAddModalOpen(true);
       navigate(location.pathname, { replace: true });

@@ -41,6 +41,11 @@ api.interceptors.response.use(
                 "products_cache",
                 "products_cache_time",
                 "dashboard_cache",
+                "orderItemsCache",
+                "selectedCollectionCache",
+                "paginationCache"
+
+
             ];
 
             cacheKeys.forEach((key) => localStorage.removeItem(key));

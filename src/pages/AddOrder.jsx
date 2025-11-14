@@ -89,16 +89,14 @@ const AddOrder = () => {
       const res = await api.get("/collections");
 
       // Filter active collections and only include collections with items available or selected
-      const activeCollections = res.data
+      const dataArray = Array.isArray(res.data) ? res.data : res.data.data || [];
+      const activeCollections = dataArray
         .filter((c) => c.status === "Active")
         .map((c) => {
-          // Filter items to available or selected
           const filteredItems = (c.items || []).filter(
-            (i) =>
-              i.status === "Available" || selectedItems.some((si) => si.id === i.id)
+            (i) => i.status === "Available" || selectedItems.some((si) => si.id === i.id)
           );
 
-          // Map items to add image_url and collection_id
           const itemsWithUrls = filteredItems.map((i) => ({
             ...i,
             image_url:
@@ -107,13 +105,11 @@ const AddOrder = () => {
             collection_id: c.id,
           }));
 
-          return {
-            ...c,
-            items: itemsWithUrls,
-          };
+          return { ...c, items: itemsWithUrls };
         })
-        // Only keep collections with at least one item
         .filter((c) => c.items.length > 0);
+
+
 
       setCollections(activeCollections);
 
@@ -214,7 +210,7 @@ const AddOrder = () => {
               justifyContent: "center",
               alignItems: "center",
               marginTop: "250px",
-              height: "100%", 
+              height: "100%",
               flexDirection: "column",
               textAlign: "center",
             }}

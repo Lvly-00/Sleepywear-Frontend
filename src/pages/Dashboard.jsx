@@ -34,6 +34,7 @@ function Dashboard() {
     fetchSummary();
   }, []);
 
+  
   const cardStyle = {
     borderRadius: "28px",
     border: "1px solid #C2C2C2",
