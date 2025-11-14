@@ -342,20 +342,6 @@ const AddOrder = () => {
               style={{
                 borderRadius: "15px",
                 paddingTop: "3px",
-                backgroundColor: "#9E2626",
-                fontFamily: "'League Spartan', sans-serif",
-                fontWeight: 500,
-              }}
-              onClick={() => setCancelModalOpened(true)}
-            >
-              Cancel Order ({selectedItems.length})
-            </Button>
-
-            <Button
-              size="md"
-              style={{
-                borderRadius: "15px",
-                paddingTop: "3px",
                 backgroundColor: "#AB8262",
                 fontFamily: "'League Spartan', sans-serif",
                 fontWeight: 500,
@@ -366,6 +352,7 @@ const AddOrder = () => {
             </Button>
           </Group>
         )}
+
       </Paper>
 
       <CancelOrderModal

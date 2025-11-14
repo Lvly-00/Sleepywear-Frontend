@@ -178,8 +178,13 @@ export default function CustomerLogs() {
                         ) : "-"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
-                        {new Date(c.created_at).toLocaleDateString()}
+                        {new Date(c.created_at).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
                       </Table.Td>
+
                       <Table.Td style={{ textAlign: "center" }}>
                         <Group justify="center">
                           <Button size="xs" variant="subtle" color="red" p={3} onClick={() => setDeleteModal({ opened: true, customer: c })}>

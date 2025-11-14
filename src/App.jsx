@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import "boxicons/css/boxicons.min.css";
+import { BrowserRouter } from "react-router-dom";
 
 import MainLayout from "./layouts/Layout";
 import PrivateRoute from "./components/PrivateRoute";
@@ -27,7 +28,7 @@ const ConfirmOrder = lazy(() => import("./pages/ConfirmOrder"));
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       {/* Suspense shows a fallback while each page loads */}
       <Suspense fallback={<TopLoadingBar />}>
         <Routes>
@@ -117,7 +118,7 @@ function App() {
           </Route>
         </Routes>
       </Suspense>
-    </Router>
+    </BrowserRouter>
   );
 }
 

@@ -16,6 +16,7 @@ import api from "../api/axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import NotifySuccess from "../components/NotifySuccess.jsx";
+import CancelOrderModal from "../components/CancelOrderModal";
 
 const ConfirmOrder = () => {
   const navigate = useNavigate();
@@ -46,6 +47,7 @@ const ConfirmOrder = () => {
   const [errors, setErrors] = useState({});
   const [customerSearch, setCustomerSearch] = useState("");
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [cancelModalOpened, setCancelModalOpened] = useState(false);
 
   const total = orderItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
 
@@ -206,6 +208,10 @@ const ConfirmOrder = () => {
     }
   };
 
+  const handleCancelOrder = () => {
+    setCancelModalOpened(true);
+  };
+
   return (
     <div style={{ padding: 20 }}>
       <PageHeader title="Confirm Order" showBack />
@@ -362,9 +368,17 @@ const ConfirmOrder = () => {
               </Grid>
             </div>
 
-            <Group justify="flex-end" mt="md">
+            {/* BUTTONS: Cancel & Generate */}
+            <Group justify="flex-end" mt="md" spacing="sm">
               <Button
-                style={{ backgroundColor: "#B59276", borderRadius: "10px", color: "white", fontSize: "16px", fontWeight: 600, height: "42px", width: "120px" }}
+                style={{ backgroundColor: "#9E2626", borderRadius: "10px", color: "white", fontSize: "16px", fontWeight: 600, height: "42px" }}
+                onClick={handleCancelOrder}
+              >
+                Cancel Order
+              </Button>
+
+              <Button
+                style={{ backgroundColor: "#B59276", borderRadius: "10px", color: "white", fontSize: "16px", fontWeight: 600, height: "42px" }}
                 onClick={handlePlaceOrder}
               >
                 Generate
@@ -373,6 +387,13 @@ const ConfirmOrder = () => {
           </Paper>
         </Grid.Col>
       </Grid>
+
+      <CancelOrderModal
+        opened={cancelModalOpened}
+        onClose={() => setCancelModalOpened(false)}
+        onResetItems={() => setOrderItems([])}
+        onConfirm={() => navigate("/orders")}
+      />
     </div>
   );
 };

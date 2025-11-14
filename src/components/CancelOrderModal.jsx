@@ -1,3 +1,5 @@
+// CancelOrderModal.jsx
+import React from "react";
 import { Modal, Button, Group, Text } from "@mantine/core";
 
 // Cache keys
@@ -8,15 +10,12 @@ const COLLECTIONS_STORAGE_KEY = "collectionsCache";
 function CancelOrderModal({ opened, onClose, onConfirm, onResetItems }) {
   const handleYes = () => {
     try {
-      // 🧹 Clear cached data
       localStorage.removeItem(ORDER_ITEMS_STORAGE_KEY);
       localStorage.removeItem(SELECTED_COLLECTION_STORAGE_KEY);
       localStorage.removeItem(COLLECTIONS_STORAGE_KEY);
 
-      // 🧾 Reset frontend order state if provided
       if (onResetItems) onResetItems();
 
-      // 🚀 Proceed with confirmation action (deleting order items + navigating)
       if (onConfirm) onConfirm();
     } catch (err) {
       console.error("Failed to clear order cache:", err);
