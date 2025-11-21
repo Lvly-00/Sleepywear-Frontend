@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
 import {
   Table,
@@ -34,12 +35,30 @@ const MIN_SKELETON_ROWS = 6;
 const CUSTOMERS_PER_PAGE = 10;
 
 export default function CustomerLogs() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Parse query params
+  const queryParams = new URLSearchParams(location.search);
+  const urlPage = parseInt(queryParams.get("page")) || 1;
+  const urlSearch = queryParams.get("search") || "";
+
   const [customers, setCustomers] = useState({});
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(urlPage);
   const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(urlSearch);
   const [loading, setLoading] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ opened: false, customer: null });
+
+  // Sync page and search to URL on change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (currentPage > 1) params.set("page", currentPage);
+    if (search.trim() !== "") params.set("search", search.trim());
+
+    // Replace URL without reloading page
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+  }, [currentPage, search, navigate, location.pathname]);
 
   const fetchCustomers = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
@@ -67,6 +86,7 @@ export default function CustomerLogs() {
     []
   );
 
+  // Fetch when page or search changes
   useEffect(() => {
     fetchCustomers(currentPage, search);
   }, [currentPage, search, fetchCustomers]);
@@ -100,12 +120,24 @@ export default function CustomerLogs() {
   const renderSkeletonRows = () =>
     Array.from({ length: skeletonRowCount }).map((_, i) => (
       <Table.Tr key={i}>
-        <Table.Td><Skeleton height={18} width="70%" /></Table.Td>
-        <Table.Td style={{ textAlign: "center" }}><Skeleton height={18} width="60%" /></Table.Td>
-        <Table.Td style={{ textAlign: "center" }}><Skeleton height={18} width="40%" /></Table.Td>
-        <Table.Td style={{ textAlign: "center" }}><Skeleton height={18} width="50%" /></Table.Td>
-        <Table.Td style={{ textAlign: "center" }}><Skeleton height={18} width="30%" /></Table.Td>
-        <Table.Td style={{ textAlign: "center" }}><Skeleton height={18} width="20%" /></Table.Td>
+        <Table.Td>
+          <Skeleton height={18} width="70%" />
+        </Table.Td>
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={18} width="60%" />
+        </Table.Td>
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={18} width="40%" />
+        </Table.Td>
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={18} width="50%" />
+        </Table.Td>
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={18} width="30%" />
+        </Table.Td>
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={18} width="20%" />
+        </Table.Td>
       </Table.Tr>
     ));
 
@@ -115,8 +147,15 @@ export default function CustomerLogs() {
         title="Customers"
         showSearch
         search={search}
-        setSearch={(val) => { setSearch(val); setCurrentPage(1); }}
-        rightSection={<Button size="xs" onClick={() => fetchCustomers(currentPage, search)}>Refresh</Button>}
+        setSearch={(val) => {
+          setSearch(val);
+          setCurrentPage(1); // Reset to first page on new search
+        }}
+        rightSection={
+          <Button size="xs" onClick={() => fetchCustomers(currentPage, search)}>
+            Refresh
+          </Button>
+        }
       />
 
       <Paper
@@ -131,7 +170,14 @@ export default function CustomerLogs() {
         }}
       >
         <ScrollArea scrollbarSize={8} style={{ flex: 1, minHeight: "0" }}>
-          <Table highlightOnHover styles={{ tr: { borderBottom: "1px solid #D8CBB8" }, th: { fontSize: "18px" }, td: { fontSize: "16px" } }}>
+          <Table
+            highlightOnHover
+            styles={{
+              tr: { borderBottom: "1px solid #D8CBB8" },
+              th: { fontSize: "18px" },
+              td: { fontSize: "16px" },
+            }}
+          >
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Customer Name</Table.Th>
@@ -149,7 +195,9 @@ export default function CustomerLogs() {
               ) : currentCustomers.length === 0 ? (
                 <Table.Tr>
                   <Table.Td colSpan={6} style={{ textAlign: "center", padding: "1.5rem" }}>
-                    <Text c="dimmed" size="20px">No Customers found</Text>
+                    <Text c="dimmed" size="20px">
+                      No Customers found
+                    </Text>
                   </Table.Td>
                 </Table.Tr>
               ) : (
@@ -172,10 +220,18 @@ export default function CustomerLogs() {
                       <Table.Td style={{ textAlign: "center" }}>{c.contact_number}</Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
                         {c.social_handle && /^https?:\/\//.test(c.social_handle) ? (
-                          <Anchor href={c.social_handle} target="_blank" rel="noopener noreferrer" underline="hover" style={{ color: "#4455f0ff" }}>
+                          <Anchor
+                            href={c.social_handle}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            underline="hover"
+                            style={{ color: "#4455f0ff" }}
+                          >
                             {c.social_handle}
                           </Anchor>
-                        ) : "-"}
+                        ) : (
+                          "-"
+                        )}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center" }}>
                         {new Date(c.created_at).toLocaleDateString("en-US", {
@@ -187,7 +243,13 @@ export default function CustomerLogs() {
 
                       <Table.Td style={{ textAlign: "center" }}>
                         <Group justify="center">
-                          <Button size="xs" variant="subtle" color="red" p={3} onClick={() => setDeleteModal({ opened: true, customer: c })}>
+                          <Button
+                            size="xs"
+                            variant="subtle"
+                            color="red"
+                            p={3}
+                            onClick={() => setDeleteModal({ opened: true, customer: c })}
+                          >
                             <Icons.Trash size={22} />
                           </Button>
                         </Group>
@@ -215,7 +277,9 @@ export default function CustomerLogs() {
       <DeleteConfirmModal
         opened={deleteModal.opened}
         onClose={() => setDeleteModal({ opened: false, customer: null })}
-        name={deleteModal.customer ? `${deleteModal.customer.first_name} ${deleteModal.customer.last_name}` : ""}
+        name={
+          deleteModal.customer ? `${deleteModal.customer.first_name} ${deleteModal.customer.last_name}` : ""
+        }
         onConfirm={() => deleteModal.customer && handleDelete(deleteModal.customer)}
       />
     </Stack>
