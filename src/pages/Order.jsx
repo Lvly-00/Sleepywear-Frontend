@@ -40,16 +40,22 @@ const ORDERS_PER_PAGE = 10;
 export default function Order() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Parse query params from URL
+  const queryParams = new URLSearchParams(location.search);
+  const urlPage = parseInt(queryParams.get("page")) || 1;
+  const urlSearch = queryParams.get("search") || "";
+
   const preloadedOrders = location.state?.preloadedOrders || null;
   const newOrder = location.state?.newOrder || null;
   const openInvoiceOnLoad = location.state?.openInvoice || false;
 
   const [ordersCache, setOrdersCache] = useState({});
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(urlPage);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(!preloadedOrders);
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(urlSearch);
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [invoiceModal, setInvoiceModal] = useState(false);
@@ -57,9 +63,23 @@ export default function Order() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
 
-  const ordersRef = useRef(ordersCache);
+  const ordersRef = React.useRef(ordersCache);
   ordersRef.current = ordersCache;
 
+  // Sync URL params on currentPage or search changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (currentPage > 1) params.set("page", currentPage);
+    if (search.trim() !== "") params.set("search", search.trim());
+
+    navigate(
+      { pathname: location.pathname, search: params.toString() },
+      { replace: true }
+    );
+  }, [currentPage, search, navigate, location.pathname]);
+
+  // Fetch orders from backend
   const fetchOrdersPage = useCallback(
     async (page) => {
       setLoading(true);
@@ -87,6 +107,7 @@ export default function Order() {
     [search]
   );
 
+  // Handle search enter key or search button
   const handleSearchEnter = () => {
     setCurrentPage(1);
     fetchOrdersPage(1);
@@ -99,31 +120,33 @@ export default function Order() {
     }
   };
 
+  // Fetch orders on page or search changes
   useEffect(() => {
     fetchOrdersPage(currentPage);
   }, [currentPage, fetchOrdersPage]);
 
   const currentOrders = ordersCache[currentPage] || [];
 
-  // SORT: unpaid first (recent first), paid last (oldest first)
+  // Sort orders: unpaid first (recent first), paid last (oldest first)
   const sortedOrders = [...currentOrders].sort((a, b) => {
     const aPaid = a.payment?.payment_status === "Paid";
     const bPaid = b.payment?.payment_status === "Paid";
 
     if (aPaid !== bPaid) {
-      return aPaid ? 1 : -1; // unpaid first
+      return aPaid ? 1 : -1;
     }
 
     const aDate = new Date(a.order_date);
     const bDate = new Date(b.order_date);
 
     if (!aPaid) {
-      return bDate - aDate; // unpaid: recent first
+      return bDate - aDate; // unpaid recent first
     } else {
-      return aDate - bDate; // paid: recent last
+      return aDate - bDate; // paid oldest first
     }
   });
 
+  // Filter orders by customer full name search
   const filteredOrders = sortedOrders.filter((order) => {
     const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
     return fullName.includes(search.toLowerCase());
@@ -163,12 +186,11 @@ export default function Order() {
 
   const handlePageChange = (page) => setCurrentPage(page);
 
-  // --- Open invoice modal automatically if redirected from ConfirmOrder ---
+  // Open invoice modal automatically if redirected from ConfirmOrder
   useEffect(() => {
     if (newOrder && openInvoiceOnLoad) {
       setInvoiceData(newOrder);
       setInvoiceModal(true);
-
       // Clear the location state so invoice does not reopen on refresh
       window.history.replaceState({}, document.title);
     }
@@ -180,8 +202,12 @@ export default function Order() {
         title="Orders"
         showSearch
         search={search}
-        setSearch={setSearch}
+        setSearch={(val) => {
+          setSearch(val);
+          setCurrentPage(1); // Reset to page 1 on search
+        }}
         onSearchEnter={handleSearchEnter}
+        onSearchKeyPress={handleSearchKeyPress}
         addLabel="Add Order"
         addLink="/add-order"
       />
@@ -272,14 +298,18 @@ export default function Order() {
                             day: "numeric",
                           })}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>₱{Math.round(totalPrice).toLocaleString()}</Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+                          ₱{Math.round(totalPrice).toLocaleString()}
+                        </Table.Td>
                         <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                           <Badge
                             size="27"
                             variant="filled"
                             style={{
                               backgroundColor:
-                                order.payment?.payment_status === "Paid" ? "#A5BDAE" : "#D9D9D9",
+                                order.payment?.payment_status === "Paid"
+                                  ? "#A5BDAE"
+                                  : "#D9D9D9",
                               color:
                                 order.payment?.payment_status === "Paid" ? "#FFF" : "#7A7A7A",
                               width: "115px",
@@ -385,6 +415,12 @@ export default function Order() {
               });
               return newCache;
             });
+
+            // If order is now Paid, jump to last page
+            if (updatedOrder.payment?.payment_status === "Paid") {
+              setCurrentPage(totalPages);
+            }
+
             NotifySuccess.addedPayment();
           }}
         />
