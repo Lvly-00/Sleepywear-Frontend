@@ -16,26 +16,31 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
     name: "",
     release_date: null,
     capital: 0,
+    ordinal: "",
   });
 
   const [errors, setErrors] = useState({
     name: "",
     release_date: "",
     capital: "",
+    ordinal: "",
   });
 
   useEffect(() => {
     if (opened && collection) {
+      const ordinalMatch = collection.name.match(/\d+/);
+      const ordinalNumber = ordinalMatch ? ordinalMatch[0] : "";
+
       setForm({
         name: collection.name || "",
-        release_date: collection.release_date
-          ? new Date(collection.release_date)
-          : null,
+        release_date: collection.release_date ? new Date(collection.release_date) : null,
         capital: collection.capital || 0,
+        ordinal: ordinalNumber,
       });
       setErrors({ name: "", release_date: "", capital: "" });
     }
   }, [opened, collection]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -71,6 +76,11 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
       newErrors.capital = "Capital must be non-negative";
       valid = false;
     }
+    if (!form.ordinal || form.ordinal < 1) {
+      newErrors.ordinal = "Colelction Name is required";
+      valid = false;
+    }
+
 
     if (!valid) {
       setErrors(newErrors);
@@ -80,6 +90,8 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
     try {
       const payload = {
         ...form,
+        name: form.ordinal, // just the number string
+        capital: form.capital,
         release_date:
           form.release_date && form.release_date instanceof Date
             ? form.release_date.toISOString().split("T")[0]
@@ -141,13 +153,15 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
             <Stack spacing="sm">
               <TextInput
                 label="Collection Number"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                error={errors.name}
+                name="ordinal"
+                value={form.ordinal}
+                onChange={(e) => setForm(f => ({ ...f, ordinal: e.target.value.replace(/\D/g, '') }))}
+                error={errors.ordinal}
                 placeholder="Enter collection number"
                 required
               />
+
+
 
               <NumberInput
                 label="Capital"
