@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import api from "../api/axios";
 import SleepyLoader from "./TopLoadingBar";
 
-const PrivateRoute = ({ children }) => {
+const PublicRoute = ({ children }) => {
   const token = localStorage.getItem("access_token");
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -26,9 +26,9 @@ const PrivateRoute = ({ children }) => {
 
   if (loading) return <SleepyLoader />;
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return children;
 };
 
-export default PrivateRoute;
+export default PublicRoute;

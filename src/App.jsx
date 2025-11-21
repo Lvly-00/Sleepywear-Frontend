@@ -6,6 +6,8 @@ import { BrowserRouter } from "react-router-dom";
 
 import MainLayout from "./layouts/Layout";
 import PrivateRoute from "./components/PrivateRoute";
+import PublicRoute from "./components/PublicRoute";
+
 import TopLoadingBar from "./components/TopLoadingBar";
 import NotFound from "./pages/NotFound";
 
@@ -33,12 +35,17 @@ function App() {
       <Suspense fallback={<TopLoadingBar />}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route
+            path="/"
+            element={<PublicRoute>
+              <Login />
+            </PublicRoute>
+            } />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+          <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
-          {/* Protected Routes */}
-          <Route element={<MainLayout />}>
+            {/* Protected Routes */ }
+            < Route element={<MainLayout />}>
             <Route
               path="/dashboard"
               element={
@@ -63,7 +70,7 @@ function App() {
                 </PrivateRoute>
               }
             />
-          
+
 
             <Route
               path="/confirm-order"
