@@ -66,7 +66,7 @@ export default function Order() {
   const ordersRef = React.useRef(ordersCache);
   ordersRef.current = ordersCache;
 
-  // Sync URL params on currentPage or search changes
+  // Update URL when currentPage or search changes
   useEffect(() => {
     const params = new URLSearchParams();
 
@@ -79,7 +79,6 @@ export default function Order() {
     );
   }, [currentPage, search, navigate, location.pathname]);
 
-  // Fetch orders from backend
   const fetchOrdersPage = useCallback(
     async (page) => {
       setLoading(true);
@@ -107,7 +106,6 @@ export default function Order() {
     [search]
   );
 
-  // Handle search enter key or search button
   const handleSearchEnter = () => {
     setCurrentPage(1);
     fetchOrdersPage(1);
@@ -120,33 +118,32 @@ export default function Order() {
     }
   };
 
-  // Fetch orders on page or search changes
+  // Fetch orders when currentPage or search changes
   useEffect(() => {
     fetchOrdersPage(currentPage);
   }, [currentPage, fetchOrdersPage]);
 
   const currentOrders = ordersCache[currentPage] || [];
 
-  // Sort orders: unpaid first (recent first), paid last (oldest first)
+  // SORT and filter logic (same as before)
   const sortedOrders = [...currentOrders].sort((a, b) => {
     const aPaid = a.payment?.payment_status === "Paid";
     const bPaid = b.payment?.payment_status === "Paid";
 
     if (aPaid !== bPaid) {
-      return aPaid ? 1 : -1;
+      return aPaid ? 1 : -1; // unpaid first
     }
 
     const aDate = new Date(a.order_date);
     const bDate = new Date(b.order_date);
 
     if (!aPaid) {
-      return bDate - aDate; // unpaid recent first
+      return bDate - aDate; // unpaid: recent first
     } else {
-      return aDate - bDate; // paid oldest first
+      return aDate - bDate; // paid: recent last
     }
   });
 
-  // Filter orders by customer full name search
   const filteredOrders = sortedOrders.filter((order) => {
     const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
     return fullName.includes(search.toLowerCase());
@@ -186,11 +183,12 @@ export default function Order() {
 
   const handlePageChange = (page) => setCurrentPage(page);
 
-  // Open invoice modal automatically if redirected from ConfirmOrder
+  // --- Open invoice modal automatically if redirected from ConfirmOrder ---
   useEffect(() => {
     if (newOrder && openInvoiceOnLoad) {
       setInvoiceData(newOrder);
       setInvoiceModal(true);
+
       // Clear the location state so invoice does not reopen on refresh
       window.history.replaceState({}, document.title);
     }
@@ -204,7 +202,7 @@ export default function Order() {
         search={search}
         setSearch={(val) => {
           setSearch(val);
-          setCurrentPage(1); // Reset to page 1 on search
+          setCurrentPage(1); // Reset page on search change
         }}
         onSearchEnter={handleSearchEnter}
         onSearchKeyPress={handleSearchKeyPress}
@@ -416,13 +414,14 @@ export default function Order() {
               return newCache;
             });
 
-            // If order is now Paid, jump to last page
+            // Check if order is now Paid and if so, jump to last page
             if (updatedOrder.payment?.payment_status === "Paid") {
               setCurrentPage(totalPages);
             }
 
             NotifySuccess.addedPayment();
           }}
+
         />
       )}
 
