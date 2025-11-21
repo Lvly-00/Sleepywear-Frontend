@@ -44,8 +44,8 @@ function App() {
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
-            {/* Protected Routes */ }
-            < Route element={<MainLayout />}>
+          {/* Protected Routes */}
+          < Route element={<MainLayout />}>
             <Route
               path="/dashboard"
               element={
@@ -120,9 +120,8 @@ function App() {
                 </PrivateRoute>
               }
             />
-            <Route path="*" element={<NotFound />} />
-
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

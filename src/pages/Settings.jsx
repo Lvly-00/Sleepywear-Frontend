@@ -22,7 +22,7 @@ const Settings = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [profile, setProfile] = useState({ business_name: "", email: "" });
+  const [profile, setProfile] = useState({ name: "", email: "" });
   const [passwords, setPasswords] = useState({
     current_password: "",
     new_password: "",
@@ -44,7 +44,7 @@ const Settings = () => {
       setLoading(true);
       const res = await api.get("/user/settings");
       setProfile({
-        business_name: res.data.business_name || "",
+        name: res.data.name || "",
         email: res.data.email || "",
       });
     } catch (err) {
@@ -99,7 +99,7 @@ const Settings = () => {
       setUpdating(true);
       await api.put("/user/settings/password", passwords);
 
-      // ✅ Success notification
+      //  Success notification
       NotifySuccess.passwordUpdated();
 
       setPasswords({
@@ -177,9 +177,9 @@ const Settings = () => {
                     <Stack spacing="md">
                       <TextInput
                         label="Business Name"
-                        value={profile.business_name}
+                        value={profile.name}
                         onChange={(e) =>
-                          setProfile({ ...profile, business_name: e.target.value })
+                          setProfile({ ...profile, name: e.target.value })
                         }
                         radius="md"
                         size="md"

@@ -28,12 +28,21 @@ const MIN_SKELETON_ROWS = 6;
 export default function Collection() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Read page from URL query string or default to 1
+  const searchParams = new URLSearchParams(location.search);
+  const pageFromUrl = parseInt(searchParams.get("page") || "1", 10);
+
   const preloadedCollections = location.state?.preloadedCollections || [];
 
-  const [collections, setCollections] = useState(Array.isArray(preloadedCollections) ? preloadedCollections : []);
+  const [collections, setCollections] = useState(
+    Array.isArray(preloadedCollections) ? preloadedCollections : []
+  );
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(!preloadedCollections || preloadedCollections.length === 0);
-  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(
+    !preloadedCollections || preloadedCollections.length === 0
+  );
+  const [page, setPage] = useState(pageFromUrl);
   const [totalPages, setTotalPages] = useState(1);
 
   const [openedEdit, setOpenedEdit] = useState(false);
@@ -44,6 +53,7 @@ export default function Collection() {
 
   const hasFetchedRef = useRef(false);
 
+  // Fetch collections with pagination and search
   const fetchCollections = useCallback(
     async (targetPage = 1, showLoader = false) => {
       if (showLoader) setLoading(true);
@@ -77,22 +87,41 @@ export default function Collection() {
     [search]
   );
 
+  // Sync page state to URL and fetch collections
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
 
-  // Initial and paginated fetch
+    const newSearchParams = new URLSearchParams(location.search);
+    newSearchParams.set("page", newPage);
+    navigate(`${location.pathname}?${newSearchParams.toString()}`, {
+      replace: true,
+    });
+  };
+
+  // Trigger fetch when page changes
   useEffect(() => {
     fetchCollections(page, true);
   }, [page, fetchCollections]);
 
-  ///  Trigger search only when Enter is pressed
+  // Trigger search only when Enter is pressed
   const handleSearchKeyPress = (e) => {
     if (e.key === "Enter") {
-      setPage(1);
-      fetchCollections(1, true);
+      performSearch();
     }
   };
 
+  // Perform search and reset page to 1 with URL update
+  const performSearch = () => {
+    setPage(1);
+    const newSearchParams = new URLSearchParams(location.search);
+    newSearchParams.set("page", 1);
+    navigate(`${location.pathname}?${newSearchParams.toString()}`, {
+      replace: true,
+    });
+    fetchCollections(1, true);
+  };
 
-  // Delete collection
+  // Delete collection handler
   const handleDelete = async () => {
     if (!collectionToDelete) return;
     try {
@@ -106,7 +135,7 @@ export default function Collection() {
     }
   };
 
-  // Add success
+  // Add success handler
   const handleAddSuccess = async () => {
     setAddModalOpen(false);
     NotifySuccess.addedCollection();
@@ -114,7 +143,7 @@ export default function Collection() {
     fetchCollections(1, true);
   };
 
-  // Edit success
+  // Edit success handler
   const handleEditSuccess = async () => {
     setOpenedEdit(false);
     setSelectedCollection(null);
@@ -150,14 +179,10 @@ export default function Collection() {
         showSearch
         search={search}
         setSearch={setSearch}
-        onSearchEnter={() => {
-          setPage(1);
-          fetchCollections(1, true);
-        }}
+        onSearchEnter={performSearch}
         addLabel="Add Collection"
         onAdd={() => setAddModalOpen(true)}
       />
-
 
       <Paper
         radius="md"
@@ -198,7 +223,7 @@ export default function Collection() {
               {loading
                 ? renderSkeletonRows(skeletonRowCount)
                 : Array.isArray(collections) && collections.length > 0
-                  ? collections.map((col, i) => (
+                ? collections.map((col, i) => (
                     <motion.tr
                       key={col.id}
                       initial={{ opacity: 0, y: -25 }}
@@ -217,10 +242,10 @@ export default function Collection() {
                       <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         {col.release_date
                           ? new Date(col.release_date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
                           : "—"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
@@ -291,15 +316,15 @@ export default function Collection() {
                       </Table.Td>
                     </motion.tr>
                   ))
-                  : (
-                    <Table.Tr style={{ borderBottom: "1px solid #D8CBB8" }}>
-                      <Table.Td colSpan={8} style={{ textAlign: "center", padding: "1.5rem" }}>
-                        <Text c="dimmed" size="20px">
-                          No collections found
-                        </Text>
-                      </Table.Td>
-                    </Table.Tr>
-                  )}
+                : (
+                  <Table.Tr style={{ borderBottom: "1px solid #D8CBB8" }}>
+                    <Table.Td colSpan={8} style={{ textAlign: "center", padding: "1.5rem" }}>
+                      <Text c="dimmed" size="20px">
+                        No collections found
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                )}
             </Table.Tbody>
           </Table>
         </ScrollArea>
@@ -308,7 +333,7 @@ export default function Collection() {
           <Pagination
             total={totalPages}
             value={page}
-            onChange={setPage}
+            onChange={handlePageChange}
             color="#0A0B32"
             size="md"
             radius="md"
@@ -323,7 +348,11 @@ export default function Collection() {
         onConfirm={handleDelete}
       />
 
-      <AddCollectionModal opened={addModalOpen} onClose={() => setAddModalOpen(false)} onSuccess={handleAddSuccess} />
+      <AddCollectionModal
+        opened={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSuccess={handleAddSuccess}
+      />
 
       {selectedCollection && (
         <EditCollectionModal
