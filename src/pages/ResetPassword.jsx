@@ -36,7 +36,7 @@ function ResetPassword() {
       return;
     }
 
-    // ✅ Single combined password validation
+    //  Single combined password validation
     const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
     const numberRegex = /[0-9]/;
     const uppercaseRegex = /[A-Z]/;

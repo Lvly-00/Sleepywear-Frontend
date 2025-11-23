@@ -65,11 +65,11 @@ export default function Order() {
 
   // Update URL params
   useEffect(() => {
-  const params = new URLSearchParams();
-  if (currentPage > 1) params.set("page", currentPage);
-  if (search.trim() !== "") params.set("search", search.trim());
-  navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-}, [currentPage, search, navigate, location.pathname]);
+    const params = new URLSearchParams();
+    if (currentPage > 1) params.set("page", currentPage);
+    if (search.trim() !== "") params.set("search", search.trim());
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+  }, [currentPage, search, navigate, location.pathname]);
 
 
   const fetchOrdersPage = useCallback(
@@ -101,13 +101,13 @@ export default function Order() {
   );
 
   // Handle Enter press for search
- const handleSearchKeyPress = (e) => {
-  if (e.key === "Enter") {
-    const trimmed = searchValue.trim();
-    setSearch(trimmed);  // triggers fetch
-    setCurrentPage(1);   // reset pagination
-  }
-};
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter") {
+      const trimmed = searchValue.trim();
+      setSearch(trimmed);  // triggers fetch
+      setCurrentPage(1);   // reset pagination
+    }
+  };
 
 
 
@@ -119,9 +119,9 @@ export default function Order() {
 
 
   // Initial fetch
-useEffect(() => {
-  fetchOrdersPage(currentPage, search);
-}, [currentPage, search]);
+  useEffect(() => {
+    fetchOrdersPage(currentPage, search);
+  }, [currentPage, search]);
 
 
   const currentOrders = ordersCache[currentPage] || [];
@@ -141,7 +141,16 @@ useEffect(() => {
 
   const filteredOrders = sortedOrders.filter((order) => {
     const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
-    return fullName.includes(search.toLowerCase());
+    const id = String(order.id);
+    const formattedId = order.formatted_id?.toLowerCase?.() || "";
+
+    const s = search.toLowerCase();
+
+    return (
+      fullName.includes(s) ||
+      id.includes(s) ||
+      formattedId.includes(s)
+    );
   });
 
   const skeletonRowCount = Math.max(currentOrders.length, MIN_SKELETON_ROWS);
@@ -354,16 +363,16 @@ useEffect(() => {
           </Table>
         </ScrollArea>
 
-          <Center mt="md" style={{ marginTop: "auto" }}>
-            <Pagination
-              total={totalPages}
-              value={currentPage} 
-              onChange={(page) => setCurrentPage(page)}
-              color="#0A0B32"
-              size="md"
-              radius="md"
-            />
-          </Center>
+        <Center mt="md" style={{ marginTop: "auto" }}>
+          <Pagination
+            total={totalPages}
+            value={currentPage}
+            onChange={(page) => setCurrentPage(page)}
+            color="#0A0B32"
+            size="md"
+            radius="md"
+          />
+        </Center>
 
 
       </Paper>
@@ -409,13 +418,13 @@ useEffect(() => {
               return newCache;
             });
 
-            // Check if order is now Paid and if so, jump to last page
-            if (updatedOrder.payment?.payment_status === "Paid") {
-              setCurrentPage(totalPages);
-            }
+            // Refresh the CURRENT PAGE instead of jumping to last page
+            const current = currentPage;
+            fetchOrdersPage(current, search);
 
             NotifySuccess.addedPayment();
           }}
+
 
         />
       )}

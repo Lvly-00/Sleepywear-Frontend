@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-export default function useIdleLogout(timeout = 60 * 1000) {
+export default function useIdleLogout(timeout = 60 * 60 * 1000) {
     useEffect(() => {
         const token = localStorage.getItem("access_token");
 

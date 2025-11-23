@@ -30,7 +30,7 @@ const ConfirmOrder = lazy(() => import("./pages/ConfirmOrder"));
 
 
 function App() {
-  useIdleLogout(60 * 1000);
+  useIdleLogout(60 * 60 * 1000);
   return (
     <BrowserRouter>
       {/* Suspense shows a fallback while each page loads */}

@@ -15,29 +15,32 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
     additionalFee: 0,
   });
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false); // <-- Add loading state
+  const [submitting, setSubmitting] = useState(false); // <-- prevent double click
 
   useEffect(() => {
     if (opened) {
       setPayment({ method: "", additionalFee: 0 });
       setErrors({});
-      setLoading(false); // reset loading when modal opens
+      setSubmitting(false);
     }
   }, [opened, order]);
 
   const savePayment = async () => {
+    if (submitting) return; // <-- ignore double click
+    setSubmitting(true);
+
     const newErrors = {};
     if (!payment.method) newErrors.paymentMethod = "Please select a payment method";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      setSubmitting(false);
       return;
     }
 
-    setLoading(true); // <-- disable button
-
     try {
-      const totalAmount = Number(order?.total || 0) + Number(payment.additionalFee || 0);
+      const totalAmount =
+        Number(order?.total || 0) + Number(payment.additionalFee || 0);
 
       const payload = {
         payment_method: payment.method,
@@ -46,19 +49,16 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
         additional_fee: payment.additionalFee || 0,
       };
 
-      await api.post(`/orders/${order.id}/payment`, payload, {
-        headers: { "Content-Type": "application/json" },
-      });
+      await api.post(`/orders/${order.id}/payment`, payload);
 
-      // Refresh order
       const updatedOrderRes = await api.get(`/orders/${order.id}`);
       if (onOrderUpdated) onOrderUpdated(updatedOrderRes.data);
 
       onClose();
     } catch (err) {
       console.error("Error saving payment:", err);
-      alert("Failed to save payment. Check console for details.");
-      setLoading(false); // <-- re-enable button if error occurs
+      alert("Failed to save payment.");
+      setSubmitting(false); // allow retry
     }
   };
 
@@ -66,10 +66,15 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
     <Modal.Root opened={opened} onClose={onClose} centered>
       <Modal.Overlay />
       <Modal.Content style={{ borderRadius: "16px", padding: "20px" }}>
-        <Modal.Header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Modal.CloseButton size={35} style={{ order: 0, marginRight: "1rem", color: "#AB8262" }} />
+        <Modal.Header
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <Modal.CloseButton
+            size={35}
+            style={{ marginRight: "1rem", color: "#AB8262" }}
+          />
           <Modal.Title style={{ flex: 1 }}>
-            <Text align="center" color="black" style={{ width: "100%", fontSize: "26px", fontWeight: "600" }}>
+            <Text align="center" color="black" style={{ fontSize: "26px", fontWeight: "600" }}>
               Add Payment
             </Text>
           </Modal.Title>
@@ -78,7 +83,11 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
 
         <Modal.Body>
           <Stack spacing="sm">
-            <Text weight={500} align="center" color="#5D4324" style={{ width: "100%", fontSize: "46px", fontWeight: "600" }}>
+            <Text
+              align="center"
+              color="#5D4324"
+              style={{ fontSize: "46px", fontWeight: "600" }}
+            >
               ₱{Math.floor(order?.total || 0).toLocaleString("en-PH")}
             </Text>
 
@@ -92,14 +101,14 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
               required
             />
 
-            <Group mt="lg" style={{ display: "flex", justifyContent: "flex-end", width: "100%" }}>
+            <Group mt="lg" style={{ justifyContent: "flex-end" }}>
               <Button
                 color="#AB8262"
                 style={{ borderRadius: "15px", width: "110px", fontSize: "16px" }}
                 onClick={savePayment}
-                disabled={loading} // <-- disable while loading
+                disabled={submitting} // <-- prevent multiple clicks
               >
-                {loading ? "Submitting..." : "Submit"} {/* optional text change */}
+                Submit
               </Button>
             </Group>
           </Stack>
