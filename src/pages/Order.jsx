@@ -42,20 +42,20 @@ export default function Order() {
   const location = useLocation();
 
   const queryParams = new URLSearchParams(location.search);
-  const urlPage = parseInt(queryParams.get("page")) || 1;
-  const urlSearch = queryParams.get("search") || "";
+  const initialPage = parseInt(queryParams.get("page") || "1", 10);
+  const initialSearch = queryParams.get("search") || "";
 
   const preloadedOrders = location.state?.preloadedOrders || null;
   const newOrder = location.state?.newOrder || null;
   const openInvoiceOnLoad = location.state?.openInvoice || false;
 
   const [ordersCache, setOrdersCache] = useState({});
-  const [currentPage, setCurrentPage] = useState(urlPage);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [search, setSearch] = useState(initialSearch);
+  const [searchValue, setSearchValue] = useState(initialSearch);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(!preloadedOrders);
 
-  const [search, setSearch] = useState(urlSearch);
-  const [searchValue, setSearchValue] = useState(urlSearch); // temp input before Enter
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [invoiceModal, setInvoiceModal] = useState(false);
@@ -64,16 +64,13 @@ export default function Order() {
   const [orderToDelete, setOrderToDelete] = useState(null);
 
   // Update URL params
-  const updateUrlParams = useCallback(
-    (page, searchTerm) => {
-      const params = new URLSearchParams();
-      if (page > 1) params.set("page", page);
-      if (searchTerm.trim() !== "") params.set("search", searchTerm.trim());
+  useEffect(() => {
+  const params = new URLSearchParams();
+  if (currentPage > 1) params.set("page", currentPage);
+  if (search.trim() !== "") params.set("search", search.trim());
+  navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+}, [currentPage, search, navigate, location.pathname]);
 
-      navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-    },
-    [navigate, location.pathname]
-  );
 
   const fetchOrdersPage = useCallback(
     async (page, searchTerm = search) => {
@@ -93,6 +90,7 @@ export default function Order() {
         }));
 
         setTotalPages(res.data.last_page || 1);
+
       } catch (err) {
         console.error("Error fetching orders:", err);
       } finally {
@@ -103,31 +101,28 @@ export default function Order() {
   );
 
   // Handle Enter press for search
-  const handleSearchKeyPress = (e) => {
-    if (e.key === "Enter") {
-      setSearch(searchValue);
-      setCurrentPage(1); // reset to page 1 on new search
-      updateUrlParams(1, searchValue);
-      fetchOrdersPage(1, searchValue);
-    }
-  };
+ const handleSearchKeyPress = (e) => {
+  if (e.key === "Enter") {
+    const trimmed = searchValue.trim();
+    setSearch(trimmed);  // triggers fetch
+    setCurrentPage(1);   // reset pagination
+  }
+};
 
-  // Update input field only, search triggers on Enter
-  const handleSearchChange = (val) => {
-    setSearchValue(val);
-  };
+
 
   // Pagination change
   const handlePageChange = (page) => {
     setCurrentPage(page);
     fetchOrdersPage(page, search);
-    updateUrlParams(page, search);
   };
 
+
   // Initial fetch
-  useEffect(() => {
-    fetchOrdersPage(currentPage, search);
-  }, [currentPage, fetchOrdersPage, search]);
+useEffect(() => {
+  fetchOrdersPage(currentPage, search);
+}, [currentPage, search]);
+
 
   const currentOrders = ordersCache[currentPage] || [];
 
@@ -195,16 +190,17 @@ export default function Order() {
         title="Orders"
         showSearch
         search={searchValue}
-        setSearch={handleSearchChange}
+        setSearch={setSearchValue}
         onSearchEnter={() => {
-          setSearch(searchValue);
+          const trimmedSearch = searchValue.trim();
+          setSearch(trimmedSearch);
           setCurrentPage(1);
-          fetchOrdersPage(1, searchValue);
+          fetchOrdersPage(1, trimmedSearch);
         }}
-        onSearchKeyPress={handleSearchKeyPress}
         addLabel="Add Order"
         addLink="/add-order"
       />
+
 
 
       <Paper
@@ -358,16 +354,18 @@ export default function Order() {
           </Table>
         </ScrollArea>
 
-        <Center mt="md" style={{ marginTop: "auto" }}>
-          <Pagination
-            total={totalPages}
-            page={currentPage}
-            onChange={handlePageChange}
-            color="#0A0B32"
-            size="md"
-            radius="md"
-          />
-        </Center>
+          <Center mt="md" style={{ marginTop: "auto" }}>
+            <Pagination
+              total={totalPages}
+              value={currentPage} 
+              onChange={(page) => setCurrentPage(page)}
+              color="#0A0B32"
+              size="md"
+              radius="md"
+            />
+          </Center>
+
+
       </Paper>
 
       {/* Delete Confirmation */}

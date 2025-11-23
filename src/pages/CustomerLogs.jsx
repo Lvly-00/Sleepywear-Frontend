@@ -299,7 +299,7 @@ export default function CustomerLogs() {
 
         <Center mt="md">
           <Pagination
-            page={currentPage}
+            value={currentPage}
             onChange={setCurrentPage}
             total={totalPages}
             color="#0A0B32"
