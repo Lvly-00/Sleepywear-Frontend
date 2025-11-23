@@ -57,38 +57,38 @@ export default function Collection() {
 
   // Fetch collections with pagination and search
   const fetchCollections = useCallback(
-  async (targetPage = 1, searchTerm = search, showLoader = false) => {
-    if (showLoader) setLoading(true);
+    async (targetPage = 1, searchTerm = search, showLoader = false) => {
+      if (showLoader) setLoading(true);
 
-    try {
-      const res = await api.get("/collections", {
-        params: {
-          page: targetPage,
-          per_page: 10,
-          search: searchTerm.trim() || undefined,
-        },
-      });
+      try {
+        const res = await api.get("/collections", {
+          params: {
+            page: targetPage,
+            per_page: 10,
+            search: searchTerm.trim() || undefined,
+          },
+        });
 
-      const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
 
-      data.sort((a, b) => {
-        const order = { Active: 0, "Sold Out": 1 };
-        return order[a.status] - order[b.status];
-      });
+        data.sort((a, b) => {
+          const order = { Active: 0, "Sold Out": 1 };
+          return order[a.status] - order[b.status];
+        });
 
-      setCollections(data);
-      setTotalPages(res.data?.last_page || 1);
-      setPage(res.data?.current_page || 1);
-    } catch (err) {
-      console.error("Error fetching collections:", err);
-      setCollections([]);
-    } finally {
-      setLoading(false);
-      hasFetchedRef.current = true;
-    }
-  },
-  [] 
-);
+        setCollections(data);
+        setTotalPages(res.data?.last_page || 1);
+        setPage(res.data?.current_page || 1);
+      } catch (err) {
+        console.error("Error fetching collections:", err);
+        setCollections([]);
+      } finally {
+        setLoading(false);
+        hasFetchedRef.current = true;
+      }
+    },
+    []
+  );
 
 
 
@@ -109,9 +109,9 @@ export default function Collection() {
 
 
   // Trigger fetch when page changes
-useEffect(() => {
-  fetchCollections(page, search, true);
-}, [page]);
+  useEffect(() => {
+    fetchCollections(page, search, true);
+  }, [page]);
 
 
   // Trigger search only when Enter is pressed
@@ -122,19 +122,19 @@ useEffect(() => {
   };
 
   // Perform search and reset page to 1 with URL update
- const performSearch = () => {
-  const trimmed = search.trim();
-  setPage(1);
+  const performSearch = () => {
+    const trimmed = search.trim();
+    setPage(1);
 
-  const params = new URLSearchParams(location.search);
-  params.set("page", 1);
-  if (trimmed) params.set("search", trimmed);
-  else params.delete("search");
+    const params = new URLSearchParams(location.search);
+    params.set("page", 1);
+    if (trimmed) params.set("search", trimmed);
+    else params.delete("search");
 
-  navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
 
-  fetchCollections(1, trimmed, true);
-};
+    fetchCollections(1, trimmed, true);
+  };
 
 
   // Delete collection handler
@@ -145,7 +145,7 @@ useEffect(() => {
       setDeleteModalOpen(false);
       setCollectionToDelete(null);
       NotifySuccess.deleted();
-      fetchCollections(page, true);
+      fetchCollections(page, search, true);
     } catch (err) {
       console.error("Error deleting collection:", err);
     }
@@ -156,7 +156,7 @@ useEffect(() => {
     setAddModalOpen(false);
     NotifySuccess.addedCollection();
     setPage(1);
-    fetchCollections(1, true);
+    fetchCollections(1, search, true);
   };
 
   // Edit success handler
@@ -164,7 +164,7 @@ useEffect(() => {
     setOpenedEdit(false);
     setSelectedCollection(null);
     NotifySuccess.editedCollection();
-    fetchCollections(page, true);
+    fetchCollections(page, search, true);
   };
 
   const skeletonRowCount = Math.max(collections.length, MIN_SKELETON_ROWS);
