@@ -133,7 +133,7 @@ useEffect(() => {
 
   navigate(`${location.pathname}?${params.toString()}`, { replace: true });
 
-  fetchCollections(1, trimmed, true); // pass search as param
+  fetchCollections(1, trimmed, true);
 };
 
 

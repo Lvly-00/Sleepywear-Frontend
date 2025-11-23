@@ -47,6 +47,7 @@ export default function CustomerLogs() {
   const [currentPage, setCurrentPage] = useState(urlPage);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState(urlSearch);
+  const [searchValue, setSearchValue] = useState(urlSearch);
   const [loading, setLoading] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ opened: false, customer: null });
   const [initialLoad, setInitialLoad] = useState(true);
@@ -96,22 +97,17 @@ export default function CustomerLogs() {
     [CUSTOMERS_PER_PAGE] // only constant values should be here
   );
 
-  // ------------------------------
-  // Reset cache + load page 1 when search changes
-  // ------------------------------
-  useEffect(() => {
-    if (initialLoad) {
-      setInitialLoad(false);
-      return;
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter") {
+      setSearch(searchValue);
+      setCurrentPage(1); // reset to first page
+      fetchCustomers(1, searchValue);
     }
+  };
 
-    // User manually typed search — reset page to 1
-    setCustomers({});
-    fetchCustomers(1, search);
-    setCurrentPage(1);
-  }, [search]);
-
-
+  const handleSearchChange = (val) => {
+    setSearchValue(val);
+  };
 
   // ------------------------------
   // Fetch when only page changes
@@ -185,17 +181,24 @@ export default function CustomerLogs() {
       <PageHeader
         title="Customers"
         showSearch
-        search={search}
-        setSearch={(val) => {
-          setSearch(val);
-          setCurrentPage(1); // Reset to first page on new search
+        search={searchValue}
+        setSearch={handleSearchChange}
+        onSearchEnter={() => {
+          setSearch(searchValue);      
+          setCurrentPage(1);            
+          fetchCustomers(1, searchValue); 
         }}
+        addLabel="Add Customer"
+        onAdd={() => setAddModalOpen(true)}
+        // Optional: if you want a right-side refresh button
         rightSection={
           <Button size="xs" onClick={() => fetchCustomers(currentPage, search)}>
             Refresh
           </Button>
         }
       />
+
+
 
       <Paper
         radius="md"
