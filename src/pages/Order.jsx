@@ -183,13 +183,11 @@ export default function Order() {
 
   const handlePageChange = (page) => setCurrentPage(page);
 
-  // --- Open invoice modal automatically if redirected from ConfirmOrder ---
   useEffect(() => {
     if (newOrder && openInvoiceOnLoad) {
       setInvoiceData(newOrder);
       setInvoiceModal(true);
 
-      // Clear the location state so invoice does not reopen on refresh
       window.history.replaceState({}, document.title);
     }
   }, [newOrder, openInvoiceOnLoad]);
@@ -361,7 +359,7 @@ export default function Order() {
           </Table>
         </ScrollArea>
 
-        <Center mt="md">
+        <Center mt="md" style={{ marginTop: "auto" }}>
           <Pagination
             total={totalPages}
             page={currentPage}

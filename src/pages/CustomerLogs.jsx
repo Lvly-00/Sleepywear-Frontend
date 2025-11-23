@@ -49,6 +49,8 @@ export default function CustomerLogs() {
   const [search, setSearch] = useState(urlSearch);
   const [loading, setLoading] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ opened: false, customer: null });
+  const [initialLoad, setInitialLoad] = useState(true);
+
 
   // Sync page and search to URL on change
   useEffect(() => {
@@ -60,9 +62,13 @@ export default function CustomerLogs() {
     navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
   }, [currentPage, search, navigate, location.pathname]);
 
+  // ------------------------------
+  // Fetch Customers
+  // ------------------------------
   const fetchCustomers = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
       setLoading(true);
+
       try {
         const res = await api.get("/customers", {
           params: {
@@ -72,9 +78,13 @@ export default function CustomerLogs() {
           },
         });
 
-        setCustomers((prev) => ({ ...prev, [pageNumber]: res.data.data || [] }));
+        setCustomers((prev) => ({
+          ...prev,
+          [pageNumber]: res.data.data || [],
+        }));
+
         setTotalPages(res.data.last_page || 1);
-        setCurrentPage(res.data.current_page || pageNumber);
+        setCurrentPage(pageNumber);
       } catch (err) {
         console.error("Failed to fetch customers:", err);
         setCustomers({});
@@ -83,26 +93,54 @@ export default function CustomerLogs() {
         setLoading(false);
       }
     },
-    []
+    [CUSTOMERS_PER_PAGE] // only constant values should be here
   );
 
-  // Fetch when page or search changes
+  // ------------------------------
+  // Reset cache + load page 1 when search changes
+  // ------------------------------
+  useEffect(() => {
+    if (initialLoad) {
+      setInitialLoad(false);
+      return;
+    }
+
+    // User manually typed search — reset page to 1
+    setCustomers({});
+    fetchCustomers(1, search);
+    setCurrentPage(1);
+  }, [search]);
+
+
+
+  // ------------------------------
+  // Fetch when only page changes
+  // ------------------------------
   useEffect(() => {
     fetchCustomers(currentPage, search);
   }, [currentPage, search, fetchCustomers]);
 
+
+  // ------------------------------
+  // Delete Customer
+  // ------------------------------
   const handleDelete = async (customer) => {
     try {
       setLoading(true);
+
       await api.delete(`/customers/${customer.id}`);
       setDeleteModal({ opened: false, customer: null });
 
-      // Remove deleted customer from cache
+      // Remove deleted customer from ALL cached pages
       setCustomers((prev) => {
         const newCache = { ...prev };
+
         Object.keys(newCache).forEach((page) => {
-          newCache[page] = newCache[page].filter((c) => c.id !== customer.id);
+          newCache[page] = newCache[page].filter(
+            (c) => c.id !== customer.id
+          );
         });
+
         return newCache;
       });
 
@@ -113,6 +151,7 @@ export default function CustomerLogs() {
       setLoading(false);
     }
   };
+
 
   const currentCustomers = customers[currentPage] || [];
   const skeletonRowCount = Math.max(currentCustomers.length, MIN_SKELETON_ROWS);
