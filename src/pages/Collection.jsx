@@ -39,6 +39,8 @@ export default function Collection() {
     Array.isArray(preloadedCollections) ? preloadedCollections : []
   );
   const [search, setSearch] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+
   const [loading, setLoading] = useState(
     !preloadedCollections || preloadedCollections.length === 0
   );
@@ -55,53 +57,62 @@ export default function Collection() {
 
   // Fetch collections with pagination and search
   const fetchCollections = useCallback(
-    async (targetPage = 1, showLoader = false) => {
-      if (showLoader) setLoading(true);
-      try {
-        const res = await api.get("/collections", {
-          params: {
-            page: targetPage,
-            per_page: 10,
-            search: search.trim() || undefined,
-          },
-        });
+  async (targetPage = 1, searchTerm = search, showLoader = false) => {
+    if (showLoader) setLoading(true);
 
-        let data = Array.isArray(res.data?.data) ? res.data.data : [];
+    try {
+      const res = await api.get("/collections", {
+        params: {
+          page: targetPage,
+          per_page: 10,
+          search: searchTerm.trim() || undefined,
+        },
+      });
 
-        data.sort((a, b) => {
-          const order = { Active: 0, "Sold Out": 1 };
-          return order[a.status] - order[b.status];
-        });
+      const data = Array.isArray(res.data?.data) ? res.data.data : [];
 
-        setCollections(data);
-        setTotalPages(res.data?.last_page || 1);
-        setPage(res.data?.current_page || 1);
-      } catch (err) {
-        console.error("Error fetching collections:", err);
-        setCollections([]);
-      } finally {
-        setLoading(false);
-        hasFetchedRef.current = true;
-      }
-    },
-    [search]
-  );
+      data.sort((a, b) => {
+        const order = { Active: 0, "Sold Out": 1 };
+        return order[a.status] - order[b.status];
+      });
+
+      setCollections(data);
+      setTotalPages(res.data?.last_page || 1);
+      setPage(res.data?.current_page || 1);
+    } catch (err) {
+      console.error("Error fetching collections:", err);
+      setCollections([]);
+    } finally {
+      setLoading(false);
+      hasFetchedRef.current = true;
+    }
+  },
+  [] // no dependencies
+);
+
+
 
   // Sync page state to URL and fetch collections
   const handlePageChange = (newPage) => {
     setPage(newPage);
 
-    const newSearchParams = new URLSearchParams(location.search);
-    newSearchParams.set("page", newPage);
-    navigate(`${location.pathname}?${newSearchParams.toString()}`, {
-      replace: true,
-    });
+    const params = new URLSearchParams(location.search);
+    params.set("page", newPage);
+
+    const trimmed = search.trim();
+    if (trimmed) {
+      params.set("search", trimmed);
+    }
+
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
   };
 
+
   // Trigger fetch when page changes
-  useEffect(() => {
-    fetchCollections(page, true);
-  }, [page, fetchCollections]);
+useEffect(() => {
+  fetchCollections(page, search, true);
+}, [page]);
+
 
   // Trigger search only when Enter is pressed
   const handleSearchKeyPress = (e) => {
@@ -111,15 +122,20 @@ export default function Collection() {
   };
 
   // Perform search and reset page to 1 with URL update
-  const performSearch = () => {
-    setPage(1);
-    const newSearchParams = new URLSearchParams(location.search);
-    newSearchParams.set("page", 1);
-    navigate(`${location.pathname}?${newSearchParams.toString()}`, {
-      replace: true,
-    });
-    fetchCollections(1, true);
-  };
+ const performSearch = () => {
+  const trimmed = search.trim();
+  setPage(1);
+
+  const params = new URLSearchParams(location.search);
+  params.set("page", 1);
+  if (trimmed) params.set("search", trimmed);
+  else params.delete("search");
+
+  navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+
+  fetchCollections(1, trimmed, true); // pass search as param
+};
+
 
   // Delete collection handler
   const handleDelete = async () => {
@@ -223,7 +239,7 @@ export default function Collection() {
               {loading
                 ? renderSkeletonRows(skeletonRowCount)
                 : Array.isArray(collections) && collections.length > 0
-                ? collections.map((col, i) => (
+                  ? collections.map((col, i) => (
                     <motion.tr
                       key={col.id}
                       initial={{ opacity: 0, y: -25 }}
@@ -242,10 +258,10 @@ export default function Collection() {
                       <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         {col.release_date
                           ? new Date(col.release_date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
                           : "—"}
                       </Table.Td>
                       <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
@@ -316,15 +332,15 @@ export default function Collection() {
                       </Table.Td>
                     </motion.tr>
                   ))
-                : (
-                  <Table.Tr style={{ borderBottom: "1px solid #D8CBB8" }}>
-                    <Table.Td colSpan={8} style={{ textAlign: "center", padding: "1.5rem" }}>
-                      <Text c="dimmed" size="20px">
-                        No collections found
-                      </Text>
-                    </Table.Td>
-                  </Table.Tr>
-                )}
+                  : (
+                    <Table.Tr style={{ borderBottom: "1px solid #D8CBB8" }}>
+                      <Table.Td colSpan={8} style={{ textAlign: "center", padding: "1.5rem" }}>
+                        <Text c="dimmed" size="20px">
+                          No collections found
+                        </Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  )}
             </Table.Tbody>
           </Table>
         </ScrollArea>
