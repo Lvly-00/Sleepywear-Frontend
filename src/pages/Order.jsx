@@ -41,7 +41,6 @@ export default function Order() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Parse query params from URL
   const queryParams = new URLSearchParams(location.search);
   const urlPage = parseInt(queryParams.get("page")) || 1;
   const urlSearch = queryParams.get("search") || "";
@@ -56,6 +55,7 @@ export default function Order() {
   const [loading, setLoading] = useState(!preloadedOrders);
 
   const [search, setSearch] = useState(urlSearch);
+  const [searchValue, setSearchValue] = useState(urlSearch); // temp input before Enter
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [invoiceModal, setInvoiceModal] = useState(false);
@@ -63,31 +63,27 @@ export default function Order() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
 
-  const ordersRef = React.useRef(ordersCache);
-  ordersRef.current = ordersCache;
+  // Update URL params
+  const updateUrlParams = useCallback(
+    (page, searchTerm) => {
+      const params = new URLSearchParams();
+      if (page > 1) params.set("page", page);
+      if (searchTerm.trim() !== "") params.set("search", searchTerm.trim());
 
-  // Update URL when currentPage or search changes
-  useEffect(() => {
-    const params = new URLSearchParams();
-
-    if (currentPage > 1) params.set("page", currentPage);
-    if (search.trim() !== "") params.set("search", search.trim());
-
-    navigate(
-      { pathname: location.pathname, search: params.toString() },
-      { replace: true }
-    );
-  }, [currentPage, search, navigate, location.pathname]);
+      navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+    },
+    [navigate, location.pathname]
+  );
 
   const fetchOrdersPage = useCallback(
-    async (page) => {
+    async (page, searchTerm = search) => {
       setLoading(true);
       try {
         const res = await api.get("/orders", {
           params: {
             page,
             per_page: ORDERS_PER_PAGE,
-            search: search.trim() || undefined,
+            search: searchTerm.trim() || undefined,
           },
         });
 
@@ -106,42 +102,46 @@ export default function Order() {
     [search]
   );
 
-  const handleSearchEnter = () => {
-    setCurrentPage(1);
-    fetchOrdersPage(1);
-  };
-
+  // Handle Enter press for search
   const handleSearchKeyPress = (e) => {
     if (e.key === "Enter") {
-      setCurrentPage(1);
-      fetchOrdersPage(1);
+      setSearch(searchValue);
+      setCurrentPage(1); // reset to page 1 on new search
+      updateUrlParams(1, searchValue);
+      fetchOrdersPage(1, searchValue);
     }
   };
 
-  // Fetch orders when currentPage or search changes
+  // Update input field only, search triggers on Enter
+  const handleSearchChange = (val) => {
+    setSearchValue(val);
+  };
+
+  // Pagination change
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    fetchOrdersPage(page, search);
+    updateUrlParams(page, search);
+  };
+
+  // Initial fetch
   useEffect(() => {
-    fetchOrdersPage(currentPage);
-  }, [currentPage, fetchOrdersPage]);
+    fetchOrdersPage(currentPage, search);
+  }, [currentPage, fetchOrdersPage, search]);
 
   const currentOrders = ordersCache[currentPage] || [];
 
-  // SORT and filter logic (same as before)
+  // SORT and filter logic
   const sortedOrders = [...currentOrders].sort((a, b) => {
     const aPaid = a.payment?.payment_status === "Paid";
     const bPaid = b.payment?.payment_status === "Paid";
 
-    if (aPaid !== bPaid) {
-      return aPaid ? 1 : -1; // unpaid first
-    }
+    if (aPaid !== bPaid) return aPaid ? 1 : -1;
 
     const aDate = new Date(a.order_date);
     const bDate = new Date(b.order_date);
 
-    if (!aPaid) {
-      return bDate - aDate; // unpaid: recent first
-    } else {
-      return aDate - bDate; // paid: recent last
-    }
+    return aPaid ? aDate - bDate : bDate - aDate;
   });
 
   const filteredOrders = sortedOrders.filter((order) => {
@@ -181,13 +181,10 @@ export default function Order() {
       </Table.Tr>
     ));
 
-  const handlePageChange = (page) => setCurrentPage(page);
-
   useEffect(() => {
     if (newOrder && openInvoiceOnLoad) {
       setInvoiceData(newOrder);
       setInvoiceModal(true);
-
       window.history.replaceState({}, document.title);
     }
   }, [newOrder, openInvoiceOnLoad]);
@@ -197,16 +194,18 @@ export default function Order() {
       <PageHeader
         title="Orders"
         showSearch
-        search={search}
-        setSearch={(val) => {
-          setSearch(val);
-          setCurrentPage(1); // Reset page on search change
+        search={searchValue}
+        setSearch={handleSearchChange}
+        onSearchEnter={() => {
+          setSearch(searchValue);
+          setCurrentPage(1);
+          fetchOrdersPage(1, searchValue);
         }}
-        onSearchEnter={handleSearchEnter}
         onSearchKeyPress={handleSearchKeyPress}
         addLabel="Add Order"
         addLink="/add-order"
       />
+
 
       <Paper
         radius="md"
