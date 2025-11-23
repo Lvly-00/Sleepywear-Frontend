@@ -188,14 +188,7 @@ export default function CustomerLogs() {
           setCurrentPage(1);            
           fetchCustomers(1, searchValue); 
         }}
-        addLabel="Add Customer"
-        onAdd={() => setAddModalOpen(true)}
-        // Optional: if you want a right-side refresh button
-        rightSection={
-          <Button size="xs" onClick={() => fetchCustomers(currentPage, search)}>
-            Refresh
-          </Button>
-        }
+     
       />
 
 
@@ -215,9 +208,9 @@ export default function CustomerLogs() {
           <Table
             highlightOnHover
             styles={{
-              tr: { borderBottom: "1px solid #D8CBB8" },
-              th: { fontSize: "18px" },
-              td: { fontSize: "16px" },
+              tr: { borderBottom: "1px solid #D8CBB8", fontSize: "20px" },
+              th: { fontFamily: "'League Spartan', sans-serif", fontSize: "20px" },
+              td: { fontFamily: "'League Spartan', sans-serif" },
             }}
           >
             <Table.Thead>
@@ -257,10 +250,10 @@ export default function CustomerLogs() {
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                     >
-                      <Table.Td>{`${c.first_name} ${c.last_name}`}</Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>{c.address || "—"}</Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>{c.contact_number}</Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>
+                      <Table.Td  style={{ fontSize: "16px" }}>{`${c.first_name} ${c.last_name}`}</Table.Td>
+                      <Table.Td  style={{ textAlign: "center", fontSize: "16px" }}>{c.address || "—"}</Table.Td>
+                      <Table.Td  style={{ textAlign: "center", fontSize: "16px" }}>{c.contact_number}</Table.Td>
+                      <Table.Td  style={{ textAlign: "center", fontSize: "16px" }}>
                         {c.social_handle && /^https?:\/\//.test(c.social_handle) ? (
                           <Anchor
                             href={c.social_handle}
@@ -275,7 +268,7 @@ export default function CustomerLogs() {
                           "-"
                         )}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center" }}>
+                      <Table.Td  style={{ textAlign: "center", fontSize: "16px" }}>
                         {new Date(c.created_at).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
@@ -283,7 +276,7 @@ export default function CustomerLogs() {
                         })}
                       </Table.Td>
 
-                      <Table.Td style={{ textAlign: "center" }}>
+                      <Table.Td  style={{ textAlign: "center", fontSize: "16px" }}>
                         <Group justify="center">
                           <Button
                             size="xs"
