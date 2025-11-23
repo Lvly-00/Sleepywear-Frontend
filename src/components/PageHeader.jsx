@@ -18,7 +18,7 @@ const PageHeader = ({
   showSearch,
   search,
   setSearch,
-  onSearchEnter, // ✅ new optional prop
+  onSearchEnter, 
   addLabel,
   addLink,
   onAdd,

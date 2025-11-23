@@ -7,6 +7,7 @@ import { BrowserRouter } from "react-router-dom";
 import MainLayout from "./layouts/Layout";
 import PrivateRoute from "./components/PrivateRoute";
 import PublicRoute from "./components/PublicRoute";
+import useIdleLogout from "./hooks/useIdleLogout";
 
 import TopLoadingBar from "./components/TopLoadingBar";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,7 @@ const ConfirmOrder = lazy(() => import("./pages/ConfirmOrder"));
 
 
 function App() {
+  useIdleLogout(60 * 1000);
   return (
     <BrowserRouter>
       {/* Suspense shows a fallback while each page loads */}

@@ -87,7 +87,7 @@ export default function Collection() {
       hasFetchedRef.current = true;
     }
   },
-  [] // no dependencies
+  [] 
 );
 
 

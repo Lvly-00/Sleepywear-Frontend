@@ -36,9 +36,19 @@ function ResetPassword() {
       return;
     }
 
-    if (password.length < 8) {
+    // ✅ Single combined password validation
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+    const numberRegex = /[0-9]/;
+    const uppercaseRegex = /[A-Z]/;
+
+    if (
+      password.length < 8 ||
+      !specialCharRegex.test(password) ||
+      !numberRegex.test(password) ||
+      !uppercaseRegex.test(password)
+    ) {
       setMessage({
-        text: "Password must be at least 8 characters.",
+        text: "Minimum 8 characters, with at least one uppercase letter, one number, and one special character.",
         type: "error",
       });
       return;
@@ -67,7 +77,7 @@ function ResetPassword() {
       setMessage({
         text:
           response.data.message ||
-          "Password reset successful! Redirecting to login...",
+          "Your password has been reset. Please log in with your new password",
         type: "success",
       });
       setTimeout(() => navigate("/"), 2000);
@@ -94,6 +104,9 @@ function ResetPassword() {
       setLoading(false);
     }
   };
+
+
+
 
   return (
     <div

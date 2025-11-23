@@ -43,7 +43,7 @@ api.interceptors.response.use(
                 "dashboard_cache",
                 "orderItemsCache",
                 "selectedCollectionCache",
-                "paginationCachea"
+                "paginationCache"
 
 
             ];
