@@ -125,6 +125,7 @@ export default function CustomerLogs() {
       setLoading(true);
 
       await api.delete(`/customers/${customer.id}`);
+
       setDeleteModal({ opened: false, customer: null });
 
       // Remove deleted customer from ALL cached pages
@@ -140,6 +141,9 @@ export default function CustomerLogs() {
         return newCache;
       });
 
+      // Refetch the current page to refresh data and pagination
+      await fetchCustomers(currentPage, search);
+
       NotifySuccess.deleted();
     } catch (err) {
       console.error("Failed to delete customer:", err);
@@ -147,6 +151,7 @@ export default function CustomerLogs() {
       setLoading(false);
     }
   };
+
 
 
   const currentCustomers = customers[currentPage] || [];
@@ -184,11 +189,11 @@ export default function CustomerLogs() {
         search={searchValue}
         setSearch={handleSearchChange}
         onSearchEnter={() => {
-          setSearch(searchValue);      
-          setCurrentPage(1);            
-          fetchCustomers(1, searchValue); 
+          setSearch(searchValue);
+          setCurrentPage(1);
+          fetchCustomers(1, searchValue);
         }}
-     
+
       />
 
 
@@ -250,10 +255,10 @@ export default function CustomerLogs() {
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                     >
-                      <Table.Td  style={{ fontSize: "16px" }}>{`${c.first_name} ${c.last_name}`}</Table.Td>
-                      <Table.Td  style={{ textAlign: "center", fontSize: "16px" }}>{c.address || "—"}</Table.Td>
-                      <Table.Td  style={{ textAlign: "center", fontSize: "16px" }}>{c.contact_number}</Table.Td>
-                      <Table.Td  style={{ textAlign: "center", fontSize: "16px" }}>
+                      <Table.Td style={{ fontSize: "16px" }}>{`${c.first_name} ${c.last_name}`}</Table.Td>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>{c.address || "—"}</Table.Td>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>{c.contact_number}</Table.Td>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         {c.social_handle && /^https?:\/\//.test(c.social_handle) ? (
                           <Anchor
                             href={c.social_handle}
@@ -268,7 +273,7 @@ export default function CustomerLogs() {
                           "-"
                         )}
                       </Table.Td>
-                      <Table.Td  style={{ textAlign: "center", fontSize: "16px" }}>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         {new Date(c.created_at).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
@@ -276,7 +281,7 @@ export default function CustomerLogs() {
                         })}
                       </Table.Td>
 
-                      <Table.Td  style={{ textAlign: "center", fontSize: "16px" }}>
+                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                         <Group justify="center">
                           <Button
                             size="xs"

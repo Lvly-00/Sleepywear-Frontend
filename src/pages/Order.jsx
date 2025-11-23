@@ -386,19 +386,22 @@ export default function Order() {
           if (!orderToDelete) return;
           try {
             await api.delete(`/orders/${orderToDelete.id}`);
-            setOrdersCache((prev) => {
-              const newCache = { ...prev };
-              Object.keys(newCache).forEach((page) => {
-                newCache[page] = newCache[page].filter((o) => o.id !== orderToDelete.id);
-              });
-              return newCache;
-            });
-            NotifySuccess.deleted();
+
+            // Close modal early
             setDeleteModalOpen(false);
+
+            // Optionally clear orderToDelete immediately
+            setOrderToDelete(null);
+
+            // Refetch current page from server to get updated orders and pagination
+            await fetchOrdersPage(currentPage, search);
+
+            NotifySuccess.deleted();
           } catch (err) {
             console.error("Error deleting order:", err);
           }
         }}
+
       />
 
       {/* Add Payment Modal */}
