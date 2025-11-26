@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
+
 import {
   Table,
   Button,
@@ -14,22 +15,11 @@ import {
   Skeleton,
   Pagination,
 } from "@mantine/core";
-import { motion, AnimatePresence } from "framer-motion";
 
 import PageHeader from "../components/PageHeader";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import { Icons } from "../components/Icons";
 import NotifySuccess from "../components/NotifySuccess";
-
-const rowVariants = {
-  hidden: { opacity: 0, y: -10 },
-  visible: (i) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.1, ease: "easeOut" },
-  }),
-  exit: { opacity: 0, y: 10 },
-};
 
 const MIN_SKELETON_ROWS = 6;
 const CUSTOMERS_PER_PAGE = 10;
@@ -38,111 +28,133 @@ export default function CustomerLogs() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Parse query params
   const queryParams = new URLSearchParams(location.search);
-  const urlPage = parseInt(queryParams.get("page")) || 1;
-  const urlSearch = queryParams.get("search") || "";
+  const initialPage = parseInt(queryParams.get("page") || "1", 10);
+  const initialSearch = queryParams.get("search") || "";
 
-  const [customers, setCustomers] = useState({});
-  const [currentPage, setCurrentPage] = useState(urlPage);
+  const preloadedCustomers = location.state?.preloadedCustomers || null;
+
+  // Prevent refetch on first render if preloaded data exists
+  const firstLoad = useRef(true);
+
+  //-----------------------------
+  // STATE
+  //-----------------------------
+  const [customersCache, setCustomersCache] = useState(
+    preloadedCustomers ? { [initialPage]: preloadedCustomers } : {}
+  );
+
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [search, setSearch] = useState(initialSearch);
+  const [searchValue, setSearchValue] = useState(initialSearch);
   const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState(urlSearch);
-  const [searchValue, setSearchValue] = useState(urlSearch);
-  const [loading, setLoading] = useState(false);
-  const [deleteModal, setDeleteModal] = useState({ opened: false, customer: null });
-  const [initialLoad, setInitialLoad] = useState(true);
+  const [loading, setLoading] = useState(!preloadedCustomers);
 
+  const [deleteModal, setDeleteModal] = useState({
+    opened: false,
+    customer: null,
+  });
 
-  // Sync page and search to URL on change
+  //-----------------------------
+  // SYNC URL PARAMS
+  //-----------------------------
   useEffect(() => {
     const params = new URLSearchParams();
     if (currentPage > 1) params.set("page", currentPage);
     if (search.trim() !== "") params.set("search", search.trim());
 
-    // Replace URL without reloading page
     navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-  }, [currentPage, search, navigate, location.pathname]);
+  }, [currentPage, search]);
 
-  // ------------------------------
-  // Fetch Customers
-  // ------------------------------
-  const fetchCustomers = useCallback(
-    async (pageNumber = 1, searchTerm = "") => {
-      setLoading(true);
+  //-----------------------------
+  // FETCH CUSTOMERS
+  //-----------------------------
+  const fetchCustomersPage = useCallback(
+    async (page, searchTerm = search, showLoader = true) => {
+      if (showLoader) setLoading(true);
 
       try {
         const res = await api.get("/customers", {
           params: {
-            page: pageNumber,
+            page,
             per_page: CUSTOMERS_PER_PAGE,
-            search: searchTerm || undefined,
+            search: searchTerm.trim() || undefined,
           },
         });
 
-        setCustomers((prev) => ({
+        setCustomersCache((prev) => ({
           ...prev,
-          [pageNumber]: res.data.data || [],
+          [page]: Array.isArray(res.data.data) ? res.data.data : [],
         }));
 
         setTotalPages(res.data.last_page || 1);
-        setCurrentPage(pageNumber);
       } catch (err) {
-        console.error("Failed to fetch customers:", err);
-        setCustomers({});
-        setTotalPages(1);
+        console.error("Error fetching customers:", err);
+        setCustomersCache((prev) => ({
+          ...prev,
+          [page]: [],
+        }));
       } finally {
-        setLoading(false);
+        if (showLoader) setLoading(false);
       }
     },
-    [CUSTOMERS_PER_PAGE] // only constant values should be here
+    [search]
   );
 
-  const handleSearchKeyPress = (e) => {
-    if (e.key === "Enter") {
-      setSearch(searchValue);
-      setCurrentPage(1); // reset to first page
-      fetchCustomers(1, searchValue);
-    }
-  };
-
-  const handleSearchChange = (val) => {
-    setSearchValue(val);
-  };
-
-  // ------------------------------
-  // Fetch when only page changes
-  // ------------------------------
+  //-----------------------------
+  // FETCH ON FIRST LOAD OR CHANGE
+  //-----------------------------
   useEffect(() => {
-    fetchCustomers(currentPage, search);
-  }, [currentPage, search, fetchCustomers]);
+    // 🛑 Skip fetching if first load AND preloaded data exists
+    if (preloadedCustomers && firstLoad.current) {
+      firstLoad.current = false;
+      return;
+    }
 
+    // If we already have cache for the page ➜ don't show skeleton
+    const cached = customersCache[currentPage];
+    fetchCustomersPage(currentPage, search, !cached);
+  }, [currentPage, search]);
 
-  // ------------------------------
-  // Delete Customer
-  // ------------------------------
-  const handleDelete = async (customer) => {
+  //-----------------------------
+  // SEARCH
+  //-----------------------------
+  const handleSearchEnter = () => {
+    const trimmed = searchValue.trim();
+    setSearch(trimmed);
+    setCurrentPage(1);
+    fetchCustomersPage(1, trimmed);
+  };
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter") handleSearchEnter();
+  };
+
+  //-----------------------------
+  // DELETE CUSTOMER
+  //-----------------------------
+  const handleDelete = async () => {
+    if (!deleteModal.customer) return;
+
     try {
       setLoading(true);
+      await api.delete(`/customers/${deleteModal.customer.id}`);
 
-      await api.delete(`/customers/${customer.id}`);
+      // Remove item from ALL cached pages
+      setCustomersCache((prev) => {
+        const updated = { ...prev };
+        for (const page in updated) {
+          updated[page] = updated[page].filter(
+            (c) => c.id !== deleteModal.customer.id
+          );
+        }
+        return updated;
+      });
 
       setDeleteModal({ opened: false, customer: null });
 
-      // Remove deleted customer from ALL cached pages
-      setCustomers((prev) => {
-        const newCache = { ...prev };
-
-        Object.keys(newCache).forEach((page) => {
-          newCache[page] = newCache[page].filter(
-            (c) => c.id !== customer.id
-          );
-        });
-
-        return newCache;
-      });
-
-      // Refetch the current page to refresh data and pagination
-      await fetchCustomers(currentPage, search);
+      // Reload current page from API
+      await fetchCustomersPage(currentPage, search);
 
       NotifySuccess.deleted();
     } catch (err) {
@@ -152,51 +164,46 @@ export default function CustomerLogs() {
     }
   };
 
-
-
-  const currentCustomers = customers[currentPage] || [];
+  //-----------------------------
+  // SKELETON
+  //-----------------------------
+  const currentCustomers = customersCache[currentPage] || [];
   const skeletonRowCount = Math.max(currentCustomers.length, MIN_SKELETON_ROWS);
 
   const renderSkeletonRows = () =>
     Array.from({ length: skeletonRowCount }).map((_, i) => (
       <Table.Tr key={i}>
-        <Table.Td>
-          <Skeleton height={18} width="70%" />
+        <Table.Td><Skeleton height={20} width="70%" /></Table.Td>
+        <Table.Td style={{ textAlign: "center" }}>
+          <Skeleton height={20} width="60%" />
         </Table.Td>
         <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={18} width="60%" />
+          <Skeleton height={20} width="40%" />
         </Table.Td>
         <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={18} width="40%" />
+          <Skeleton height={20} width="50%" />
         </Table.Td>
         <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={18} width="50%" />
+          <Skeleton height={20} width="30%" />
         </Table.Td>
         <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={18} width="30%" />
-        </Table.Td>
-        <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={18} width="20%" />
+          <Skeleton height={20} width="20%" />
         </Table.Td>
       </Table.Tr>
     ));
 
+  //-----------------------------
+  // RENDER
+  //-----------------------------
   return (
     <Stack p="xs" spacing="lg" style={{ fontFamily: "'League Spartan', sans-serif" }}>
       <PageHeader
         title="Customers"
         showSearch
         search={searchValue}
-        setSearch={handleSearchChange}
-        onSearchEnter={() => {
-          setSearch(searchValue);
-          setCurrentPage(1);
-          fetchCustomers(1, searchValue);
-        }}
-
+        setSearch={setSearchValue}
+        onSearchEnter={handleSearchEnter}
       />
-
-
 
       <Paper
         radius="md"
@@ -236,67 +243,74 @@ export default function CustomerLogs() {
                 <Table.Tr>
                   <Table.Td colSpan={6} style={{ textAlign: "center", padding: "1.5rem" }}>
                     <Text c="dimmed" size="20px">
-                      No Customers found
+                      No customers found
                     </Text>
                   </Table.Td>
                 </Table.Tr>
               ) : (
-                <AnimatePresence>
-                  {currentCustomers.map((c, i) => (
-                    <motion.tr
-                      key={c.id}
-                      custom={i}
-                      variants={rowVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      layout
-                      style={{ borderBottom: "1px solid #D8CBB8", cursor: "default" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                    >
-                      <Table.Td style={{ fontSize: "16px" }}>{`${c.first_name} ${c.last_name}`}</Table.Td>
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>{c.address || "—"}</Table.Td>
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>{c.contact_number}</Table.Td>
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                        {c.social_handle && /^https?:\/\//.test(c.social_handle) ? (
-                          <Anchor
-                            href={c.social_handle}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            underline="hover"
-                            style={{ color: "#4455f0ff" }}
-                          >
-                            {c.social_handle}
-                          </Anchor>
-                        ) : (
-                          "-"
-                        )}
-                      </Table.Td>
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                        {new Date(c.created_at).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </Table.Td>
+                currentCustomers.map((c) => (
+                  <Table.Tr
+                    key={c.id}
+                    style={{ borderBottom: "1px solid #D8CBB8" }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
+                  >
+                    <Table.Td style={{ fontSize: "16px" }}>
+                      {c.first_name} {c.last_name}
+                    </Table.Td>
 
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                        <Group justify="center">
-                          <Button
-                            size="xs"
-                            variant="subtle"
-                            color="red"
-                            p={3}
-                            onClick={() => setDeleteModal({ opened: true, customer: c })}
-                          >
-                            <Icons.Trash size={22} />
-                          </Button>
-                        </Group>
-                      </Table.Td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
+                    <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+                      {c.address || "—"}
+                    </Table.Td>
+
+                    <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+                      {c.contact_number}
+                    </Table.Td>
+
+                    <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+                      {c.social_handle && /^https?:\/\//.test(c.social_handle) ? (
+                        <Anchor
+                          href={c.social_handle}
+                          target="_blank"
+                          underline="hover"
+                          style={{ color: "#4455f0" }}
+                        >
+                          {c.social_handle}
+                        </Anchor>
+                      ) : (
+                        "-"
+                      )}
+                    </Table.Td>
+
+                    <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+                      {new Date(c.created_at).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </Table.Td>
+
+                    <Table.Td style={{ textAlign: "center" }}>
+                      <Group justify="center">
+                        <Button
+                          size="xs"
+                          variant="subtle"
+                          color="red"
+                          p={3}
+                          onClick={() =>
+                            setDeleteModal({ opened: true, customer: c })
+                          }
+                        >
+                          <Icons.Trash size={22} />
+                        </Button>
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))
               )}
             </Table.Tbody>
           </Table>
@@ -304,9 +318,9 @@ export default function CustomerLogs() {
 
         <Center mt="md">
           <Pagination
-            value={currentPage}
-            onChange={setCurrentPage}
             total={totalPages}
+            value={currentPage}
+            onChange={(page) => setCurrentPage(page)}
             color="#0A0B32"
             size="md"
             radius="md"
@@ -318,9 +332,11 @@ export default function CustomerLogs() {
         opened={deleteModal.opened}
         onClose={() => setDeleteModal({ opened: false, customer: null })}
         name={
-          deleteModal.customer ? `${deleteModal.customer.first_name} ${deleteModal.customer.last_name}` : ""
+          deleteModal.customer
+            ? `${deleteModal.customer.first_name} ${deleteModal.customer.last_name}`
+            : ""
         }
-        onConfirm={() => deleteModal.customer && handleDelete(deleteModal.customer)}
+        onConfirm={handleDelete}
       />
     </Stack>
   );

@@ -206,7 +206,7 @@ export default function Order() {
             styles={{
               tr: { borderBottom: "1px solid #D8CBB8", fontSize: "20px" },
               th: { fontFamily: "'League Spartan', sans-serif", fontSize: "20px" },
-              td: { fontFamily: "'League Spartan', sans-serif" },
+              td: { fontFamily: "'League Spartan', sans-serif", fontSize: "16px" },
             }}
           >
             <Table.Thead>
@@ -245,7 +245,7 @@ export default function Order() {
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                       >
-                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>{order.formatted_id}</Table.Td>
+                        <Table.Td style={{ textAlign: "left",  }}>{order.formatted_id}</Table.Td>
                         <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>{fullName}</Table.Td>
                         <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>{totalQty}</Table.Td>
                         <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
