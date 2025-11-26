@@ -91,7 +91,6 @@ export default function Collection() {
   );
 
 
-
   // Sync page state to URL and fetch collections
   const handlePageChange = (newPage) => {
     setPage(newPage);
@@ -226,12 +225,12 @@ export default function Collection() {
               <Table.Tr>
                 <Table.Th>Collection Name</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Release Date</Table.Th>
-                <Table.Th style={{ textAlign: "center" }}>Qty</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>QTY</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Stock QTY</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Capital</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Revenue</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Status</Table.Th>
-                <Table.Th style={{ textAlign: "center" }}>Actions</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Manage</Table.Th>
               </Table.Tr>
             </Table.Thead>
 
@@ -298,9 +297,12 @@ export default function Collection() {
                             fontSize: "16px",
                           }}
                         >
-                          {col.status === "Active" ? "Active" : "Sold Out"}
+                          {col.status
+                            .toLowerCase()
+                            .replace(/\b\w/g, (char) => char.toUpperCase())}
                         </Badge>
                       </Table.Td>
+
                       <Table.Td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
                         <Group gap={4} justify="center">
                           <Button
