@@ -29,100 +29,126 @@ export default function Collection() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Read page from URL query string or default to 1
   const searchParams = new URLSearchParams(location.search);
   const pageFromUrl = parseInt(searchParams.get("page") || "1", 10);
+  const searchFromUrl = searchParams.get("search") || "";
 
   const preloadedCollections = location.state?.preloadedCollections || [];
 
+  const [search, setSearch] = useState(searchFromUrl);
   const [collections, setCollections] = useState(
     Array.isArray(preloadedCollections) ? preloadedCollections : []
   );
-  const [search, setSearch] = useState("");
-  const [searchLoading, setSearchLoading] = useState(false);
-
-  const [loading, setLoading] = useState(
-    !preloadedCollections || preloadedCollections.length === 0
-  );
   const [page, setPage] = useState(pageFromUrl);
   const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(!preloadedCollections.length);
 
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [openedEdit, setOpenedEdit] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState(null);
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [collectionToDelete, setCollectionToDelete] = useState(null);
-  const [addModalOpen, setAddModalOpen] = useState(false);
 
-  const hasFetchedRef = useRef(false);
+  const cacheRef = useRef({});
 
-  // Fetch collections with pagination and search
+
+
+  const sortCollections = (list) => {
+    const sorted = [...list].sort((a, b) => {
+      const order = { Active: 0, "Sold Out": 1 };
+      return order[a.status] - order[b.status];
+    });
+    return sorted;
+  };
+
   const fetchCollections = useCallback(
-    async (targetPage = 1, searchTerm = search, showLoader = false) => {
-      if (showLoader) setLoading(true);
+    async (targetPage, searchTerm, useLoading = true) => {
+      const key = searchTerm.trim().toLowerCase();
+
+      // Check cache first
+      if (cacheRef.current[key]?.[targetPage]) {
+        setCollections(cacheRef.current[key][targetPage].data);
+        setTotalPages(cacheRef.current[key][targetPage].last_page);
+        setLoading(false);
+        return;
+      }
+
+      if (useLoading) setLoading(true);
 
       try {
         const res = await api.get("/collections", {
           params: {
             page: targetPage,
             per_page: 10,
-            search: searchTerm.trim() || undefined,
+            search: searchTerm || undefined,
           },
         });
 
-        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        const data = Array.isArray(res.data?.data)
+          ? sortCollections(res.data.data)
+          : [];
 
-        data.sort((a, b) => {
-          const order = { Active: 0, "Sold Out": 1 };
-          return order[a.status] - order[b.status];
-        });
+        const lastPage = res.data?.last_page || 1;
+
+        // Store in cache
+        if (!cacheRef.current[key]) cacheRef.current[key] = {};
+        cacheRef.current[key][targetPage] = {
+          data,
+          last_page: lastPage,
+        };
 
         setCollections(data);
-        setTotalPages(res.data?.last_page || 1);
-        setPage(res.data?.current_page || 1);
+        setTotalPages(lastPage);
       } catch (err) {
-        console.error("Error fetching collections:", err);
+        console.error("Fetch error:", err);
         setCollections([]);
       } finally {
         setLoading(false);
-        hasFetchedRef.current = true;
       }
     },
     []
   );
 
+  // Initialize load or use preloaded
+  useEffect(() => {
+    const trimmed = search.trim().toLowerCase();
 
-  // Sync page state to URL and fetch collections
+    // Save preloaded to cache
+    if (preloadedCollections.length > 0) {
+      if (!cacheRef.current[trimmed]) cacheRef.current[trimmed] = {};
+
+      cacheRef.current[trimmed][pageFromUrl] = {
+        data: sortCollections(preloadedCollections),
+        last_page: totalPages,
+      };
+
+      setCollections(sortCollections(preloadedCollections));
+      setLoading(false);
+      return;
+    }
+
+    // Otherwise fetch
+    fetchCollections(pageFromUrl, trimmed, true);
+  }, []);
+
   const handlePageChange = (newPage) => {
     setPage(newPage);
 
     const params = new URLSearchParams(location.search);
     params.set("page", newPage);
-
-    const trimmed = search.trim();
-    if (trimmed) {
-      params.set("search", trimmed);
-    }
+    if (search.trim()) params.set("search", search.trim());
+    else params.delete("search");
 
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+
+    fetchCollections(newPage, search.trim(), true);
   };
 
-
-  // Trigger fetch when page changes
-  useEffect(() => {
-    fetchCollections(page, search, true);
-  }, [page]);
-
-
-  // Trigger search only when Enter is pressed
-  const handleSearchKeyPress = (e) => {
-    if (e.key === "Enter") {
-      performSearch();
-    }
-  };
-
-  // Perform search and reset page to 1 with URL update
   const performSearch = () => {
     const trimmed = search.trim();
+    const key = trimmed.toLowerCase();
+
     setPage(1);
 
     const params = new URLSearchParams(location.search);
@@ -132,42 +158,51 @@ export default function Collection() {
 
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
 
+    // Load from cache if available
+    if (cacheRef.current[key]?.[1]) {
+      setCollections(cacheRef.current[key][1].data);
+      setTotalPages(cacheRef.current[key][1].last_page);
+      setLoading(false);
+      return;
+    }
+
     fetchCollections(1, trimmed, true);
   };
 
-
-  // Delete collection handler
   const handleDelete = async () => {
     if (!collectionToDelete) return;
     try {
       await api.delete(`/collections/${collectionToDelete.id}`);
-      setDeleteModalOpen(false);
-      setCollectionToDelete(null);
       NotifySuccess.deleted();
-      fetchCollections(page, search, true);
+      setDeleteModalOpen(false);
+
+      // Clear cache so data refreshes
+      cacheRef.current = {};
+
+      fetchCollections(page, search.trim(), true);
     } catch (err) {
-      console.error("Error deleting collection:", err);
+      console.error("Delete error:", err);
     }
   };
 
-  // Add success handler
-  const handleAddSuccess = async () => {
+  const handleAddSuccess = () => {
     setAddModalOpen(false);
     NotifySuccess.addedCollection();
-    setPage(1);
-    fetchCollections(1, search, true);
+
+    cacheRef.current = {}; // reset cache
+    performSearch();
   };
 
-  // Edit success handler
-  const handleEditSuccess = async () => {
+  const handleEditSuccess = () => {
     setOpenedEdit(false);
-    setSelectedCollection(null);
     NotifySuccess.editedCollection();
-    fetchCollections(page, search, true);
+
+    cacheRef.current = {}; // reset cache
+    fetchCollections(page, search.trim(), true);
   };
 
   const skeletonRowCount = Math.max(collections.length, MIN_SKELETON_ROWS);
-  const renderSkeletonRows = (rows = 5) =>
+  const renderSkeletonRows = (rows) =>
     Array.from({ length: rows }).map((_, i) => (
       <Table.Tr key={i} style={{ borderBottom: "1px solid #D8CBB8" }}>
         {Array(8)
@@ -179,13 +214,6 @@ export default function Collection() {
           ))}
       </Table.Tr>
     ));
-
-  useEffect(() => {
-    if (location.state?.openAddModal) {
-      setAddModalOpen(true);
-      navigate(location.pathname, { replace: true });
-    }
-  }, [location, navigate]);
 
   return (
     <Stack p="xs" spacing="lg">
@@ -209,16 +237,15 @@ export default function Collection() {
           position: "relative",
           display: "flex",
           flexDirection: "column",
-          fontFamily: "'League Spartan', sans-serif",
         }}
       >
-        <ScrollArea scrollbarSize={8} style={{ flex: 1, minHeight: "0" }}>
+        <ScrollArea scrollbarSize={8} style={{ flex: 1 }}>
           <Table
             highlightOnHover
             styles={{
               tr: { borderBottom: "1px solid #D8CBB8", fontSize: "20px" },
               th: { fontFamily: "'League Spartan', sans-serif", fontSize: "20px" },
-              td: { fontFamily: "'League Spartan', sans-serif" },
+              td: { fontFamily: "'League Spartan', sans-serif", fontSize: "16px" },
             }}
           >
             <Table.Thead>
@@ -237,24 +264,19 @@ export default function Collection() {
             <Table.Tbody key={page}>
               {loading
                 ? renderSkeletonRows(skeletonRowCount)
-                : Array.isArray(collections) && collections.length > 0
-                  ? collections.map((col, i) => (
-                    <motion.tr
+                : collections.length > 0
+                  ? collections.map((col) => (
+                    <Table.Tr
                       key={col.id}
-                      initial={{ opacity: 0, y: -25 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 25 }}
-                      transition={{ delay: i * 0.07, duration: 0.35, ease: "easeOut" }}
-                      layout
                       onClick={() => navigate(`/collections/${col.id}/items`)}
-                      style={{ cursor: "pointer", borderBottom: "1px solid #D8CBB8" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                      style={{
+                        cursor: "pointer",
+                        borderBottom: "1px solid #D8CBB8",
+                      }}
                     >
-                      <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
-                        {col.name || "—"}
-                      </Table.Td>
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+                      <Table.Td>{col.name || "—"}</Table.Td>
+
+                      <Table.Td style={{ textAlign: "center" }}>
                         {col.release_date
                           ? new Date(col.release_date).toLocaleDateString("en-US", {
                             year: "numeric",
@@ -263,34 +285,44 @@ export default function Collection() {
                           })
                           : "—"}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+
+                      <Table.Td style={{ textAlign: "center" }}>
                         {col.qty ?? 0}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+
+                      <Table.Td style={{ textAlign: "center" }}>
                         {Array.isArray(col.items)
                           ? col.items.filter((item) => item.status === "Available").length
                           : 0}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+
+                      <Table.Td style={{ textAlign: "center" }}>
                         ₱
                         {col.capital
-                          ? new Intl.NumberFormat("en-PH").format(Math.floor(col.capital))
+                          ? new Intl.NumberFormat("en-PH").format(
+                            Math.floor(col.capital)
+                          )
                           : "0"}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+
+                      <Table.Td style={{ textAlign: "center" }}>
                         ₱
                         {col.total_sales
-                          ? new Intl.NumberFormat("en-PH").format(Math.floor(col.total_sales))
+                          ? new Intl.NumberFormat("en-PH").format(
+                            Math.floor(col.total_sales)
+                          )
                           : "0"}
                       </Table.Td>
-                      <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
+
+                      <Table.Td style={{ textAlign: "center" }}>
                         <Badge
                           size="27"
                           variant="filled"
                           style={{
-                            backgroundColor: col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
+                            backgroundColor:
+                              col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
                             color: col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
-                            width: "130px",
+                            width: "115px",
                             fontWeight: 400,
                             paddingTop: "5px",
                             borderRadius: "16px",
@@ -303,7 +335,10 @@ export default function Collection() {
                         </Badge>
                       </Table.Td>
 
-                      <Table.Td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+                      <Table.Td
+                        style={{ textAlign: "center" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Group gap={4} justify="center">
                           <Button
                             size="xs"
@@ -317,13 +352,13 @@ export default function Collection() {
                           >
                             <Icons.Edit size={26} />
                           </Button>
+
                           <Button
                             size="xs"
                             variant="subtle"
                             color="red"
                             p={3}
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            onClick={() => {
                               setCollectionToDelete(col);
                               setDeleteModalOpen(true);
                             }}
@@ -332,11 +367,14 @@ export default function Collection() {
                           </Button>
                         </Group>
                       </Table.Td>
-                    </motion.tr>
+                    </Table.Tr>
                   ))
                   : (
                     <Table.Tr style={{ borderBottom: "1px solid #D8CBB8" }}>
-                      <Table.Td colSpan={8} style={{ textAlign: "center", padding: "1.5rem" }}>
+                      <Table.Td
+                        colSpan={8}
+                        style={{ textAlign: "center", padding: "1.5rem" }}
+                      >
                         <Text c="dimmed" size="20px">
                           No collections found
                         </Text>
@@ -344,6 +382,7 @@ export default function Collection() {
                     </Table.Tr>
                   )}
             </Table.Tbody>
+
           </Table>
         </ScrollArea>
 
