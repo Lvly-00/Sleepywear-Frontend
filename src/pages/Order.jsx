@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Button,
@@ -24,18 +24,17 @@ import api from "../api/axios";
 import NotifySuccess from "@/components/NotifySuccess";
 
 const MIN_SKELETON_ROWS = 6;
+const ORDERS_PER_PAGE = 10;
 
 const rowVariants = {
   hidden: { opacity: 0, y: -10 },
   visible: (i) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, ease: "easeOut" },
+    transition: { delay: i * 0.05, ease: "easeOut" },
   }),
   exit: { opacity: 0, y: 10 },
 };
-
-const ORDERS_PER_PAGE = 10;
 
 export default function Order() {
   const navigate = useNavigate();
@@ -49,7 +48,10 @@ export default function Order() {
   const newOrder = location.state?.newOrder || null;
   const openInvoiceOnLoad = location.state?.openInvoice || false;
 
-  const [ordersCache, setOrdersCache] = useState({});
+  // Store cached pages
+  const [ordersCache, setOrdersCache] = useState(
+    preloadedOrders ? { [initialPage]: preloadedOrders } : {}
+  );
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [search, setSearch] = useState(initialSearch);
   const [searchValue, setSearchValue] = useState(initialSearch);
@@ -63,7 +65,7 @@ export default function Order() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
 
-  // Update URL params
+  // Update URL params when page/search changes
   useEffect(() => {
     const params = new URLSearchParams();
     if (currentPage > 1) params.set("page", currentPage);
@@ -71,10 +73,11 @@ export default function Order() {
     navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
   }, [currentPage, search, navigate, location.pathname]);
 
-
+  // Fetch orders for a specific page
   const fetchOrdersPage = useCallback(
-    async (page, searchTerm = search) => {
-      setLoading(true);
+    async (page, searchTerm = search, showLoader = true) => {
+      if (showLoader) setLoading(true);
+
       try {
         const res = await api.get("/orders", {
           params: {
@@ -86,71 +89,60 @@ export default function Order() {
 
         setOrdersCache((prev) => ({
           ...prev,
-          [page]: res.data.data,
+          [page]: Array.isArray(res.data.data) ? res.data.data : [],
         }));
 
         setTotalPages(res.data.last_page || 1);
-
       } catch (err) {
         console.error("Error fetching orders:", err);
+        setOrdersCache((prev) => ({
+          ...prev,
+          [page]: [],
+        }));
       } finally {
-        setLoading(false);
+        if (showLoader) setLoading(false);
       }
     },
     [search]
   );
 
-  // Handle Enter press for search
+  // Initial fetch if no preloaded data
+  useEffect(() => {
+    if (!preloadedOrders) {
+      fetchOrdersPage(currentPage, search);
+    }
+  }, [currentPage, search, preloadedOrders, fetchOrdersPage]);
+
+  // Handle Enter key for search
   const handleSearchKeyPress = (e) => {
     if (e.key === "Enter") {
       const trimmed = searchValue.trim();
-      setSearch(trimmed);  // triggers fetch
-      setCurrentPage(1);   // reset pagination
+      setSearch(trimmed);
+      setCurrentPage(1);
     }
   };
 
+  // Always ensure currentOrders is an array
+  const currentOrders = Array.isArray(ordersCache[currentPage])
+    ? ordersCache[currentPage]
+    : [];
 
-
-  // Pagination change
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    fetchOrdersPage(page, search);
-  };
-
-
-  // Initial fetch
-  useEffect(() => {
-    fetchOrdersPage(currentPage, search);
-  }, [currentPage, search]);
-
-
-  const currentOrders = ordersCache[currentPage] || [];
-
-  // SORT and filter logic
+  // Sort and filter
   const sortedOrders = [...currentOrders].sort((a, b) => {
     const aPaid = a.payment?.payment_status === "Paid";
     const bPaid = b.payment?.payment_status === "Paid";
-
     if (aPaid !== bPaid) return aPaid ? 1 : -1;
 
-    const aDate = new Date(a.order_date);
-    const bDate = new Date(b.order_date);
-
-    return aPaid ? aDate - bDate : bDate - aDate;
+    return new Date(a.order_date) - new Date(b.order_date);
   });
 
   const filteredOrders = sortedOrders.filter((order) => {
     const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
     const id = String(order.id);
     const formattedId = order.formatted_id?.toLowerCase?.() || "";
-
     const s = search.toLowerCase();
 
-    return (
-      fullName.includes(s) ||
-      id.includes(s) ||
-      formattedId.includes(s)
-    );
+    return fullName.includes(s) || id.includes(s) || formattedId.includes(s);
   });
 
   const skeletonRowCount = Math.max(currentOrders.length, MIN_SKELETON_ROWS);
@@ -158,33 +150,19 @@ export default function Order() {
   const renderSkeletonRows = (rows = 5) =>
     Array.from({ length: rows }).map((_, i) => (
       <Table.Tr key={i}>
-        <Table.Td>
-          <Skeleton height={20} width="40%" />
-        </Table.Td>
-        <Table.Td>
-          <Skeleton height={20} width="70%" />
-        </Table.Td>
+        <Table.Td><Skeleton height={20} width="40%" /></Table.Td>
+        <Table.Td><Skeleton height={20} width="70%" /></Table.Td>
+        <Table.Td style={{ textAlign: "center" }}><Skeleton height={20} width="30%" /></Table.Td>
+        <Table.Td style={{ textAlign: "center" }}><Skeleton height={20} width="40%" /></Table.Td>
+        <Table.Td style={{ textAlign: "center" }}><Skeleton height={20} width="30%" /></Table.Td>
+        <Table.Td style={{ textAlign: "center" }}><Skeleton height={30} width="80px" radius="xl" /></Table.Td>
         <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={20} width="30%" />
-        </Table.Td>
-        <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={20} width="40%" />
-        </Table.Td>
-        <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={20} width="30%" />
-        </Table.Td>
-        <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={30} width="80px" radius="xl" />
-        </Table.Td>
-        <Table.Td style={{ textAlign: "center" }}>
-          <Group justify="center">
-            <Skeleton height={24} circle />
-            <Skeleton height={24} circle />
-          </Group>
+          <Group justify="center"><Skeleton height={24} circle /><Skeleton height={24} circle /></Group>
         </Table.Td>
       </Table.Tr>
     ));
 
+  // Open invoice modal if new order was just added
   useEffect(() => {
     if (newOrder && openInvoiceOnLoad) {
       setInvoiceData(newOrder);
@@ -210,8 +188,6 @@ export default function Order() {
         addLink="/add-order"
       />
 
-
-
       <Paper
         radius="md"
         p="xl"
@@ -219,7 +195,6 @@ export default function Order() {
           minHeight: "70vh",
           marginBottom: "1rem",
           background: "white",
-          position: "relative",
           display: "flex",
           flexDirection: "column",
           fontFamily: "'League Spartan', sans-serif",
@@ -247,71 +222,43 @@ export default function Order() {
             </Table.Thead>
 
             <Table.Tbody>
-              {loading ? (
-                renderSkeletonRows(skeletonRowCount)
-              ) : filteredOrders.length === 0 ? (
-                <Table.Tr>
-                  <Table.Td colSpan={7} style={{ textAlign: "center", padding: "1.5rem" }}>
-                    <Text c="dimmed" size="20px">
-                      No orders found
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              ) : (
-                <AnimatePresence>
-                  {filteredOrders.map((order, i) => {
+              {currentOrders.length === 0 && loading
+                ? renderSkeletonRows(skeletonRowCount)
+                : filteredOrders.length === 0
+                  ? (
+                    <Table.Tr>
+                      <Table.Td colSpan={7} style={{ textAlign: "center", padding: "1.5rem" }}>
+                        <Text c="dimmed" size="20px">No orders found</Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  )
+                  : filteredOrders.map((order) => {
                     const fullName = `${order.first_name} ${order.last_name}`;
                     const totalQty = order.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
-                    const totalPrice =
-                      order.total ||
-                      order.items?.reduce((sum, i) => sum + i.price * i.quantity, 0) ||
-                      0;
+                    const totalPrice = order.total || order.items?.reduce((sum, i) => sum + i.price * i.quantity, 0) || 0;
 
                     return (
-                      <motion.tr
+                      <Table.Tr
                         key={order.id}
-                        custom={i}
-                        variants={rowVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        layout
-                        onClick={() => {
-                          setInvoiceData(order);
-                          setInvoiceModal(true);
-                        }}
+                        onClick={() => { setInvoiceData(order); setInvoiceModal(true); }}
                         style={{ cursor: "pointer", borderBottom: "1px solid #D8CBB8" }}
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = "transparent")
-                        }
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                       >
-                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>
-                          {order.formatted_id}
-                        </Table.Td>
+                        <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>{order.formatted_id}</Table.Td>
                         <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>{fullName}</Table.Td>
                         <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>{totalQty}</Table.Td>
                         <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                          {new Date(order.order_date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
+                          {new Date(order.order_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                         </Table.Td>
-                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                          ₱{Math.round(totalPrice).toLocaleString()}
-                        </Table.Td>
+                        <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>₱{Math.round(totalPrice).toLocaleString()}</Table.Td>
                         <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
                           <Badge
                             size="27"
                             variant="filled"
                             style={{
-                              backgroundColor:
-                                order.payment?.payment_status === "Paid"
-                                  ? "#A5BDAE"
-                                  : "#D9D9D9",
-                              color:
-                                order.payment?.payment_status === "Paid" ? "#FFF" : "#7A7A7A",
+                              backgroundColor: order.payment?.payment_status === "Paid" ? "#A5BDAE" : "#D9D9D9",
+                              color: order.payment?.payment_status === "Paid" ? "#FFF" : "#7A7A7A",
                               width: "115px",
                               fontWeight: 400,
                               paddingTop: "5px",
@@ -330,11 +277,7 @@ export default function Order() {
                                 color="#276D58"
                                 variant="subtle"
                                 p={3}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedOrder(order);
-                                  setAddPaymentOpen(true);
-                                }}
+                                onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setAddPaymentOpen(true); }}
                               >
                                 <Icons.AddPayment size={26} />
                               </Button>
@@ -344,21 +287,15 @@ export default function Order() {
                               variant="subtle"
                               color="red"
                               p={3}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOrderToDelete(order);
-                                setDeleteModalOpen(true);
-                              }}
+                              onClick={(e) => { e.stopPropagation(); setOrderToDelete(order); setDeleteModalOpen(true); }}
                             >
                               <Icons.Trash size={26} />
                             </Button>
                           </Group>
                         </Table.Td>
-                      </motion.tr>
+                      </Table.Tr>
                     );
                   })}
-                </AnimatePresence>
-              )}
             </Table.Tbody>
           </Table>
         </ScrollArea>
@@ -373,11 +310,10 @@ export default function Order() {
             radius="md"
           />
         </Center>
-
-
       </Paper>
 
-      {/* Delete Confirmation */}
+
+      {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
@@ -386,22 +322,14 @@ export default function Order() {
           if (!orderToDelete) return;
           try {
             await api.delete(`/orders/${orderToDelete.id}`);
-
-            // Close modal early
             setDeleteModalOpen(false);
-
-            // Optionally clear orderToDelete immediately
             setOrderToDelete(null);
-
-            // Refetch current page from server to get updated orders and pagination
             await fetchOrdersPage(currentPage, search);
-
             NotifySuccess.deleted();
           } catch (err) {
             console.error("Error deleting order:", err);
           }
         }}
-
       />
 
       {/* Add Payment Modal */}
@@ -414,30 +342,18 @@ export default function Order() {
             setOrdersCache((prev) => {
               const newCache = { ...prev };
               Object.keys(newCache).forEach((page) => {
-                newCache[page] = newCache[page].map((o) =>
-                  o.id === updatedOrder.id ? updatedOrder : o
-                );
+                newCache[page] = newCache[page].map((o) => (o.id === updatedOrder.id ? updatedOrder : o));
               });
               return newCache;
             });
-
-            // Refresh the CURRENT PAGE instead of jumping to last page
-            const current = currentPage;
-            fetchOrdersPage(current, search);
-
+            fetchOrdersPage(currentPage, search, false);
             NotifySuccess.addedPayment();
           }}
-
-
         />
       )}
 
       {/* Invoice Modal */}
-      <InvoicePreview
-        opened={invoiceModal}
-        onClose={() => setInvoiceModal(false)}
-        invoiceData={invoiceData}
-      />
+      <InvoicePreview opened={invoiceModal} onClose={() => setInvoiceModal(false)} invoiceData={invoiceData} />
     </Stack>
   );
 }

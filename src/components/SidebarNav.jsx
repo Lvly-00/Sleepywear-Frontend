@@ -79,20 +79,21 @@ function SidebarNav() {
 
   // ---- Handle Orders Navigation ----
   const handleOrdersClick = async (e) => {
-    e.preventDefault();
-    if (loadingOrders) return;
+  e.preventDefault();
+  if (loadingOrders) return;
 
-    setLoadingOrders(true);
-    try {
-      const res = await api.get("/orders");
-      navigate("/orders", { state: { preloadedOrders: res.data } });
-    } catch (err) {
-      console.error("Failed to fetch orders:", err);
-      alert("Failed to load orders. Please try again.");
-    } finally {
-      setLoadingOrders(false);
-    }
-  };
+  setLoadingOrders(true);
+  try {
+    const res = await api.get("/orders");
+    navigate("/orders", { state: { preloadedOrders: res.data } });
+  } catch (err) {
+    console.error("Failed to fetch orders:", err);
+    alert("Failed to load orders. Please try again.");
+  } finally {
+    setLoadingOrders(false);
+  }
+};
+
 
   // ---- Handle Inventory Navigation ----
   const handleInventoryClick = async (e) => {
