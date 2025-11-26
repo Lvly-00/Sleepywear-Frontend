@@ -172,7 +172,7 @@ export default function Item() {
                           textAlign: "center",
                         }}
                       >
-                        Sold Out
+                        Sold 
                       </Text>
                     </div>
                   )}
@@ -233,7 +233,7 @@ export default function Item() {
                             setEditModal(true);
                           }}
                         >
-                          <Icons.Edit size={18} />
+                          <Icons.Edit size={26} />
                         </Button>
                         <Button
                           size="compact-sm"
@@ -244,7 +244,7 @@ export default function Item() {
                             setDeleteModalOpen(true);
                           }}
                         >
-                          <Icons.Trash size={18} />
+                          <Icons.Trash size={26} />
                         </Button>
                       </Group>
                     </Group>
