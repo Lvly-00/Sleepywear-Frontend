@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
 
@@ -28,111 +28,165 @@ export default function CustomerLogs() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ------------------------------------------------------------------------------
+  // READ URL PARAMS
+  // ------------------------------------------------------------------------------
   const queryParams = new URLSearchParams(location.search);
-  const initialPage = parseInt(queryParams.get("page") || "1", 10);
-  const initialSearch = queryParams.get("search") || "";
+  const pageFromUrl = parseInt(queryParams.get("page") || "1", 10);
+  const searchFromUrl = queryParams.get("search") || "";
+  const preloadedCustomers = location.state?.preloadedCustomers || [];
 
-  const preloadedCustomers = location.state?.preloadedCustomers || null;
-
-  // Prevent refetch on first render if preloaded data exists
-  const firstLoad = useRef(true);
-
-  //-----------------------------
-  // STATE
-  //-----------------------------
-  const [customersCache, setCustomersCache] = useState(
-    preloadedCustomers ? { [initialPage]: preloadedCustomers } : {}
+  const [searchValue, setSearchValue] = useState(searchFromUrl);
+  const [search, setSearch] = useState(searchFromUrl);
+  const [page, setPage] = useState(pageFromUrl);
+  const [customers, setCustomers] = useState(
+    Array.isArray(preloadedCustomers) ? preloadedCustomers : []
   );
-
-  const [currentPage, setCurrentPage] = useState(initialPage);
-  const [search, setSearch] = useState(initialSearch);
-  const [searchValue, setSearchValue] = useState(initialSearch);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(!preloadedCustomers);
+  const [loading, setLoading] = useState(!preloadedCustomers.length);
 
   const [deleteModal, setDeleteModal] = useState({
     opened: false,
     customer: null,
   });
 
-  //-----------------------------
-  // SYNC URL PARAMS
-  //-----------------------------
+  // ------------------------------------------------------------------------------
+  // CACHE (same as Collections)
+  // ------------------------------------------------------------------------------
+  const cacheRef = useRef({});
+
+  // ------------------------------------------------------------------------------
+  // Detect browser back/forward (POP)
+  // ------------------------------------------------------------------------------
+  const popRef = useRef(false);
+
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (currentPage > 1) params.set("page", currentPage);
-    if (search.trim() !== "") params.set("search", search.trim());
+    const handlePop = () => {
+      popRef.current = true;
+    };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, []);
 
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-  }, [currentPage, search]);
-
-  //-----------------------------
+  // ------------------------------------------------------------------------------
   // FETCH CUSTOMERS
-  //-----------------------------
-  const fetchCustomersPage = useCallback(
-    async (page, searchTerm = search, showLoader = true) => {
-      if (showLoader) setLoading(true);
+  // ------------------------------------------------------------------------------
+  const fetchCustomers = useCallback(
+    async (targetPage, searchTerm, forceRefresh = false) => {
+      const key = searchTerm.trim().toLowerCase();
+
+      // cache hit (unless forced)
+      if (!forceRefresh && cacheRef.current[key]?.[targetPage]) {
+        setCustomers(cacheRef.current[key][targetPage].data);
+        setTotalPages(cacheRef.current[key][targetPage].last_page);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
 
       try {
         const res = await api.get("/customers", {
           params: {
-            page,
+            page: targetPage,
             per_page: CUSTOMERS_PER_PAGE,
             search: searchTerm.trim() || undefined,
           },
         });
 
-        setCustomersCache((prev) => ({
-          ...prev,
-          [page]: Array.isArray(res.data.data) ? res.data.data : [],
-        }));
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        const lastPage = res.data?.last_page || 1;
 
-        setTotalPages(res.data.last_page || 1);
+        // store in cache
+        if (!cacheRef.current[key]) cacheRef.current[key] = {};
+        cacheRef.current[key][targetPage] = {
+          data,
+          last_page: lastPage,
+        };
+
+        setCustomers(data);
+        setTotalPages(lastPage);
       } catch (err) {
-        console.error("Error fetching customers:", err);
-        setCustomersCache((prev) => ({
-          ...prev,
-          [page]: [],
-        }));
+        console.error("Fetch error:", err);
+        setCustomers([]);
       } finally {
-        if (showLoader) setLoading(false);
+        setLoading(false);
       }
     },
-    [search]
+    []
   );
 
-  //-----------------------------
-  // FETCH ON FIRST LOAD OR CHANGE
-  //-----------------------------
+  // ------------------------------------------------------------------------------
+  // INITIAL LOAD (same as Collections)
+  // ------------------------------------------------------------------------------
   useEffect(() => {
-    // 🛑 Skip fetching if first load AND preloaded data exists
-    if (preloadedCustomers && firstLoad.current) {
-      firstLoad.current = false;
+    const trimmed = searchFromUrl.trim().toLowerCase();
+
+    // preload
+    if (preloadedCustomers.length > 0) {
+      if (!cacheRef.current[trimmed]) cacheRef.current[trimmed] = {};
+      cacheRef.current[trimmed][pageFromUrl] = {
+        data: preloadedCustomers,
+        last_page: totalPages,
+      };
+
+      setCustomers(preloadedCustomers);
+      setLoading(false);
       return;
     }
 
-    // If we already have cache for the page ➜ don't show skeleton
-    const cached = customersCache[currentPage];
-    fetchCustomersPage(currentPage, search, !cached);
-  }, [currentPage, search]);
+    // normal fetch
+    fetchCustomers(pageFromUrl, trimmed);
+  }, []);
 
-  //-----------------------------
+  // ------------------------------------------------------------------------------
+  // POP BACK NAVIGATION — force refresh on pop
+  // ------------------------------------------------------------------------------
+  useEffect(() => {
+    if (popRef.current) {
+      popRef.current = false;
+      fetchCustomers(page, search, true);
+    }
+  }, [page, search]);
+
+  // ------------------------------------------------------------------------------
+  // SYNC URL PARAMS
+  // ------------------------------------------------------------------------------
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set("page", page);
+    if (search.trim()) params.set("search", search.trim());
+
+    navigate(
+      { pathname: location.pathname, search: params.toString() },
+      { replace: true }
+    );
+  }, [page, search]);
+
+  // ------------------------------------------------------------------------------
+  // PAGE CHANGE (no autofetch — exactly like Collections)
+  // ------------------------------------------------------------------------------
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+
+    const trimmed = search.trim().toLowerCase();
+    fetchCustomers(newPage, trimmed);
+  };
+
+  // ------------------------------------------------------------------------------
   // SEARCH
-  //-----------------------------
-  const handleSearchEnter = () => {
+  // ------------------------------------------------------------------------------
+  const performSearch = () => {
     const trimmed = searchValue.trim();
     setSearch(trimmed);
-    setCurrentPage(1);
-    fetchCustomersPage(1, trimmed);
+    setPage(1);
+
+    fetchCustomers(1, trimmed, true);
   };
 
-  const handleSearchKeyPress = (e) => {
-    if (e.key === "Enter") handleSearchEnter();
-  };
-
-  //-----------------------------
+  // ------------------------------------------------------------------------------
   // DELETE CUSTOMER
-  //-----------------------------
+  // ------------------------------------------------------------------------------
   const handleDelete = async () => {
     if (!deleteModal.customer) return;
 
@@ -140,69 +194,49 @@ export default function CustomerLogs() {
       setLoading(true);
       await api.delete(`/customers/${deleteModal.customer.id}`);
 
-      // Remove item from ALL cached pages
-      setCustomersCache((prev) => {
-        const updated = { ...prev };
-        for (const page in updated) {
-          updated[page] = updated[page].filter(
-            (c) => c.id !== deleteModal.customer.id
-          );
-        }
-        return updated;
-      });
+      // invalidate cache
+      cacheRef.current = {};
 
-      setDeleteModal({ opened: false, customer: null });
-
-      // Reload current page from API
-      await fetchCustomersPage(currentPage, search);
+      fetchCustomers(page, search, true);
 
       NotifySuccess.deleted();
+      setDeleteModal({ opened: false, customer: null });
     } catch (err) {
-      console.error("Failed to delete customer:", err);
+      console.error("Delete failed:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  //-----------------------------
-  // SKELETON
-  //-----------------------------
-  const currentCustomers = customersCache[currentPage] || [];
-  const skeletonRowCount = Math.max(currentCustomers.length, MIN_SKELETON_ROWS);
+  // ------------------------------------------------------------------------------
+  // SKELETON RENDER
+  // ------------------------------------------------------------------------------
+  const skeletonRows = Math.max(customers.length, MIN_SKELETON_ROWS);
 
   const renderSkeletonRows = () =>
-    Array.from({ length: skeletonRowCount }).map((_, i) => (
+    Array.from({ length: skeletonRows }).map((_, i) => (
       <Table.Tr key={i}>
-        <Table.Td><Skeleton height={20} width="70%" /></Table.Td>
-        <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={20} width="60%" />
-        </Table.Td>
-        <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={20} width="40%" />
-        </Table.Td>
-        <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={20} width="50%" />
-        </Table.Td>
-        <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={20} width="30%" />
-        </Table.Td>
-        <Table.Td style={{ textAlign: "center" }}>
-          <Skeleton height={20} width="20%" />
-        </Table.Td>
+        {Array(6)
+          .fill(null)
+          .map((_, j) => (
+            <Table.Td key={j} style={{ textAlign: j === 0 ? "left" : "center" }}>
+              <Skeleton height={20} width="70%" />
+            </Table.Td>
+          ))}
       </Table.Tr>
     ));
 
-  //-----------------------------
+  // ------------------------------------------------------------------------------
   // RENDER
-  //-----------------------------
+  // ------------------------------------------------------------------------------
   return (
-    <Stack p="xs" spacing="lg" style={{ fontFamily: "'League Spartan', sans-serif" }}>
+    <Stack p="xs" spacing="lg">
       <PageHeader
         title="Customers"
         showSearch
         search={searchValue}
         setSearch={setSearchValue}
-        onSearchEnter={handleSearchEnter}
+        onSearchEnter={performSearch}
       />
 
       <Paper
@@ -210,21 +244,18 @@ export default function CustomerLogs() {
         p="xl"
         style={{
           minHeight: "70vh",
-          marginBottom: "1rem",
           background: "white",
           display: "flex",
           flexDirection: "column",
         }}
       >
-        <ScrollArea scrollbarSize={8} style={{ flex: 1, minHeight: "0" }}>
-          <Table
-            highlightOnHover
+        <ScrollArea scrollbarSize={8} style={{ flex: 1 }}>
+          <Table highlightOnHover
             styles={{
               tr: { borderBottom: "1px solid #D8CBB8", fontSize: "20px" },
               th: { fontFamily: "'League Spartan', sans-serif", fontSize: "20px" },
-              td: { fontFamily: "'League Spartan', sans-serif" },
-            }}
-          >
+              td: { fontFamily: "'League Spartan', sans-serif", fontSize: "16px" },
+            }}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Customer Name</Table.Th>
@@ -237,81 +268,54 @@ export default function CustomerLogs() {
             </Table.Thead>
 
             <Table.Tbody>
-              {loading ? (
-                renderSkeletonRows()
-              ) : currentCustomers.length === 0 ? (
-                <Table.Tr>
-                  <Table.Td colSpan={6} style={{ textAlign: "center", padding: "1.5rem" }}>
-                    <Text c="dimmed" size="20px">
-                      No customers found
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              ) : (
-                currentCustomers.map((c) => (
-                  <Table.Tr
-                    key={c.id}
-                    style={{ borderBottom: "1px solid #D8CBB8" }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
-                  >
-                    <Table.Td style={{ fontSize: "16px" }}>
-                      {c.first_name} {c.last_name}
-                    </Table.Td>
-
-                    <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                      {c.address || "—"}
-                    </Table.Td>
-
-                    <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                      {c.contact_number}
-                    </Table.Td>
-
-                    <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                      {c.social_handle && /^https?:\/\//.test(c.social_handle) ? (
-                        <Anchor
-                          href={c.social_handle}
-                          target="_blank"
-                          underline="hover"
-                          style={{ color: "#4455f0" }}
-                        >
-                          {c.social_handle}
-                        </Anchor>
-                      ) : (
-                        "-"
-                      )}
-                    </Table.Td>
-
-                    <Table.Td style={{ textAlign: "center", fontSize: "16px" }}>
-                      {new Date(c.created_at).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </Table.Td>
-
-                    <Table.Td style={{ textAlign: "center" }}>
-                      <Group justify="center">
-                        <Button
-                          size="xs"
-                          variant="subtle"
-                          color="red"
-                          p={3}
-                          onClick={() =>
-                            setDeleteModal({ opened: true, customer: c })
-                          }
-                        >
-                          <Icons.Trash size={22} />
-                        </Button>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))
-              )}
+              {loading
+                ? renderSkeletonRows()
+                : customers.length === 0
+                  ? (
+                    <Table.Tr>
+                      <Table.Td colSpan={6} style={{ textAlign: "center", padding: "1.5rem" }}>
+                        <Text c="dimmed">No customers found</Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  )
+                  : customers.map((c) => (
+                    <Table.Tr key={c.id}>
+                      <Table.Td>{c.first_name} {c.last_name}</Table.Td>
+                      <Table.Td style={{ textAlign: "center" }}>{c.address || "—"}</Table.Td>
+                      <Table.Td style={{ textAlign: "center" }}>{c.contact_number}</Table.Td>
+                      <Table.Td style={{ textAlign: "center" }}>
+                        {c.social_handle && /^https?:\/\//.test(c.social_handle)
+                          ? (
+                            <Anchor href={c.social_handle} target="_blank" underline="hover">
+                              {c.social_handle}
+                            </Anchor>
+                          )
+                          : "-"}
+                      </Table.Td>
+                      <Table.Td style={{ textAlign: "center" }}>
+                        {new Date(c.created_at).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </Table.Td>
+                      <Table.Td style={{ textAlign: "center" }}>
+                        <Group justify="center">
+                          <Button
+                            size="xs"
+                            variant="subtle"
+                            color="red"
+                            p={3}
+                            onClick={() =>
+                              setDeleteModal({ opened: true, customer: c })
+                            }
+                          >
+                            <Icons.Trash size={22} />
+                          </Button>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
             </Table.Tbody>
           </Table>
         </ScrollArea>
@@ -319,8 +323,8 @@ export default function CustomerLogs() {
         <Center mt="md">
           <Pagination
             total={totalPages}
-            value={currentPage}
-            onChange={(page) => setCurrentPage(page)}
+            value={page}
+            onChange={handlePageChange}
             color="#0A0B32"
             size="md"
             radius="md"
