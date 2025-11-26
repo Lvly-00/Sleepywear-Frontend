@@ -238,7 +238,7 @@ export default function Order() {
               <Table.Tr>
                 <Table.Th>Order ID</Table.Th>
                 <Table.Th>Customer Name</Table.Th>
-                <Table.Th style={{ textAlign: "center" }}>Qty</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>QTY</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Order Date</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Price</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Payment Status</Table.Th>
