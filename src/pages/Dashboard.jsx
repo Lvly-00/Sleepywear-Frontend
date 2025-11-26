@@ -84,7 +84,7 @@ function Dashboard() {
 
         chartData.push(row);
       }
-      
+
 
       setDailySales(chartData);
       setCollections(collectionNames);
@@ -99,7 +99,7 @@ function Dashboard() {
     fetchDashboardData();
   }, []);
 
-  console.log("Daily Sales Data", dailySales);
+  // console.log("Daily Sales Data", dailySales);
 
   return (
     <Stack p="xs" spacing="lg">
@@ -113,22 +113,47 @@ function Dashboard() {
 
         <Grid gutter="xl" justify="center">
           {[
-            { label: "Net Income", icon: <Icons.Coins size={66} />, value: `₱${formatNumber(summary.netIncome)}` },
-            { label: "Gross Income", icon: <Icons.Coin size={66} />, value: `₱${formatNumber(summary.grossIncome)}` },
+            { label: "Net Income", icon: <Icons.Coins size={66} />, value: `₱${formatNumber(summary.netIncome)}`, extraText: "‎     " },
+            { label: "Gross Income", icon: <Icons.Coin size={66} />, value: `₱${formatNumber(summary.grossIncome)}`, extraText: "‎    " },
             { label: "Total Items Sold", icon: <Icons.Tag size={66} />, value: formatNumber(summary.totalItemsSold), extraText: "pieces" },
             { label: "Customers", icon: <Icons.Customers size={66} />, value: formatNumber(summary.totalCustomers), extraText: "total" },
           ].map(({ label, icon, value, extraText }, idx) => (
             <Grid.Col key={idx} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
               <Skeleton visible={loading} height={250} radius="xl">
-                <Card style={{ ...cardStyle, maxWidth: 300, width: "100%" }}>
-                  <Text weight={400} style={{ fontSize: "clamp(18px,2.5vw,26px)", marginBottom: 6, fontFamily: "'League Spartan', sans-serif" }}>
+                <Card style={{ ...cardStyle }}>
+                  <Text style={{ fontWeight: 400, fontSize: "clamp(18px,2.5vw,26px)", marginBottom: 6, fontFamily: "'League Spartan', sans-serif" }}>
                     {label}
                   </Text>
                   {icon}
-                  <Text color="#5D4324" style={{ fontSize: "clamp(32px,2vw,50px)", fontWeight: 500, marginTop: 6, fontFamily: "'League Spartan', sans-serif" }}>
+                  <Text
+                    color="#5D4324"
+                    style={{
+                      fontSize: "clamp(32px,3vw,50px)",
+                      margin: 0,
+                      padding: 0,
+                      lineHeight: 1.1,     // 🔥 reduces vertical gap
+                      fontWeight: 500,
+                      fontFamily: "'League Spartan', sans-serif",
+                    }}
+                  >
                     {value}
                   </Text>
-                  {extraText && <Text color="#7a6f58" style={{ fontSize: "clamp(18px,2vw,26px)", marginTop: 2, fontWeight: 400, fontFamily: "'League Spartan', sans-serif" }}>{extraText}</Text>}
+
+                  {extraText && (
+                    <Text
+                      color="#7a6f58"
+                      style={{
+                        fontSize: "clamp(18px,2vw,26px)",
+                        margin: 0,
+                        padding: 0,
+                        lineHeight: 1.0,   // 🔥 makes it tighter
+                        fontWeight: 400,
+                        fontFamily: "'League Spartan', sans-serif",
+                      }}
+                    >
+                      {extraText}
+                    </Text>
+                  )}
                 </Card>
               </Skeleton>
             </Grid.Col>
