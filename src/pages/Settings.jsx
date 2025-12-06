@@ -19,7 +19,6 @@ import { Icons } from "../components/Icons";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const Settings = () => {
-  const location = useLocation();
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState({ name: "", email: "" });
@@ -28,17 +27,21 @@ const Settings = () => {
     new_password: "",
     new_password_confirmation: "",
   });
+
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  
+  // Separate error states for clarity
+  const [profileErrors, setProfileErrors] = useState({});
+  const [passwordErrors, setPasswordErrors] = useState({});
 
-  // Password validation regex (min 8 chars, uppercase, lowercase, number, special char)
+  // Client-side regex for strong password
   const isPasswordSecure = (password) => {
     const regex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-={}[\]|\\:;"'<>,./~`])[A-Za-z\d@$!%*?&#^()_+\-={}[\]|\\:;"'<>,./~`]{8,}$/;
     return regex.test(password);
   };
 
-  // Fetch user settings
   const fetchProfile = async () => {
     try {
       setLoading(true);
@@ -48,8 +51,8 @@ const Settings = () => {
         email: res.data.email || "",
       });
     } catch (err) {
-      NotifySuccess.deleted();
-      console.error("Fetch profile error:", err);
+      NotifySuccess.error("Could not load profile.");
+      console.error("Fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -59,74 +62,94 @@ const Settings = () => {
     fetchProfile();
   }, []);
 
-  // Generic update handler
   const handleUpdate = async (data, url, refresh = false) => {
     try {
       setUpdating(true);
       await api.put(url, data);
       NotifySuccess.editedItem();
-
+      setProfileErrors({});
       if (refresh) await fetchProfile();
     } catch (err) {
-      NotifySuccess.deleted();
-      console.error("Update error:", err.response?.data);
+      const response = err.response?.data;
+      if (err.response?.status === 422 && response?.errors) {
+        setProfileErrors(response.errors);
+      } else {
+        NotifySuccess.error("Something went wrong.");
+      }
     } finally {
       setUpdating(false);
     }
   };
 
-  // Update Profile
   const updateProfile = (e) => {
     e.preventDefault();
     handleUpdate(profile, "/user/settings", true);
   };
 
-  // Update Password
   const updatePassword = async (e) => {
     e.preventDefault();
+    
+    // 1. Reset previous errors
+    setPasswordErrors({});
 
-    if (!isPasswordSecure(passwords.new_password)) {
-      NotifySuccess.weakPassword();
-      return;
-    }
-
+    // 2. Client-Side Validation (New Password)
+    // We check this first to save an API call if the format is obviously wrong.
+    const validationErrors = {};
     if (passwords.new_password !== passwords.new_password_confirmation) {
-      NotifySuccess.passwordMismatch();
-      return;
+      validationErrors.new_password_confirmation = ["Passwords do not match."];
+    }
+    if (!isPasswordSecure(passwords.new_password)) {
+      validationErrors.new_password = [
+        "Password must be at least 8 characters and include uppercase, lowercase, number, and symbol.",
+      ];
     }
 
+    // If local validation fails, show errors and STOP.
+    if (Object.keys(validationErrors).length > 0) {
+      setPasswordErrors(validationErrors);
+      return; 
+    }
+
+    // 3. Server-Side Validation (Current Password & Final Check)
     try {
       setUpdating(true);
       await api.put("/user/settings/password", passwords);
 
-      //  Success notification
       NotifySuccess.passwordUpdated();
 
+      // Clear form
       setPasswords({
         current_password: "",
         new_password: "",
         new_password_confirmation: "",
       });
 
-      // Example logout (if using token auth)
+      // Logout
       localStorage.removeItem("authToken");
       navigate("/");
     } catch (err) {
-      const errorMsg = err.response?.data?.message;
-      const currentPasswordError =
-        err.response?.data?.errors?.current_password?.includes(
-          "Current password is incorrect."
-        );
+      const response = err.response?.data;
+      const status = err.response?.status;
 
-      if (currentPasswordError) {
-        NotifySuccess.incorrectPassword();
-      } else if (errorMsg === "Failed to update password.") {
-        NotifySuccess.deleted();
+      // Handle 422 Validation Errors (Including "Current password incorrect")
+      if (status === 422 && response?.errors) {
+        // This takes the object { current_password: ["Incorrect..."], new_password: ["..."] }
+        // and sets it to state. The Inputs will read this immediately.
+        setPasswordErrors(response.errors);
+        
+        // Optional: Also show a toast if it's the specific password error
+        if (response.errors.current_password) {
+             NotifySuccess.error("Current password is incorrect");
+        }
+      } 
+      else if (response?.message) {
+        NotifySuccess.error(response.message);
+        setPasswordErrors({ general: response.message });
       } else {
-        NotifySuccess.deleted();
+        NotifySuccess.error("Failed to update password.");
       }
 
-      console.error("Password update error:", err.response?.data);
+      console.error("Password update error:", response);
     } finally {
       setUpdating(false);
     }
@@ -148,24 +171,15 @@ const Settings = () => {
           <Title order={2} style={{ color: "#02034C", fontWeight: 500 }}>
             Profile Information
           </Title>
-          <Text size="md" color="#02034c6e">
+          <Text size="md" c="#02034c6e">
             Update your Business Name and Email.
           </Text>
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 5 }}>
-          <Card
-            shadow="md"
-            padding="xl"
-            radius="xl"
-            style={{
-              border: "1px solid #E0E0E0",
-              backgroundColor: "#FFFFFF",
-              minHeight: 180,
-            }}
-          >
+          <Card shadow="md" padding="xl" radius="xl" style={{ border: "1px solid #E0E0E0", backgroundColor: "#FFFFFF", minHeight: 180 }}>
             {loading ? (
-              <Stack>
+              <Stack gap="md">
                 <Skeleton height={36} radius="md" />
                 <Skeleton height={36} radius="md" />
                 <Skeleton height={40} radius="xl" />
@@ -174,40 +188,37 @@ const Settings = () => {
               <Transition mounted={!loading} transition="fade" duration={300} timingFunction="ease">
                 {(styles) => (
                   <form onSubmit={updateProfile} style={styles}>
-                    <Stack spacing="md">
+                    <Stack gap="md">
                       <TextInput
                         label="Business Name"
                         value={profile.name}
-                        onChange={(e) =>
-                          setProfile({ ...profile, name: e.target.value })
-                        }
+                        onChange={(e) => {
+                          setProfile({ ...profile, name: e.target.value });
+                          setProfileErrors({ ...profileErrors, name: null });
+                        }}
+                        error={profileErrors.name?.[0]}
                         radius="md"
                         size="md"
                         disabled={updating}
-                        styles={{
-                          label: { color: "#232D80" },
-                          input: { borderColor: "#232D80", color: "#232c808f" },
-                        }}
+                        styles={{ label: { color: "#232D80" }, input: { borderColor: "#232D80", color: "#232c808f" } }}
                       />
+                      
                       <TextInput
                         label="Email"
                         value={profile.email}
-                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                        onChange={(e) => {
+                          setProfile({ ...profile, email: e.target.value });
+                          setProfileErrors({ ...profileErrors, email: null });
+                        }}
+                        error={profileErrors.email?.[0]}
                         radius="md"
                         size="md"
                         disabled={updating}
-                        styles={{
-                          label: { color: "#232D80" },
-                          input: { borderColor: "#232D80", color: "#232c808f" },
-                        }}
+                        styles={{ label: { color: "#232D80" }, input: { borderColor: "#232D80", color: "#232c808f" } }}
                       />
+
                       <Group justify="flex-end">
-                        <SubmitButton
-                          type="submit"
-                          radius="xl"
-                          loading={updating}
-                          style={{ backgroundColor: "#232D80", color: "#fff" }}
-                        >
+                        <SubmitButton type="submit" radius="xl" loading={updating} style={{ backgroundColor: "#232D80", color: "#fff" }}>
                           Update
                         </SubmitButton>
                       </Group>
@@ -226,24 +237,15 @@ const Settings = () => {
           <Title order={2} style={{ color: "#02034C", fontWeight: 500 }}>
             Update Password
           </Title>
-          <Text size="md" color="#02034c6e">
-            Use a strong combination of letters, numbers, and symbols (e.g. @, ?, 1, 2)
+          <Text size="md" c="#02034c6e">
+            Use a strong combination of letters, numbers, and symbols.
           </Text>
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 5 }}>
-          <Card
-            shadow="md"
-            padding="xl"
-            radius="xl"
-            style={{
-              border: "1px solid #E0E0E0",
-              backgroundColor: "#FFFFFF",
-              minHeight: 180,
-            }}
-          >
+          <Card shadow="md" padding="xl" radius="xl" style={{ border: "1px solid #E0E0E0", backgroundColor: "#FFFFFF", minHeight: 180 }}>
             {loading ? (
-              <Stack>
+              <Stack gap="md">
                 <Skeleton height={36} radius="md" />
                 <Skeleton height={36} radius="md" />
                 <Skeleton height={36} radius="md" />
@@ -253,13 +255,21 @@ const Settings = () => {
               <Transition mounted={!loading} transition="fade" duration={300} timingFunction="ease">
                 {(styles) => (
                   <form onSubmit={updatePassword} style={styles}>
-                    <Stack spacing="md">
+                    <Stack gap="md">
+                      {/* CURRENT PASSWORD INPUT */}
                       <PasswordInput
                         label="Current Password"
                         value={passwords.current_password}
-                        onChange={(e) =>
-                          setPasswords({ ...passwords, current_password: e.target.value })
-                        }
+                        onChange={(e) => {
+                          setPasswords({
+                            ...passwords,
+                            current_password: e.target.value,
+                          });
+                          // Clear specific error on change
+                          setPasswordErrors((prev) => ({ ...prev, current_password: null }));
+                        }}
+                        // Display error from state (Server or Client)
+                        error={passwordErrors.current_password && passwordErrors.current_password[0]}
                         visibilityToggleIcon={({ reveal }) =>
                           reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
                         }
@@ -268,53 +278,58 @@ const Settings = () => {
                         disabled={updating}
                         styles={{
                           label: { color: "#232D80" },
-                          input: { borderColor: "#232D80", color: "#232c808f" },
+                          input: { 
+                             borderColor: passwordErrors.current_password ? "#fa5252" : "#232D80", 
+                             color: "#232c808f" 
+                          },
                         }}
                       />
+
+                      {/* NEW PASSWORD INPUT */}
                       <PasswordInput
                         label="New Password"
                         value={passwords.new_password}
-                        onChange={(e) =>
-                          setPasswords({ ...passwords, new_password: e.target.value })
-                        }
+                        onChange={(e) => {
+                          setPasswords({ ...passwords, new_password: e.target.value });
+                          setPasswordErrors((prev) => ({ ...prev, new_password: null }));
+                        }}
+                        error={passwordErrors.new_password && passwordErrors.new_password[0]}
                         visibilityToggleIcon={({ reveal }) =>
                           reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
                         }
                         radius="md"
                         size="md"
                         disabled={updating}
-                        styles={{
-                          label: { color: "#232D80" },
-                          input: { borderColor: "#232D80", color: "#232c808f" },
-                        }}
+                        styles={{ label: { color: "#232D80" }, input: { borderColor: "#232D80", color: "#232c808f" } }}
                       />
+
+                      {/* CONFIRM PASSWORD INPUT */}
                       <PasswordInput
                         label="Confirm New Password"
                         value={passwords.new_password_confirmation}
-                        onChange={(e) =>
-                          setPasswords({
-                            ...passwords,
-                            new_password_confirmation: e.target.value,
-                          })
-                        }
+                        onChange={(e) => {
+                          setPasswords({ ...passwords, new_password_confirmation: e.target.value });
+                          setPasswordErrors((prev) => ({ ...prev, new_password_confirmation: null }));
+                        }}
+                        error={passwordErrors.new_password_confirmation && passwordErrors.new_password_confirmation[0]}
                         visibilityToggleIcon={({ reveal }) =>
                           reveal ? <Icons.BlueEye size={18} /> : <Icons.BlueEyeOff size={18} />
                         }
                         radius="md"
                         size="md"
                         disabled={updating}
-                        styles={{
-                          label: { color: "#232D80" },
-                          input: { borderColor: "#232D80", color: "#232c808f" },
-                        }}
+                        styles={{ label: { color: "#232D80" }, input: { borderColor: "#232D80", color: "#232c808f" } }}
                       />
+
+                      {/* General/Fallback Errors */}
+                      {passwordErrors.general && (
+                        <Text size="sm" c="red">
+                          {passwordErrors.general}
+                        </Text>
+                      )}
+
                       <Group justify="flex-end">
-                        <SubmitButton
-                          type="submit"
-                          radius="xl"
-                          loading={updating}
-                          style={{ backgroundColor: "#232D80", color: "#fff" }}
-                        >
+                        <SubmitButton type="submit" radius="xl" loading={updating} style={{ backgroundColor: "#232D80", color: "#fff" }}>
                           Update
                         </SubmitButton>
                       </Group>
