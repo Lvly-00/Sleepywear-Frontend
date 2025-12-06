@@ -316,13 +316,13 @@ export default function Collection() {
 
                       <Table.Td style={{ textAlign: "center" }}>
                         <Badge
-                          size="27"
+                          size="28"
                           variant="filled"
                           style={{
                             backgroundColor:
                               col.status === "Active" ? "#A5BDAE" : "#D9D9D9",
                             color: col.status === "Active" ? "#FFFFFF" : "#7A7A7A",
-                            width: "115px",
+                            width: "130px",
                             fontWeight: 400,
                             paddingTop: "5px",
                             borderRadius: "16px",

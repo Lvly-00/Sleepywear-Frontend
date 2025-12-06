@@ -105,7 +105,7 @@ export default function Item() {
     if (!preloadedItems) fetchItems();
   }, [id]);
 
-  // 🔁 Listen for collection updates globally (real-time sync)
+  //  Listen for collection updates globally (real-time sync)
   useEffect(() => {
     const onCollectionsUpdated = () => fetchItems();
     window.addEventListener("collectionsUpdated", onCollectionsUpdated);
@@ -142,7 +142,6 @@ export default function Item() {
                   withBorder
                   style={{
                     opacity: item.status === "Available" ? 1 : 0.6,
-                    filter: item.status === "Available" ? "none" : "grayscale(0.7)",
                     transition: "all 0.2s ease",
                     height: "100%", // makes all cards equal height per row
                     display: "flex",
@@ -157,24 +156,28 @@ export default function Item() {
                         position: "absolute",
                         inset: 0,
                         background: "#faf8f366",
-                        zIndex: 2,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        zIndex: 1, // ensure overlay stays behind text
                       }}
                     >
+
                       <Text
                         fw={700}
                         transform="uppercase"
                         style={{
-                          fontSize: "clamp(20px, 5vw, 48px)",
-                          color: "#641212ff",
+                          position: "relative", // allow zIndex to work
+                          zIndex: 5,            // put text above overlay
+                          fontSize: "clamp(20px, 5vw, 50px)",
+                          color: "#B80000",
                           textAlign: "center",
                         }}
                       >
-                        Sold 
+                        Sold
                       </Text>
                     </div>
+
                   )}
 
                   {/*  Responsive image section */}
@@ -190,8 +193,10 @@ export default function Item() {
                             objectFit: "cover",
                             borderTopLeftRadius: "12px",
                             borderTopRightRadius: "12px",
+                            filter: item.status === "Available" ? "none" : "grayscale(0.7)",
                           }}
                         />
+
                       ) : (
                         <Skeleton height="100%" />
                       )}
@@ -220,8 +225,9 @@ export default function Item() {
                           textAlign: "center",
                         }}
                       >
-                        ₱{Number(item.price).toString().replace(/^0+/, "")}
+                        ₱{Number(item.price).toLocaleString()}
                       </Text>
+
 
                       <Group gap="xs">
                         <Button
