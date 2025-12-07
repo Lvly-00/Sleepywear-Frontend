@@ -35,19 +35,22 @@ export default function Order() {
   const initialPage = parseInt(queryParams.get("page") || "1", 10);
   const initialSearch = queryParams.get("search") || "";
 
+  // Handle preloaded state
   const preloadedOrders = location.state?.preloadedOrders || null;
   const newOrder = location.state?.newOrder || null;
   const openInvoiceOnLoad = location.state?.openInvoice || false;
 
-  const isInitialMount = useRef(true);
-
+  // Initialize cache with preloaded data if available
   const [ordersCache, setOrdersCache] = useState(
     preloadedOrders ? { [initialPage]: preloadedOrders } : {}
   );
+
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [search, setSearch] = useState(initialSearch);
   const [searchValue, setSearchValue] = useState(initialSearch);
   const [totalPages, setTotalPages] = useState(1);
+  
+  // Initialize loading: true if we don't have preloaded data
   const [loading, setLoading] = useState(!preloadedOrders);
 
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
@@ -56,17 +59,22 @@ export default function Order() {
   // Invoice Modal State
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
-  const [modalLoading, setModalLoading] = useState(false); // New loading state for modal
+  const [modalLoading, setModalLoading] = useState(false);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
 
+  // Sync URL with state
   useEffect(() => {
     const params = new URLSearchParams();
     if (currentPage > 1) params.set("page", currentPage);
     if (search.trim() !== "") params.set("search", search.trim());
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-  }, [currentPage, search, navigate, location.pathname]);
+    
+    // Only navigate if the search string is actually different to prevent re-renders
+    if (location.search !== `?${params.toString()}` && (location.search !== "" || params.toString() !== "")) {
+        navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+    }
+  }, [currentPage, search, navigate, location.pathname, location.search]);
 
   const fetchOrdersPage = useCallback(
     async (page, searchTerm = search, showLoader = true) => {
@@ -100,30 +108,41 @@ export default function Order() {
     [search]
   );
 
+  // --- FIXED LOGIC HERE ---
   useEffect(() => {
-    if (isInitialMount.current && preloadedOrders) {
-      isInitialMount.current = false;
-      return; 
+    // Check if we already have data for this page in our cache
+    const hasData = ordersCache[currentPage] && ordersCache[currentPage].length > 0;
+
+    // If we have data (e.g. from preloadedOrders or previous navigation), use it.
+    if (hasData) {
+      setLoading(false);
+      return;
     }
-    isInitialMount.current = false;
+
+    // Otherwise, fetch it.
     fetchOrdersPage(currentPage, search);
+    
+    // We intentionally omit 'ordersCache' from deps to prevent loops, 
+    // relying on currentPage/search changes to trigger new fetches.
   }, [currentPage, search, fetchOrdersPage]);
+
 
   const handleSearchTrigger = () => {
     const trimmed = searchValue.trim();
-    setSearch(trimmed); 
-    setCurrentPage(1);  
-    setOrdersCache({});
+    if (trimmed !== search) {
+        setLoading(true); // Show loader immediately
+        setSearch(trimmed); 
+        setCurrentPage(1);  
+        setOrdersCache({}); // Clear cache to force a refetch in the useEffect
+    }
   };
 
-  // --- NEW: Handle Row Click (Fetch Details) ---
   const handleRowClick = async (orderId) => {
-    setInvoiceModal(true); // Open immediately
-    setModalLoading(true); // Show loader inside
-    setInvoiceData(null);  // Clear old data
+    setInvoiceModal(true);
+    setModalLoading(true);
+    setInvoiceData(null); 
 
     try {
-      // Fetch full details (including items) from backend
       const res = await api.get(`/orders/${orderId}`);
       setInvoiceData(res.data);
     } catch (error) {
@@ -163,8 +182,6 @@ export default function Order() {
 
   useEffect(() => {
     if (newOrder && openInvoiceOnLoad) {
-      // If passing a new order from creation, it usually has items already.
-      // So we can set it directly.
       setInvoiceData(newOrder);
       setInvoiceModal(true);
       window.history.replaceState({}, document.title);
@@ -231,15 +248,12 @@ export default function Order() {
                   ) 
                   : displayedOrders.map((order) => {
                     const fullName = `${order.first_name} ${order.last_name}`;
-                    // Note: If items are missing from index(), these counts might be 0 or undefined.
-                    // That is expected behavior for Option 1.
                     const totalQty = order.items_count || order.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
                     const totalPrice = order.total;
 
                     return (
                       <Table.Tr
                         key={order.id}
-                        // UPDATED CLICK HANDLER
                         onClick={() => handleRowClick(order.id)}
                         style={{ cursor: "pointer", borderBottom: "1px solid #D8CBB8" }}
                       >
@@ -322,6 +336,7 @@ export default function Order() {
             setDeleteModalOpen(false);
             setOrderToDelete(null);
             setOrdersCache({});
+            // Force fetch
             await fetchOrdersPage(currentPage, search);
             NotifySuccess.deleted();
           } catch (err) {
@@ -347,7 +362,6 @@ export default function Order() {
         />
       )}
 
-      {/* MODAL WRAPPER to handle loading state */}
       {invoiceModal && (
         <InvoicePreview 
           opened={invoiceModal} 
