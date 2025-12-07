@@ -9,6 +9,7 @@ import {
   YAxis,
   Tooltip,
   Legend,
+  Label, // Import Label if needed, but we used the prop on Axis
 } from "recharts";
 import PageHeader from "../components/PageHeader";
 import { Icons } from "../components/Icons";
@@ -32,7 +33,6 @@ function Dashboard() {
   const [dailySales, setDailySales] = useState([]);
   const [collections, setCollections] = useState([]);
 
-  // 🔥 If preloadedSummary exists → NO SKELETON
   const [loading, setLoading] = useState(!preloadedSummary);
 
   const COLORS = ["#944E1B", "#54361C", "#F0BB78", "#AB8262", "#232D80"];
@@ -49,6 +49,8 @@ function Dashboard() {
 
     for (let i = 1; i <= monthDays; i++) {
       const row = { date: i };
+      
+      // 🔥 Initialize all collections to 0 by default so graph isn't empty/broken
       collectionNames.forEach((name) => (row[name] = 0));
 
       const dayData = data.dailySales.find((d) => Number(d.date) === i);
@@ -88,7 +90,6 @@ function Dashboard() {
     }
   };
 
-  // 🔥 Do NOT fetch if data is preloaded from Sidebar
   useEffect(() => {
     if (preloadedSummary) {
       buildChartData(preloadedSummary);
@@ -223,13 +224,21 @@ function Dashboard() {
             <ResponsiveContainer width="100%" height={320}>
               <LineChart
                 data={dailySales}
-                margin={{ top: 20, right: 30, left: 20 }}
+                // 🔥 Increased margins to fit the labels
+                margin={{ top: 20, right: 30, left: 10, bottom: 25 }}
               >
                 <XAxis
                   dataKey="date"
                   interval={0}
-                  height={60}
+                  height={40}
                   tick={{ fontSize: 12 }}
+                  // 🔥 Date Label added here
+                  label={{ 
+                    value: "Date", 
+                    position: "insideBottom", 
+                    offset: -10,
+                    style: { fill: "#666", fontSize: 14, fontWeight: 500 }
+                  }}
                 />
                 <YAxis
                   tickFormatter={(value) => {
@@ -238,11 +247,19 @@ function Dashboard() {
                     return `₱${value}`;
                   }}
                   width={70}
-                  domain={['auto', 'auto']}
+                  // 🔥 Forces Y-axis to start at 0 even if data is empty
+                  domain={[0, 'auto']} 
+                  // 🔥 Profit Label added here
+                  label={{ 
+                    value: "Profit", 
+                    angle: -90, 
+                    position: "insideLeft",
+                    style: { fill: "#666", fontSize: 14, fontWeight: 500 }
+                  }}
                 />
 
                 <Tooltip
-                  labelFormatter={(value) => `${monthName} ${value}`} 
+                  labelFormatter={(value) => `${monthName} ${value}`}
                   formatter={(value) => `₱${formatNumber(value)}`}
                   contentStyle={{
                     borderRadius: "12px",
@@ -252,7 +269,7 @@ function Dashboard() {
                     fontFamily: "'League Spartan', sans-serif",
                   }}
                 />
-                <Legend verticalAlign="bottom" height={36} />
+                <Legend verticalAlign="bottom" height={5} />
 
                 {collections.map((col, idx) => (
                   <Line
