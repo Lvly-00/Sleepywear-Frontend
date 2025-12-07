@@ -10,6 +10,7 @@ import {
   Paper,
   Skeleton,
   Stack,
+  AspectRatio, // Added AspectRatio
 } from "@mantine/core";
 import { IconChevronDown } from "@tabler/icons-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -26,10 +27,10 @@ const COLLECTIONS_STORAGE_KEY = "collectionsCache_v2";
 // ----------------------------------------------------------------------
 const fixImageUrl = (url) => {
   if (!url) return null;
-
+  
   if (url.startsWith("items/") || !url.includes(".")) {
-    // Use f_auto,q_auto to handle missing extensions (.png, .jpg)
-    return `https://res.cloudinary.com/dz0q8u0ia/image/upload/f_auto,q_auto/${url}`;
+     // Use f_auto,q_auto to handle missing extensions (.png, .jpg)
+     return `https://res.cloudinary.com/dz0q8u0ia/image/upload/f_auto,q_auto/${url}`;
   }
 
   // 2. If it's already a valid HTTP link
@@ -120,14 +121,13 @@ const AddOrder = () => {
 
           const itemsWithUrls = filteredItems.map((i) => ({
             ...i,
-
-            image_url: fixImageUrl(i.image),
+            image_url: fixImageUrl(i.image), 
             collection_id: c.id,
           }));
 
           return { ...c, items: itemsWithUrls };
         })
-        .filter((c) => c.items.length > 0);
+        .filter((c) => c.items.length > 0); 
 
       setCollections(activeCollections);
 
@@ -230,8 +230,6 @@ const AddOrder = () => {
               Add Collection
             </Button>
           </div>
-
-
         ) : (
           <Grid gutter="md" mt="lg">
             {availableItems.length === 0 ? (
@@ -242,15 +240,16 @@ const AddOrder = () => {
               availableItems.map((item) => {
                 const selected = selectedItems.some((i) => i.id === item.id);
                 return (
-                  <Grid.Col key={item.id} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+                  // UPDATED GRID: xl: 2 for large screens, xs: 6 for mobile
+                  <Grid.Col key={item.id} span={{ base: 12, xs: 6, sm: 4, md: 3, xl: 2 }}>
                     <Card
                       shadow="md"
                       radius="lg"
                       withBorder
-                      padding="lg"
+                      padding="sm"
                       onClick={() => handleItemToggle(item)}
                       style={{
-                        aspectRatio: "1080 / 1350",
+                        height: "100%",
                         borderColor: selected ? "#A5976B" : "#e0e0e0",
                         backgroundColor: selected ? "#F1F0ED" : "white",
                         cursor: "pointer",
@@ -258,43 +257,34 @@ const AddOrder = () => {
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
-                        overflow: "hidden",
                       }}
                     >
-                      {item.image_url && (
-                        <div
-                          style={{
-                            width: "100%",
-                            aspectRatio: "1080 / 1350",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            backgroundColor: "#f9f9f9",
-                            borderRadius: "10px",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <Image
-                            src={item.image_url}
-                            alt={item.name}
-                            fit="cover"
-                            width="100%"
-                            height="100%"
-                            onError={(e) => {
-                              console.error("Failed to load:", item.image_url);
-                            }}
-                          />
-                        </div>
-                      )}
+                      <Card.Section>
+                        {/* UPDATED: AspectRatio 1080/1350 */}
+                        <AspectRatio ratio={1080 / 1350}>
+                          {item.image_url && (
+                            <Image
+                              src={item.image_url}
+                              alt={item.name}
+                              fit="cover"
+                              width="100%"
+                              height="100%"
+                              onError={(e) => {
+                                console.error("Failed to load:", item.image_url);
+                              }}
+                            />
+                          )}
+                        </AspectRatio>
+                      </Card.Section>
 
-                      <div style={{ textAlign: "center", padding: "8px 0" }}>
-                        <Group gap="xs" justify="center" wrap="nowrap">
+                      <Stack pt="sm" gap={4} style={{ textAlign: "center", flexGrow: 1 }}>
+                        <Group gap="xs" justify="center" wrap="wrap" style={{ minHeight: "2.5em" }}>
                           <Text
-                            fw={500}
+                            fw={600}
                             transform="uppercase"
                             style={{
                               fontFamily: "'League Spartan', sans-serif",
-                              fontSize: "clamp(14px, 2.5vw, 24px)",
+                              fontSize: "clamp(12px, 1.2vw, 15px)",
                             }}
                           >
                             {item.item_code || item.code}
@@ -302,7 +292,7 @@ const AddOrder = () => {
                           <Text
                             c="dimmed"
                             style={{
-                              fontSize: "clamp(18px, 2.5vw, 24px)",
+                              fontSize: "clamp(12px, 1.2vw, 15px)",
                             }}
                           >
                             |
@@ -312,24 +302,26 @@ const AddOrder = () => {
                             transform="uppercase"
                             style={{
                               fontFamily: "'League Spartan', sans-serif",
-                              fontSize: "clamp(14px, 2.5vw, 24px)",
+                              fontSize: "clamp(12px, 1.2vw, 15px)",
                             }}
                           >
                             {item.name}
                           </Text>
                         </Group>
 
+                        {/* Price centered at bottom */}
                         <Text
                           color="#A6976B"
+                          mt="auto"
                           style={{
-                            fontSize: "clamp(14px, 1.8vw, 20px)",
+                            fontSize: "clamp(16px, 1.8vw, 20px)",
                             fontWeight: 400,
-                            marginTop: "4px",
+                            marginTop: "auto",
                           }}
                         >
                           ₱{item.price}
                         </Text>
-                      </div>
+                      </Stack>
                     </Card>
                   </Grid.Col>
                 );
