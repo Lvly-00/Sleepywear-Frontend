@@ -284,7 +284,7 @@ const AddOrder = () => {
                             transform="uppercase"
                             style={{
                               fontFamily: "'League Spartan', sans-serif",
-                              fontSize: "clamp(12px, 1.2vw, 15px)",
+                              fontSize: "clamp(12px, 1.2vw, 20px)",
                             }}
                           >
                             {item.item_code || item.code}
@@ -302,7 +302,7 @@ const AddOrder = () => {
                             transform="uppercase"
                             style={{
                               fontFamily: "'League Spartan', sans-serif",
-                              fontSize: "clamp(12px, 1.2vw, 15px)",
+                              fontSize: "clamp(12px, 1.2vw, 20px)",
                             }}
                           >
                             {item.name}

@@ -193,11 +193,11 @@ export default function Item() {
                   {/* 2. INFO SECTION */}
                   <Stack pt="sm" gap={4} style={{ textAlign: "center", flexGrow: 1 }}>
                     <Group gap="xs" justify="center" wrap="wrap" style={{ minHeight: "2.5em" }}>
-                      <Text fw={600} style={{ fontSize: "clamp(12px, 1.2vw, 15px)" }}>
+                      <Text fw={600} style={{ fontSize: "clamp(12px, 1.2vw, 20px)" }}>
                         {item.item_code || item.code}
                       </Text>
                       <Text c="dimmed" size="sm">|</Text>
-                      <Text fw={500} style={{ fontSize: "clamp(12px, 1.2vw, 15px)" }}>
+                      <Text fw={400} style={{ fontSize: "clamp(12px, 1.2vw, 20px)" }}>
                         {item.name}
                       </Text>
                     </Group>
