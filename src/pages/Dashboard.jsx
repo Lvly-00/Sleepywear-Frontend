@@ -9,7 +9,6 @@ import {
   YAxis,
   Tooltip,
   Legend,
-  Label, // Import Label if needed, but we used the prop on Axis
 } from "recharts";
 import PageHeader from "../components/PageHeader";
 import { Icons } from "../components/Icons";
@@ -32,7 +31,6 @@ function Dashboard() {
 
   const [dailySales, setDailySales] = useState([]);
   const [collections, setCollections] = useState([]);
-
   const [loading, setLoading] = useState(!preloadedSummary);
 
   const COLORS = ["#944E1B", "#54361C", "#F0BB78", "#AB8262", "#232D80"];
@@ -49,8 +47,6 @@ function Dashboard() {
 
     for (let i = 1; i <= monthDays; i++) {
       const row = { date: i };
-      
-      // 🔥 Initialize all collections to 0 by default so graph isn't empty/broken
       collectionNames.forEach((name) => (row[name] = 0));
 
       const dayData = data.dailySales.find((d) => Number(d.date) === i);
@@ -59,7 +55,6 @@ function Dashboard() {
           if (key !== "date") row[key] = dayData[key];
         });
       }
-
       chartData.push(row);
     }
 
@@ -117,7 +112,6 @@ function Dashboard() {
     <Stack p="xs" spacing="lg">
       <PageHeader title="Dashboard" />
 
-      {/* Summary Cards */}
       <Paper p="lg" style={{ backgroundColor: "#FAF8F3" }}>
         <Text
           style={{
@@ -184,7 +178,6 @@ function Dashboard() {
                   >
                     {value}
                   </Text>
-
                   {extraText && (
                     <Text
                       color="#7a6f58"
@@ -207,7 +200,6 @@ function Dashboard() {
         </Grid>
       </Paper>
 
-      {/* Collection Sales Chart */}
       <Paper p="xl" style={{ backgroundColor: "#FAF8F3" }}>
         <Skeleton visible={loading} height={400} radius="xl">
           <Card p="lg">
@@ -224,19 +216,20 @@ function Dashboard() {
             <ResponsiveContainer width="100%" height={320}>
               <LineChart
                 data={dailySales}
-                // 🔥 Increased margins to fit the labels
-                margin={{ top: 20, right: 30, left: 10, bottom: 25 }}
+                // 🔥 1. INCREASED BOTTOM MARGIN to 50
+                margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
               >
                 <XAxis
                   dataKey="date"
                   interval={0}
-                  height={40}
+                  // 🔥 2. INCREASED HEIGHT to 60 (was 40)
+                  height={60}
                   tick={{ fontSize: 12 }}
-                  // 🔥 Date Label added here
                   label={{ 
                     value: "Date", 
                     position: "insideBottom", 
-                    offset: -10,
+                    // 🔥 3. Adjusted offset so it sits nicely between ticks and legend
+                    offset: -5,
                     style: { fill: "#666", fontSize: 14, fontWeight: 500 }
                   }}
                 />
@@ -247,9 +240,7 @@ function Dashboard() {
                     return `₱${value}`;
                   }}
                   width={70}
-                  // 🔥 Forces Y-axis to start at 0 even if data is empty
                   domain={[0, 'auto']} 
-                  // 🔥 Profit Label added here
                   label={{ 
                     value: "Profit", 
                     angle: -90, 
@@ -269,7 +260,9 @@ function Dashboard() {
                     fontFamily: "'League Spartan', sans-serif",
                   }}
                 />
-                <Legend verticalAlign="bottom" height={10} />
+                
+                {/* 🔥 4. INCREASED LEGEND HEIGHT to 40 (was 10) */}
+                <Legend verticalAlign="bottom" height={40} />
 
                 {collections.map((col, idx) => (
                   <Line
