@@ -13,7 +13,6 @@ import {
   Pagination,
   Center,
 } from "@mantine/core";
-import { motion } from "framer-motion";
 
 import NotifySuccess from "@/components/NotifySuccess";
 import PageHeader from "../components/PageHeader";
@@ -52,7 +51,18 @@ export default function Collection() {
 
   const cacheRef = useRef({});
 
+  // ----------------------------------------------------------------------
+  // NEW: Listen for "Add Collection" redirect from AddOrder page
+  // ----------------------------------------------------------------------
+  useEffect(() => {
+    if (location.state?.openAddModal) {
+      // 1. Open the modal
+      setAddModalOpen(true);
 
+      // 2. Clear the state so it doesn't re-open on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   const sortCollections = (list) => {
     const sorted = [...list].sort((a, b) => {
