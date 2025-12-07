@@ -26,10 +26,10 @@ const COLLECTIONS_STORAGE_KEY = "collectionsCache_v2";
 // ----------------------------------------------------------------------
 const fixImageUrl = (url) => {
   if (!url) return null;
-  
+
   if (url.startsWith("items/") || !url.includes(".")) {
-     // Use f_auto,q_auto to handle missing extensions (.png, .jpg)
-     return `https://res.cloudinary.com/dz0q8u0ia/image/upload/f_auto,q_auto/${url}`;
+    // Use f_auto,q_auto to handle missing extensions (.png, .jpg)
+    return `https://res.cloudinary.com/dz0q8u0ia/image/upload/f_auto,q_auto/${url}`;
   }
 
   // 2. If it's already a valid HTTP link
@@ -120,14 +120,14 @@ const AddOrder = () => {
 
           const itemsWithUrls = filteredItems.map((i) => ({
             ...i,
-           
-            image_url: fixImageUrl(i.image), 
+
+            image_url: fixImageUrl(i.image),
             collection_id: c.id,
           }));
 
           return { ...c, items: itemsWithUrls };
         })
-        .filter((c) => c.items.length > 0); 
+        .filter((c) => c.items.length > 0);
 
       setCollections(activeCollections);
 
@@ -193,8 +193,6 @@ const AddOrder = () => {
               }))}
               value={selectedCollection}
               onChange={setSelectedCollection}
-              searchable
-              nothingFound="No collections found"
               clearable={false}
             />
           </Group>
@@ -283,7 +281,7 @@ const AddOrder = () => {
                             width="100%"
                             height="100%"
                             onError={(e) => {
-                                console.error("Failed to load:", item.image_url);
+                              console.error("Failed to load:", item.image_url);
                             }}
                           />
                         </div>
