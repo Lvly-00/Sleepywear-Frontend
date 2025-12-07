@@ -17,9 +17,30 @@ import api from "../api/axios";
 import PageHeader from "../components/PageHeader";
 import CancelOrderModal from "../components/CancelOrderModal";
 
-const ORDER_ITEMS_STORAGE_KEY = "orderItemsCache";
-const SELECTED_COLLECTION_STORAGE_KEY = "selectedCollectionCache";
-const COLLECTIONS_STORAGE_KEY = "collectionsCache";
+const ORDER_ITEMS_STORAGE_KEY = "orderItemsCache_v2";
+const SELECTED_COLLECTION_STORAGE_KEY = "selectedCollectionCache_v2";
+const COLLECTIONS_STORAGE_KEY = "collectionsCache_v2";
+
+// ----------------------------------------------------------------------
+// HELPER: Image URL Formatter 
+// ----------------------------------------------------------------------
+const fixImageUrl = (url) => {
+  if (!url) return null;
+  
+  if (url.startsWith("items/") || !url.includes(".")) {
+     // Use f_auto,q_auto to handle missing extensions (.png, .jpg)
+     return `https://res.cloudinary.com/dz0q8u0ia/image/upload/f_auto,q_auto/${url}`;
+  }
+
+  // 2. If it's already a valid HTTP link
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // 3. Fallback for actual legacy local images
+  const base = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
+  return `${base}/storage/${url.replace(/^public\//, "")}`;
+};
 
 const AddOrder = () => {
   const navigate = useNavigate();
@@ -44,7 +65,7 @@ const AddOrder = () => {
 
   const [loading, setLoading] = useState(collections.length === 0);
 
-  // Cache selectedItems to localStorage
+  // Cache selectedItems
   useEffect(() => {
     try {
       const dataStr = JSON.stringify(selectedItems);
@@ -56,7 +77,7 @@ const AddOrder = () => {
     }
   }, [selectedItems]);
 
-  // Cache selectedCollection to localStorage
+  // Cache selectedCollection
   useEffect(() => {
     try {
       if (selectedCollection) {
@@ -67,7 +88,7 @@ const AddOrder = () => {
     }
   }, [selectedCollection]);
 
-  // Cache collections to localStorage
+  // Cache collections
   useEffect(() => {
     try {
       const dataStr = JSON.stringify(collections);
@@ -91,27 +112,25 @@ const AddOrder = () => {
       const dataArray = Array.isArray(res.data) ? res.data : res.data.data || [];
 
       const activeCollections = dataArray
-        .filter((c) => c.status === "Active") // only active collections
+        .filter((c) => c.status === "Active")
         .map((c) => {
           const filteredItems = (c.items || []).filter(
-            (i) => i.status === "Available" // only items available
+            (i) => i.status === "Available"
           );
 
           const itemsWithUrls = filteredItems.map((i) => ({
             ...i,
-            image_url:
-              i.image_url ||
-              (i.image ? `${import.meta.env.VITE_API_URL}/storage/${i.image}` : null),
+           
+            image_url: fixImageUrl(i.image), 
             collection_id: c.id,
           }));
 
           return { ...c, items: itemsWithUrls };
         })
-        .filter((c) => c.items.length > 0); // remove collections with no available items
+        .filter((c) => c.items.length > 0); 
 
       setCollections(activeCollections);
 
-      // Set default selectedCollection if none selected
       if (!selectedCollection && activeCollections.length > 0) {
         setSelectedCollection(activeCollections[0].id.toString());
       }
@@ -146,17 +165,11 @@ const AddOrder = () => {
     });
   };
 
-  // Items for selected collection
   const availableItems =
     collections.find((c) => c.id.toString() === selectedCollection)?.items || [];
 
   const handleAddCollectionRedirect = () => {
     navigate("/collections", { state: { openAddModal: true } });
-  };
-
-  const handleBack = () => {
-    const from = locationState?.from || "/orders";
-    navigate(from);
   };
 
   const hasItems = collections.length > 0;
@@ -269,6 +282,9 @@ const AddOrder = () => {
                             fit="cover"
                             width="100%"
                             height="100%"
+                            onError={(e) => {
+                                console.error("Failed to load:", item.image_url);
+                            }}
                           />
                         </div>
                       )}

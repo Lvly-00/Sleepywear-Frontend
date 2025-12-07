@@ -184,13 +184,16 @@ const ConfirmOrder = () => {
           alert("Warning: Order placed but failed to update some item statuses.");
         }
 
-        // Clear session storage
+        // --- CLEAR ALL CACHES ON SUCCESS ---
         setOrderItems([]);
         sessionStorage.removeItem("orderItems");
         sessionStorage.removeItem("customerForm");
-        localStorage.removeItem("orderItemsCache");
-        localStorage.removeItem("collectionsCache");
-        localStorage.removeItem("selectedCollectionCache");
+        
+        // Clear LocalStorage V2 keys
+        localStorage.removeItem("orderItemsCache_v2");
+        localStorage.removeItem("selectedCollectionCache_v2");
+        localStorage.removeItem("collectionsCache_v2"); // optional
+        
         window.dispatchEvent(new Event("collectionsUpdated"));
 
         NotifySuccess.addedOrder();
@@ -210,6 +213,19 @@ const ConfirmOrder = () => {
 
   const handleCancelOrder = () => {
     setCancelModalOpened(true);
+  };
+
+  const handleConfirmCancel = () => {
+    // --- CLEAR ALL CACHES ON CANCEL ---
+    setOrderItems([]);
+    sessionStorage.removeItem("orderItems");
+    sessionStorage.removeItem("customerForm");
+
+    // Clear LocalStorage V2 keys so AddOrder starts fresh next time
+    localStorage.removeItem("orderItemsCache_v2");
+    localStorage.removeItem("selectedCollectionCache_v2");
+    
+    navigate("/orders");
   };
 
   return (
@@ -391,8 +407,8 @@ const ConfirmOrder = () => {
       <CancelOrderModal
         opened={cancelModalOpened}
         onClose={() => setCancelModalOpened(false)}
-        onResetItems={() => setOrderItems([])}
-        onConfirm={() => navigate("/orders")}
+        onResetItems={() => setOrderItems([])} // Local state
+        onConfirm={handleConfirmCancel}        // Triggers storage cleanup + nav
       />
     </div>
   );

@@ -12,6 +12,8 @@ import {
   Skeleton,
   Pagination,
   Center,
+  Loader,
+  Modal,
 } from "@mantine/core";
 
 import AddPaymentModal from "../components/AddPaymentModal";
@@ -37,10 +39,8 @@ export default function Order() {
   const newOrder = location.state?.newOrder || null;
   const openInvoiceOnLoad = location.state?.openInvoice || false;
 
-  // Track if component just mounted
   const isInitialMount = useRef(true);
 
-  // Store cached pages
   const [ordersCache, setOrdersCache] = useState(
     preloadedOrders ? { [initialPage]: preloadedOrders } : {}
   );
@@ -52,12 +52,15 @@ export default function Order() {
 
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  
+  // Invoice Modal State
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false); // New loading state for modal
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
 
-  // Update URL params when page/search changes
   useEffect(() => {
     const params = new URLSearchParams();
     if (currentPage > 1) params.set("page", currentPage);
@@ -65,7 +68,6 @@ export default function Order() {
     navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
   }, [currentPage, search, navigate, location.pathname]);
 
-  // Fetch orders for a specific page
   const fetchOrdersPage = useCallback(
     async (page, searchTerm = search, showLoader = true) => {
       if (showLoader) setLoading(true);
@@ -98,33 +100,43 @@ export default function Order() {
     [search]
   );
 
-  // Main Data Fetching Effect
   useEffect(() => {
-    // 1. If it's the very first render AND we have preloaded data, skip fetch.
     if (isInitialMount.current && preloadedOrders) {
       isInitialMount.current = false;
       return; 
     }
-
-    // 2. Otherwise (search changed, page changed, or no preloaded data), fetch data.
     isInitialMount.current = false;
     fetchOrdersPage(currentPage, search);
-  }, [currentPage, search, fetchOrdersPage]); // Removed preloadedOrders from dependencies
+  }, [currentPage, search, fetchOrdersPage]);
 
-  // Handle Search Trigger
   const handleSearchTrigger = () => {
     const trimmed = searchValue.trim();
     setSearch(trimmed); 
     setCurrentPage(1);  
-    setOrdersCache({}); // Clear cache so we don't show old data while loading
+    setOrdersCache({});
   };
 
-  // Always ensure currentOrders is an array
+  // --- NEW: Handle Row Click (Fetch Details) ---
+  const handleRowClick = async (orderId) => {
+    setInvoiceModal(true); // Open immediately
+    setModalLoading(true); // Show loader inside
+    setInvoiceData(null);  // Clear old data
+
+    try {
+      // Fetch full details (including items) from backend
+      const res = await api.get(`/orders/${orderId}`);
+      setInvoiceData(res.data);
+    } catch (error) {
+      console.error("Failed to load order details:", error);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
   const currentOrders = Array.isArray(ordersCache[currentPage])
     ? ordersCache[currentPage]
     : [];
 
-  // Sort orders (Visual sort only)
   const displayedOrders = [...currentOrders].sort((a, b) => {
     const aPaid = a.payment?.payment_status === "Paid";
     const bPaid = b.payment?.payment_status === "Paid";
@@ -151,6 +163,8 @@ export default function Order() {
 
   useEffect(() => {
     if (newOrder && openInvoiceOnLoad) {
+      // If passing a new order from creation, it usually has items already.
+      // So we can set it directly.
       setInvoiceData(newOrder);
       setInvoiceModal(true);
       window.history.replaceState({}, document.title);
@@ -217,16 +231,17 @@ export default function Order() {
                   ) 
                   : displayedOrders.map((order) => {
                     const fullName = `${order.first_name} ${order.last_name}`;
-                    const totalQty = order.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
-                    const totalPrice = order.total || order.items?.reduce((sum, i) => sum + i.price * i.quantity, 0) || 0;
+                    // Note: If items are missing from index(), these counts might be 0 or undefined.
+                    // That is expected behavior for Option 1.
+                    const totalQty = order.items_count || order.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
+                    const totalPrice = order.total;
 
                     return (
                       <Table.Tr
                         key={order.id}
-                        onClick={() => { setInvoiceData(order); setInvoiceModal(true); }}
+                        // UPDATED CLICK HANDLER
+                        onClick={() => handleRowClick(order.id)}
                         style={{ cursor: "pointer", borderBottom: "1px solid #D8CBB8" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                       >
                         <Table.Td style={{ textAlign: "left" }}>{order.formatted_id}</Table.Td>
                         <Table.Td style={{ textAlign: "left", fontSize: "16px" }}>{fullName}</Table.Td>
@@ -298,12 +313,10 @@ export default function Order() {
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        // UPDATED LINE: Use formatted_id, or fallback to manual padding if missing
         name={orderToDelete ? `Order ${orderToDelete.formatted_id || String(orderToDelete.id).padStart(4, '0')}` : ""}
         onConfirm={async () => {
           if (!orderToDelete) return;
           try {
-            // Keep using the raw ID for the API call
             await api.delete(`/orders/${orderToDelete.id}`);
             
             setDeleteModalOpen(false);
@@ -334,7 +347,15 @@ export default function Order() {
         />
       )}
 
-      <InvoicePreview opened={invoiceModal} onClose={() => setInvoiceModal(false)} invoiceData={invoiceData} />
+      {/* MODAL WRAPPER to handle loading state */}
+      {invoiceModal && (
+        <InvoicePreview 
+          opened={invoiceModal} 
+          onClose={() => setInvoiceModal(false)} 
+          invoiceData={invoiceData} 
+          isLoading={modalLoading} 
+        />
+      )}
     </Stack>
   );
 }

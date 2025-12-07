@@ -51,19 +51,14 @@ const sortItemsRealtime = (itemsList) => {
 const fixImageUrl = (url) => {
   if (!url) return null;
   
-  // 1. Detect Cloudinary Public ID (starts with 'items/' or has no extension)
-  // We check this FIRST to override any bad localhost URLs that might have been passed.
+  
   if (url.startsWith("items/") || !url.includes(".")) {
-     // Use f_auto,q_auto to handle missing extensions (.png, .jpg)
      return `https://res.cloudinary.com/dz0q8u0ia/image/upload/f_auto,q_auto/${url}`;
   }
 
-  // 2. If it's already a valid HTTP link (and NOT a mistaken localhost link from before)
   if (url.startsWith("http://") || url.startsWith("https://")) {
-    // Optional: Filter out accidental localhost links if you want to be super safe
     if (url.includes("127.0.0.1") || url.includes("localhost")) {
-        // If it points to storage/items, it's likely the broken path. 
-        // We try to strip the domain and re-evaluate, or just fail safely.
+   
     }
     return url;
   }
