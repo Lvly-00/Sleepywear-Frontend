@@ -41,10 +41,7 @@ function SidebarNav() {
   const handleNavigation = async (e, path, apiEndpoint, stateKey) => {
     e.preventDefault();
     
-    // If already on the page, just do nothing or refresh? 
-    // Usually, we avoid reloading if we are already there, 
-    // but here we allow it to refresh data.
-    
+
     if (fetchingPath) return; // Prevent multiple clicks
 
     setFetchingPath(path);

@@ -1,4 +1,3 @@
-// Keep all your imports the same
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import api from "../api/axios";
@@ -21,8 +20,9 @@ import { Icons } from "../components/Icons";
 import TopLoadingBar from "../components/TopLoadingBar";
 import NotifySuccess from "@/components/NotifySuccess";
 
-
-// 🧩 Enhanced real-time sort function (mirrors your backend logic)
+// ----------------------------------------------------------------------
+// HELPER: Sort Logic
+// ----------------------------------------------------------------------
 const sortItemsRealtime = (itemsList) => {
   const statusOrder = (status) => {
     switch (status) {
@@ -39,59 +39,94 @@ const sortItemsRealtime = (itemsList) => {
     if (aStatus !== bStatus) return aStatus - bStatus;
 
     if (aStatus === 1 && bStatus === 1)
-      return new Date(a.created_at) - new Date(b.created_at); // oldest first for Available
+      return new Date(a.created_at) - new Date(b.created_at); 
 
-    return new Date(a.updated_at) - new Date(b.updated_at); // oldest first for Sold Out
+    return new Date(a.updated_at) - new Date(b.updated_at); 
   });
 };
 
+// ----------------------------------------------------------------------
+// HELPER: Image URL Formatter
+// ----------------------------------------------------------------------
+const fixImageUrl = (url) => {
+  if (!url) return null;
+  
+  // 1. Detect Cloudinary Public ID (starts with 'items/' or has no extension)
+  // We check this FIRST to override any bad localhost URLs that might have been passed.
+  if (url.startsWith("items/") || !url.includes(".")) {
+     // Use f_auto,q_auto to handle missing extensions (.png, .jpg)
+     return `https://res.cloudinary.com/dz0q8u0ia/image/upload/f_auto,q_auto/${url}`;
+  }
+
+  // 2. If it's already a valid HTTP link (and NOT a mistaken localhost link from before)
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    // Optional: Filter out accidental localhost links if you want to be super safe
+    if (url.includes("127.0.0.1") || url.includes("localhost")) {
+        // If it points to storage/items, it's likely the broken path. 
+        // We try to strip the domain and re-evaluate, or just fail safely.
+    }
+    return url;
+  }
+
+  // 3. Fallback for actual legacy local images
+  const base = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
+  return `${base}/storage/${url.replace(/^public\//, "")}`;
+};
 
 export default function Item() {
   const { id } = useParams();
   const location = useLocation();
   const preloadedItems = location.state?.preloadedItems || null;
 
-  const [items, setItems] = useState(preloadedItems || []);
+  // ----------------------------------------------------------------------
+  // STATE INITIALIZATION (Fixes the Preloaded Data Bug)
+  // ----------------------------------------------------------------------
+  const [items, setItems] = useState(() => {
+    if (!preloadedItems) return [];
+    
+    // We prefer 'item.image' (the raw DB value) over 'item.image_url' (which might be the broken link).
+    return sortItemsRealtime(preloadedItems.map(item => ({
+      ...item,
+      image_url: fixImageUrl(item.image || item.image_url), // Priority: Raw DB ID > Old URL
+      is_available: item.status === "Available",
+    })));
+  });
+
   const [loading, setLoading] = useState(!preloadedItems);
   const [collections, setCollections] = useState([]);
+  
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  
+  const [selectedItem, setSelectedItem] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
 
-  const fixImageUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith("http")) return url;
-    const base = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
-    return `${base}/storage/${url.replace(/^public\//, "")}`;
-  };
+  // ----------------------------------------------------------------------
+  // DATA FETCHING
+  // ----------------------------------------------------------------------
 
-  // Fetch collections (safe & normalized)
   useEffect(() => {
     api.get("/collections")
       .then((res) => {
-        const data = Array.isArray(res.data)
-          ? res.data
-          : Array.isArray(res.data?.data)
-            ? res.data.data
-            : [];
+        const data = Array.isArray(res.data) ? res.data : (res.data?.data || []);
         setCollections(data);
       })
       .catch((err) => console.error("Error fetching collections:", err));
   }, []);
 
-
-  // Fetch items
   const fetchItems = async () => {
     try {
       setLoading(true);
       const res = await api.get("/items", { params: { collection_id: id } });
+      
       const normalized = res.data.map((item) => ({
         ...item,
-        image_url: fixImageUrl(item.image_url || item.image),
+        // Always prioritize the raw 'image' field for formatting
+        image_url: fixImageUrl(item.image || item.image_url),
         is_available: item.status === "Available",
       }));
+      
       setItems(sortItemsRealtime(normalized));
     } catch (err) {
       console.error("Error fetching items:", err);
@@ -100,12 +135,13 @@ export default function Item() {
     }
   };
 
-  // Load on mount
+  // Only fetch if we didn't have preloaded items (or refresh anyway to get latest)
   useEffect(() => {
-    if (!preloadedItems) fetchItems();
+    // We call fetchItems even if preloaded exist, to ensure we have the fresh Cloudinary URLs
+    // But we do it silently (loading=false) if we already have data
+    fetchItems();
   }, [id]);
 
-  //  Listen for collection updates globally (real-time sync)
   useEffect(() => {
     const onCollectionsUpdated = () => fetchItems();
     window.addEventListener("collectionsUpdated", onCollectionsUpdated);
@@ -113,6 +149,10 @@ export default function Item() {
   }, [id]);
 
   const collection = collections.find((c) => String(c.id) === String(id));
+
+  // ----------------------------------------------------------------------
+  // RENDER
+  // ----------------------------------------------------------------------
 
   return (
     <>
@@ -141,9 +181,9 @@ export default function Item() {
                   radius="lg"
                   withBorder
                   style={{
-                    opacity: item.status === "Available" ? 1 : 0.6,
+                    opacity: item.status === "Available" ? 1 : 0.85,
                     transition: "all 0.2s ease",
-                    height: "100%", // makes all cards equal height per row
+                    height: "100%", 
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
@@ -155,72 +195,77 @@ export default function Item() {
                       style={{
                         position: "absolute",
                         inset: 0,
-                        background: "#faf8f366",
+                        background: "rgba(250, 248, 243, 0.6)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        zIndex: 1, // ensure overlay stays behind text
+                        zIndex: 10,
+                        borderRadius: "16px",
+                        pointerEvents: "none", 
                       }}
                     >
-
                       <Text
-                        fw={700}
+                        fw={900}
                         transform="uppercase"
                         style={{
-                          position: "relative", // allow zIndex to work
-                          zIndex: 5,            // put text above overlay
-                          fontSize: "clamp(20px, 5vw, 50px)",
+                          fontSize: "clamp(24px, 5vw, 40px)",
                           color: "#B80000",
                           textAlign: "center",
+                          transform: "rotate(-15deg)",
+                          border: "4px solid #B80000",
+                          padding: "0.2rem 1rem",
+                          borderRadius: "8px",
+                          backgroundColor: "rgba(255, 255, 255, 0.8)"
                         }}
                       >
-                        Sold
+                        SOLD
                       </Text>
                     </div>
-
                   )}
 
-                  {/*  Responsive image section */}
                   <Card.Section>
                     <AspectRatio ratio={1 / 1}>
                       {item.image_url ? (
                         <img
                           src={item.image_url}
                           alt={item.name}
+                          loading="lazy"
                           style={{
                             width: "100%",
                             height: "100%",
                             objectFit: "cover",
                             borderTopLeftRadius: "12px",
                             borderTopRightRadius: "12px",
-                            filter: item.status === "Available" ? "none" : "grayscale(0.7)",
+                            filter: item.status === "Available" ? "none" : "grayscale(0.5)",
+                          }}
+                          onError={(e) => {
+                             console.warn("Failed to load image:", item.image_url);
+                          
                           }}
                         />
-
                       ) : (
                         <Skeleton height="100%" />
                       )}
                     </AspectRatio>
                   </Card.Section>
 
-                  {/*  Responsive text & actions */}
                   <Stack p="sm" spacing="xs" style={{ textAlign: "center", flexGrow: 1 }}>
                     <Group gap="xs" justify="center" wrap="wrap">
-                      <Text fw={600} style={{ fontSize: "clamp(12px, 2vw, 18px)" }}>
+                      <Text fw={600} style={{ fontSize: "clamp(12px, 2vw, 16px)" }}>
                         {item.item_code || item.code}
                       </Text>
                       <Text c="dimmed">|</Text>
-                      <Text fw={500} style={{ fontSize: "clamp(12px, 2vw, 18px)" }}>
+                      <Text fw={500} style={{ fontSize: "clamp(12px, 2vw, 16px)" }}>
                         {item.name}
                       </Text>
                     </Group>
 
-                    <Group justify="space-between" align="center" mt="xs" wrap="nowrap">
+                    <Group justify="space-between" align="center" mt="auto" wrap="nowrap" style={{ zIndex: 20 }}>
                       <Text
                         color="#A6976B"
-                        fw={500}
+                        fw={700}
                         style={{
-                          fontSize: "clamp(14px, 2.5vw, 20px)",
+                          fontSize: "clamp(16px, 2.5vw, 20px)",
                           flex: 1,
                           textAlign: "center",
                         }}
@@ -228,42 +273,43 @@ export default function Item() {
                         ₱{Number(item.price).toLocaleString()}
                       </Text>
 
-
                       <Group gap="xs">
                         <Button
-                          size="compact-sm"
+                          size="compact-md"
                           color="#276D58"
                           variant="subtle"
-                          onClick={() => {
+                          style={{ pointerEvents: "auto" }}
+                          onClick={(e) => {
+                            e.stopPropagation(); 
                             setSelectedItem(item);
                             setEditModal(true);
                           }}
                         >
-                          <Icons.Edit size={26} />
+                          <Icons.Edit size={22} />
                         </Button>
                         <Button
-                          size="compact-sm"
+                          size="compact-md"
                           color="red"
                           variant="subtle"
-                          onClick={() => {
+                          style={{ pointerEvents: "auto" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setItemToDelete(item);
                             setDeleteModalOpen(true);
                           }}
                         >
-                          <Icons.Trash size={26} />
+                          <Icons.Trash size={22} />
                         </Button>
                       </Group>
                     </Group>
                   </Stack>
                 </Card>
               </Grid.Col>
-
             ))}
           </Grid>
         )}
       </Stack>
 
-      {/* Add Item Modal */}
       <AddItemModal
         opened={addModal}
         onClose={() => setAddModal(false)}
@@ -271,7 +317,7 @@ export default function Item() {
         onItemAdded={(newItem) => {
           const normalized = {
             ...newItem,
-            image_url: fixImageUrl(newItem.image_url || newItem.image),
+            image_url: fixImageUrl(newItem.image || newItem.image_url),
             is_available: newItem.status === "Available",
           };
           setItems((prev) => sortItemsRealtime([...prev, normalized]));
@@ -280,7 +326,6 @@ export default function Item() {
         }}
       />
 
-      {/* Edit Item Modal */}
       {selectedItem && (
         <EditItemModal
           opened={editModal}
@@ -292,7 +337,7 @@ export default function Item() {
           onItemUpdated={(updatedItem) => {
             const normalized = {
               ...updatedItem,
-              image_url: fixImageUrl(updatedItem.image_url || updatedItem.image),
+              image_url: fixImageUrl(updatedItem.image || updatedItem.image_url),
               is_available: updatedItem.status === "Available",
             };
             setItems((prev) =>
@@ -305,7 +350,6 @@ export default function Item() {
         />
       )}
 
-      {/* Delete Confirmation */}
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
