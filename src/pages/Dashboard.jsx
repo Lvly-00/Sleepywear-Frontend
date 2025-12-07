@@ -242,6 +242,7 @@ function Dashboard() {
                 />
 
                 <Tooltip
+                  labelFormatter={(value) => `${monthName} ${value}`} 
                   formatter={(value) => `₱${formatNumber(value)}`}
                   contentStyle={{
                     borderRadius: "12px",
