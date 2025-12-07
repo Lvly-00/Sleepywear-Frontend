@@ -298,11 +298,14 @@ export default function Order() {
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        name={orderToDelete ? `Order #${orderToDelete.id}` : ""}
+        // UPDATED LINE: Use formatted_id, or fallback to manual padding if missing
+        name={orderToDelete ? `Order ${orderToDelete.formatted_id || String(orderToDelete.id).padStart(4, '0')}` : ""}
         onConfirm={async () => {
           if (!orderToDelete) return;
           try {
+            // Keep using the raw ID for the API call
             await api.delete(`/orders/${orderToDelete.id}`);
+            
             setDeleteModalOpen(false);
             setOrderToDelete(null);
             setOrdersCache({});
@@ -313,7 +316,6 @@ export default function Order() {
           }
         }}
       />
-
       {addPaymentOpen && selectedOrder && (
         <AddPaymentModal
           opened={addPaymentOpen}
