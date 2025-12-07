@@ -216,22 +216,13 @@ function Dashboard() {
             <ResponsiveContainer width="100%" height={320}>
               <LineChart
                 data={dailySales}
-                // 🔥 1. INCREASED BOTTOM MARGIN to 50
-                margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
+=                margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
               >
                 <XAxis
                   dataKey="date"
                   interval={0}
-                  // 🔥 2. INCREASED HEIGHT to 60 (was 40)
-                  height={60}
-                  tick={{ fontSize: 12 }}
-                  label={{ 
-                    value: "Date", 
-                    position: "insideBottom", 
-                    // 🔥 3. Adjusted offset so it sits nicely between ticks and legend
-                    offset: -5,
-                    style: { fill: "#666", fontSize: 14, fontWeight: 500 }
-                  }}
+                  height={40} 
+                  tick={{ fontSize: 10 }}
                 />
                 <YAxis
                   tickFormatter={(value) => {
@@ -261,7 +252,6 @@ function Dashboard() {
                   }}
                 />
                 
-                {/* 🔥 4. INCREASED LEGEND HEIGHT to 40 (was 10) */}
                 <Legend verticalAlign="bottom" height={40} />
 
                 {collections.map((col, idx) => (
