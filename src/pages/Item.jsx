@@ -51,19 +51,14 @@ const sortItemsRealtime = (itemsList) => {
 const fixImageUrl = (url) => {
   if (!url) return null;
   
-  
   if (url.startsWith("items/") || !url.includes(".")) {
      return `https://res.cloudinary.com/dz0q8u0ia/image/upload/f_auto,q_auto/${url}`;
   }
 
   if (url.startsWith("http://") || url.startsWith("https://")) {
-    if (url.includes("127.0.0.1") || url.includes("localhost")) {
-   
-    }
     return url;
   }
 
-  // 3. Fallback for actual legacy local images
   const base = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
   return `${base}/storage/${url.replace(/^public\//, "")}`;
 };
@@ -74,15 +69,14 @@ export default function Item() {
   const preloadedItems = location.state?.preloadedItems || null;
 
   // ----------------------------------------------------------------------
-  // STATE INITIALIZATION (Fixes the Preloaded Data Bug)
+  // STATE INITIALIZATION
   // ----------------------------------------------------------------------
   const [items, setItems] = useState(() => {
     if (!preloadedItems) return [];
     
-    // We prefer 'item.image' (the raw DB value) over 'item.image_url' (which might be the broken link).
     return sortItemsRealtime(preloadedItems.map(item => ({
       ...item,
-      image_url: fixImageUrl(item.image || item.image_url), // Priority: Raw DB ID > Old URL
+      image_url: fixImageUrl(item.image || item.image_url), 
       is_available: item.status === "Available",
     })));
   });
@@ -117,7 +111,6 @@ export default function Item() {
       
       const normalized = res.data.map((item) => ({
         ...item,
-        // Always prioritize the raw 'image' field for formatting
         image_url: fixImageUrl(item.image || item.image_url),
         is_available: item.status === "Available",
       }));
@@ -130,10 +123,7 @@ export default function Item() {
     }
   };
 
-  // Only fetch if we didn't have preloaded items (or refresh anyway to get latest)
   useEffect(() => {
-    // We call fetchItems even if preloaded exist, to ensure we have the fresh Cloudinary URLs
-    // But we do it silently (loading=false) if we already have data
     fetchItems();
   }, [id]);
 
@@ -235,7 +225,6 @@ export default function Item() {
                           }}
                           onError={(e) => {
                              console.warn("Failed to load image:", item.image_url);
-                          
                           }}
                         />
                       ) : (
@@ -273,6 +262,8 @@ export default function Item() {
                           size="compact-md"
                           color="#276D58"
                           variant="subtle"
+                          // 🔥 DISABLE EDIT IF SOLD
+                          disabled={item.status !== "Available"} 
                           style={{ pointerEvents: "auto" }}
                           onClick={(e) => {
                             e.stopPropagation(); 

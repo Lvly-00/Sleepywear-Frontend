@@ -193,7 +193,7 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
               <Group mt="lg" justify="flex-end">
                 <Button
                   color="#AB8262"
-                  style={{ borderRadius: 15, width: 90, fontSize: 16 }}
+                  style={{ borderRadius: 15, width: 95, fontSize: 16 }}
                   type="submit"
                 >
                   Update

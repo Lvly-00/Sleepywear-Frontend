@@ -240,7 +240,7 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
                     backgroundColor: "#AB8262",
                     color: "white",
                     borderRadius: "12px",
-                    width: "90px",
+                    width: "100px",
                     height: "36px",
                     fontSize: "15px",
                   }}
