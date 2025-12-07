@@ -216,7 +216,7 @@ function Dashboard() {
             <ResponsiveContainer width="100%" height={320}>
               <LineChart
                 data={dailySales}
-=                margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
+                margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
               >
                 <XAxis
                   dataKey="date"
