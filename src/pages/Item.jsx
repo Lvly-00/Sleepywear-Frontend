@@ -11,6 +11,7 @@ import {
   Grid,
   AspectRatio,
   Skeleton,
+  Box,
 } from "@mantine/core";
 import PageHeader from "../components/PageHeader";
 import AddItemModal from "../components/AddItemModal";
@@ -68,9 +69,6 @@ export default function Item() {
   const location = useLocation();
   const preloadedItems = location.state?.preloadedItems || null;
 
-  // ----------------------------------------------------------------------
-  // STATE INITIALIZATION
-  // ----------------------------------------------------------------------
   const [items, setItems] = useState(() => {
     if (!preloadedItems) return [];
     
@@ -90,10 +88,6 @@ export default function Item() {
   
   const [selectedItem, setSelectedItem] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
-
-  // ----------------------------------------------------------------------
-  // DATA FETCHING
-  // ----------------------------------------------------------------------
 
   useEffect(() => {
     api.get("/collections")
@@ -135,10 +129,6 @@ export default function Item() {
 
   const collection = collections.find((c) => String(c.id) === String(id));
 
-  // ----------------------------------------------------------------------
-  // RENDER
-  // ----------------------------------------------------------------------
-
   return (
     <>
       <TopLoadingBar loading={loading} />
@@ -158,23 +148,25 @@ export default function Item() {
             <Text>No items found for this collection.</Text>
           </Center>
         ) : (
-          <Grid>
+          <Grid gutter="md">
             {items.map((item) => (
-              <Grid.Col key={item.id} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
+              // UPDATED GRID: Added 'xl: 2' to allow 6 items per row on large screens/zoom out
+              <Grid.Col key={item.id} span={{ base: 12, xs: 6, sm: 4, md: 3, xl: 2 }}>
                 <Card
                   shadow="sm"
                   radius="lg"
                   withBorder
+                  padding="sm"
                   style={{
                     opacity: item.status === "Available" ? 1 : 0.85,
                     transition: "all 0.2s ease",
-                    height: "100%", 
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     position: "relative",
                   }}
                 >
+                  {/* SOLD OUT OVERLAY */}
                   {item.status !== "Available" && (
                     <div
                       style={{
@@ -193,7 +185,7 @@ export default function Item() {
                         fw={900}
                         transform="uppercase"
                         style={{
-                          fontSize: "clamp(24px, 5vw, 40px)",
+                          fontSize: "clamp(20px, 4vw, 32px)",
                           color: "#B80000",
                           textAlign: "center",
                           transform: "rotate(-15deg)",
@@ -209,7 +201,8 @@ export default function Item() {
                   )}
 
                   <Card.Section>
-                    <AspectRatio ratio={1 / 1}>
+                    {/* Fixed Portrait Ratio (1080 / 1350) */}
+                    <AspectRatio ratio={1080 / 1350}>
                       {item.image_url ? (
                         <img
                           src={item.image_url}
@@ -219,8 +212,6 @@ export default function Item() {
                             width: "100%",
                             height: "100%",
                             objectFit: "cover",
-                            borderTopLeftRadius: "12px",
-                            borderTopRightRadius: "12px",
                             filter: item.status === "Available" ? "none" : "grayscale(0.5)",
                           }}
                           onError={(e) => {
@@ -233,61 +224,83 @@ export default function Item() {
                     </AspectRatio>
                   </Card.Section>
 
-                  <Stack p="sm" spacing="xs" style={{ textAlign: "center", flexGrow: 1 }}>
-                    <Group gap="xs" justify="center" wrap="wrap">
-                      <Text fw={600} style={{ fontSize: "clamp(12px, 2vw, 16px)" }}>
+                  {/* INFO SECTION */}
+                  <Stack pt="sm" gap={4} style={{ textAlign: "center", flexGrow: 1 }}>
+                    <Group gap="xs" justify="center" wrap="wrap" style={{ minHeight: "2.5em" }}>
+                      <Text fw={600} style={{ fontSize: "clamp(12px, 1.2vw, 15px)" }}>
                         {item.item_code || item.code}
                       </Text>
-                      <Text c="dimmed">|</Text>
-                      <Text fw={500} style={{ fontSize: "clamp(12px, 2vw, 16px)" }}>
+                      <Text c="dimmed" size="sm">|</Text>
+                      <Text fw={500} style={{ fontSize: "clamp(12px, 1.2vw, 15px)" }}>
                         {item.name}
                       </Text>
                     </Group>
 
-                    <Group justify="space-between" align="center" mt="auto" wrap="nowrap" style={{ zIndex: 20 }}>
+                    {/* BOTTOM ROW: Price Center + Buttons Right */}
+                    <Box 
+                      mt="auto" 
+                      style={{ 
+                        position: "relative", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center",
+                        minHeight: "40px"
+                      }}
+                    >
+                      {/* Price: Always Centered */}
                       <Text
                         color="#A6976B"
                         fw={700}
                         style={{
-                          fontSize: "clamp(16px, 2.5vw, 20px)",
-                          flex: 1,
+                          fontSize: "clamp(16px, 1.8vw, 20px)",
                           textAlign: "center",
+                          width: "100%",
+                          zIndex: 1,
                         }}
                       >
                         ₱{Number(item.price).toLocaleString()}
                       </Text>
 
-                      <Group gap="xs">
+                      {/* Buttons: Absolute Right */}
+                      <Group 
+                        gap={2} 
+                        style={{ 
+                          position: "absolute", 
+                          right: 0, 
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          zIndex: 20 
+                        }}
+                      >
                         <Button
-                          size="compact-md"
+                          size="compact-sm"
                           color="#276D58"
                           variant="subtle"
-                          // 🔥 DISABLE EDIT IF SOLD
                           disabled={item.status !== "Available"} 
-                          style={{ pointerEvents: "auto" }}
+                          style={{ pointerEvents: "auto", padding: "4px" }}
                           onClick={(e) => {
                             e.stopPropagation(); 
                             setSelectedItem(item);
                             setEditModal(true);
                           }}
                         >
-                          <Icons.Edit size={22} />
+                          <Icons.Edit size={18} />
                         </Button>
                         <Button
-                          size="compact-md"
+                          size="compact-sm"
                           color="red"
                           variant="subtle"
-                          style={{ pointerEvents: "auto" }}
+                          style={{ pointerEvents: "auto", padding: "4px" }}
                           onClick={(e) => {
                             e.stopPropagation();
                             setItemToDelete(item);
                             setDeleteModalOpen(true);
                           }}
                         >
-                          <Icons.Trash size={22} />
+                          <Icons.Trash size={18} />
                         </Button>
                       </Group>
-                    </Group>
+                    </Box>
                   </Stack>
                 </Card>
               </Grid.Col>
