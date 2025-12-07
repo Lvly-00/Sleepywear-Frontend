@@ -40,9 +40,9 @@ const sortItemsRealtime = (itemsList) => {
     if (aStatus !== bStatus) return aStatus - bStatus;
 
     if (aStatus === 1 && bStatus === 1)
-      return new Date(a.created_at) - new Date(b.created_at); 
+      return new Date(a.created_at) - new Date(b.created_at);
 
-    return new Date(a.updated_at) - new Date(b.updated_at); 
+    return new Date(a.updated_at) - new Date(b.updated_at);
   });
 };
 
@@ -51,9 +51,9 @@ const sortItemsRealtime = (itemsList) => {
 // ----------------------------------------------------------------------
 const fixImageUrl = (url) => {
   if (!url) return null;
-  
+
   if (url.startsWith("items/") || !url.includes(".")) {
-     return `https://res.cloudinary.com/dz0q8u0ia/image/upload/f_auto,q_auto/${url}`;
+    return `https://res.cloudinary.com/dz0q8u0ia/image/upload/f_auto,q_auto/${url}`;
   }
 
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -71,21 +71,21 @@ export default function Item() {
 
   const [items, setItems] = useState(() => {
     if (!preloadedItems) return [];
-    
+
     return sortItemsRealtime(preloadedItems.map(item => ({
       ...item,
-      image_url: fixImageUrl(item.image || item.image_url), 
+      image_url: fixImageUrl(item.image || item.image_url),
       is_available: item.status === "Available",
     })));
   });
 
   const [loading, setLoading] = useState(!preloadedItems);
   const [collections, setCollections] = useState([]);
-  
+
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  
+
   const [selectedItem, setSelectedItem] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
 
@@ -102,13 +102,13 @@ export default function Item() {
     try {
       setLoading(true);
       const res = await api.get("/items", { params: { collection_id: id } });
-      
+
       const normalized = res.data.map((item) => ({
         ...item,
         image_url: fixImageUrl(item.image || item.image_url),
         is_available: item.status === "Available",
       }));
-      
+
       setItems(sortItemsRealtime(normalized));
     } catch (err) {
       console.error("Error fetching items:", err);
@@ -166,42 +166,8 @@ export default function Item() {
                     position: "relative",
                   }}
                 >
-                  {/* SOLD OUT OVERLAY */}
-                  {item.status !== "Available" && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        background: "rgba(250, 248, 243, 0.6)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 10,
-                        borderRadius: "16px",
-                        pointerEvents: "none", 
-                      }}
-                    >
-                      <Text
-                        fw={900}
-                        transform="uppercase"
-                        style={{
-                          fontSize: "clamp(20px, 4vw, 32px)",
-                          color: "#B80000",
-                          textAlign: "center",
-                          transform: "rotate(-15deg)",
-                          border: "4px solid #B80000",
-                          padding: "0.2rem 1rem",
-                          borderRadius: "8px",
-                          backgroundColor: "rgba(255, 255, 255, 0.8)"
-                        }}
-                      >
-                        SOLD
-                      </Text>
-                    </div>
-                  )}
-
+                  {/* 1. CARD SECTION MUST BE FIRST CHILD TO SIT FLUSH AT TOP */}
                   <Card.Section>
-                    {/* Fixed Portrait Ratio (1080 / 1350) */}
                     <AspectRatio ratio={1080 / 1350}>
                       {item.image_url ? (
                         <img
@@ -215,7 +181,7 @@ export default function Item() {
                             filter: item.status === "Available" ? "none" : "grayscale(0.5)",
                           }}
                           onError={(e) => {
-                             console.warn("Failed to load image:", item.image_url);
+                            console.warn("Failed to load image:", item.image_url);
                           }}
                         />
                       ) : (
@@ -224,7 +190,7 @@ export default function Item() {
                     </AspectRatio>
                   </Card.Section>
 
-                  {/* INFO SECTION */}
+                  {/* 2. INFO SECTION */}
                   <Stack pt="sm" gap={4} style={{ textAlign: "center", flexGrow: 1 }}>
                     <Group gap="xs" justify="center" wrap="wrap" style={{ minHeight: "2.5em" }}>
                       <Text fw={600} style={{ fontSize: "clamp(12px, 1.2vw, 15px)" }}>
@@ -236,18 +202,17 @@ export default function Item() {
                       </Text>
                     </Group>
 
-                    {/* BOTTOM ROW: Price Center + Buttons Right */}
-                    <Box 
-                      mt="auto" 
-                      style={{ 
-                        position: "relative", 
-                        display: "flex", 
-                        alignItems: "center", 
+                    {/* Price & Buttons */}
+                    <Box
+                      mt="auto"
+                      style={{
+                        position: "relative",
+                        display: "flex",
+                        alignItems: "center",
                         justifyContent: "center",
                         minHeight: "40px"
                       }}
                     >
-                      {/* Price: Always Centered */}
                       <Text
                         color="#A6976B"
                         fw={700}
@@ -261,25 +226,24 @@ export default function Item() {
                         ₱{Number(item.price).toLocaleString()}
                       </Text>
 
-                      {/* Buttons: Absolute Right */}
-                      <Group 
-                        gap={2} 
-                        style={{ 
-                          position: "absolute", 
-                          right: 0, 
+                      <Group
+                        gap={2}
+                        style={{
+                          position: "absolute",
+                          right: 0,
                           top: "50%",
                           transform: "translateY(-50%)",
-                          zIndex: 20 
+                          zIndex: 20
                         }}
                       >
                         <Button
                           size="compact-sm"
                           color="#276D58"
                           variant="subtle"
-                          disabled={item.status !== "Available"} 
+                          disabled={item.status !== "Available"}
                           style={{ pointerEvents: "auto", padding: "4px" }}
                           onClick={(e) => {
-                            e.stopPropagation(); 
+                            e.stopPropagation();
                             setSelectedItem(item);
                             setEditModal(true);
                           }}
@@ -302,6 +266,40 @@ export default function Item() {
                       </Group>
                     </Box>
                   </Stack>
+
+                  {/* 3. SOLD OVERLAY - MOVED TO BOTTOM */}
+                  {item.status !== "Available" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "rgba(250, 248, 243, 0.6)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 10,
+                        borderRadius: "16px",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      <Text
+                        fw={900}
+                        transform="uppercase"
+                        style={{
+                          fontSize: "clamp(20px, 4vw, 32px)",
+                          color: "#B80000",
+                          textAlign: "center",
+                          transform: "rotate(-15deg)",
+                          border: "4px solid #B80000",
+                          padding: "0.2rem 1rem",
+                          borderRadius: "8px",
+                          backgroundColor: "rgba(255, 255, 255, 0.8)"
+                        }}
+                      >
+                        SOLD
+                      </Text>
+                    </div>
+                  )}
                 </Card>
               </Grid.Col>
             ))}
