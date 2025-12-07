@@ -17,7 +17,7 @@ const links = [
 function SidebarNav() {
   // Track which specific link is currently fetching
   const [fetchingPath, setFetchingPath] = useState(null);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -40,7 +40,6 @@ function SidebarNav() {
   // ====== GENERIC PRE-FETCH HANDLER ======
   const handleNavigation = async (e, path, apiEndpoint, stateKey) => {
     e.preventDefault();
-    
 
     if (fetchingPath) return; // Prevent multiple clicks
 
@@ -49,13 +48,12 @@ function SidebarNav() {
     try {
       // 1. Fetch data WHILE staying on the current page
       const res = await api.get(apiEndpoint);
-      
+
       // 2. Data received! Now navigate and pass data in state
       navigate(path, { state: { [stateKey]: res.data } });
-      
+
     } catch (err) {
       console.error(`Failed to load ${path}:`, err);
-      // Optional: Add a toast notification here
     } finally {
       setFetchingPath(null);
     }
@@ -113,7 +111,7 @@ function SidebarNav() {
               >
                 <Icon active={isActive} size={25} />
                 <span className={classes.linkLabel}>{label}</span>
-                
+
                 {/* Loader shows INSIDE the button while fetching */}
                 {isLoadingThis && (
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
@@ -129,8 +127,8 @@ function SidebarNav() {
       <div className={classes.navbarBottom}>
         <Menu shadow="md" width={240} classNames={{ dropdown: classes.dropdown }}>
           <Menu.Target>
-            <div 
-              className={classes.link} 
+            <div
+              className={classes.link}
               style={{ cursor: "pointer", position: "relative" }}
             >
               <Icons.User size={25} />
@@ -144,13 +142,18 @@ function SidebarNav() {
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Item
+              // Added className here
+              className={classes.menuItem}
+              color="white"
               leftSection={<Icons.Settings size={20} />}
               onClick={handleSettingsClick}
             >
               Settings
             </Menu.Item>
             <Menu.Item
-              color="red"
+              // Added className here
+              className={classes.menuItem}
+              color="white"
               leftSection={<Icons.Logout size={20} />}
               onClick={handleLogout}
             >
