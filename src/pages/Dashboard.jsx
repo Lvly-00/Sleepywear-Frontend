@@ -269,7 +269,7 @@ function Dashboard() {
                     fontFamily: "'League Spartan', sans-serif",
                   }}
                 />
-                <Legend verticalAlign="bottom" height={5} />
+                <Legend verticalAlign="bottom" height={10} />
 
                 {collections.map((col, idx) => (
                   <Line
