@@ -3,19 +3,46 @@ import React from "react";
 import { Modal, Button, Group, Text } from "@mantine/core";
 
 // Cache keys
-const ORDER_ITEMS_STORAGE_KEY = "orderItemsCache";
-const SELECTED_COLLECTION_STORAGE_KEY = "selectedCollectionCache";
-const COLLECTIONS_STORAGE_KEY = "collectionsCache";
+const ORDER_ITEMS_STORAGE_KEY = "orderItemsCache_v2";
+const SELECTED_COLLECTION_STORAGE_KEY = "selectedCollectionCache_v2";
 
 function CancelOrderModal({ opened, onClose, onConfirm, onResetItems }) {
+  
+  // 🔥 Helper to check if there are actual items in the cache
+  const hasSelectedItems = () => {
+    try {
+      const itemsJson = localStorage.getItem(ORDER_ITEMS_STORAGE_KEY);
+      
+      // If no key exists, return false
+      if (!itemsJson) return false;
+
+      // Parse the JSON to check if the array actually has items
+      const items = JSON.parse(itemsJson);
+      return Array.isArray(items) && items.length > 0;
+    } catch (e) {
+      console.error("Error parsing order items:", e);
+      return false;
+    }
+  };
+
+  // 🔥 Checks:
+  // 1. Do we have specific items selected? (Priority)
+  // 2. OR do we have a collection selected? (Optional: remove this line if you ONLY want it to trigger on items)
+  const shouldRender = 
+    hasSelectedItems() || 
+    localStorage.getItem(SELECTED_COLLECTION_STORAGE_KEY);
+
+  // If there are no items (and no collection selected), do not render the modal
+  if (!shouldRender) {
+    return null;
+  }
+
   const handleYes = () => {
     try {
       localStorage.removeItem(ORDER_ITEMS_STORAGE_KEY);
       localStorage.removeItem(SELECTED_COLLECTION_STORAGE_KEY);
-      localStorage.removeItem(COLLECTIONS_STORAGE_KEY);
-
+      
       if (onResetItems) onResetItems();
-
       if (onConfirm) onConfirm();
     } catch (err) {
       console.error("Failed to clear order cache:", err);

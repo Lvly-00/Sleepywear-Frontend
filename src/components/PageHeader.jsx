@@ -13,6 +13,10 @@ import api from "../api/axios";
 import TopLoadingBar from "./TopLoadingBar";
 import CancelOrderModal from "./CancelOrderModal";
 
+const ORDER_ITEMS_STORAGE_KEY = "orderItemsCache_v2";
+// We don't check collection key anymore for the warning
+// const SELECTED_COLLECTION_STORAGE_KEY = "selectedCollectionCache_v2"; 
+
 const PageHeader = ({
   title,
   showSearch,
@@ -30,6 +34,23 @@ const PageHeader = ({
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+
+  // 🔥 UPDATED: Strictly check for ITEMS only. 
+  // Selecting a collection doesn't count as "unsaved work".
+  const hasPendingOrderData = () => {
+    try {
+      const itemsJson = localStorage.getItem(ORDER_ITEMS_STORAGE_KEY);
+      
+      // Only return TRUE if the key exists AND the array has items inside
+      if (itemsJson) {
+        const items = JSON.parse(itemsJson);
+        return Array.isArray(items) && items.length > 0;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  };
 
   const handleConfirmCancel = async () => {
     setShowCancelModal(false);
@@ -65,7 +86,21 @@ const PageHeader = ({
     }
 
     if (location.pathname.includes("/add-order")) {
-      setShowCancelModal(true);
+      // 🔥 Check if we really have items to cancel
+      if (hasPendingOrderData()) {
+        setShowCancelModal(true);
+      } else {
+        // No items? Just navigate back freely
+        setLoading(true);
+        try {
+          const res = await api.get("/orders");
+          navigate("/orders", { state: { preloadedOrders: res.data } });
+        } catch (err) {
+          navigate("/orders");
+        } finally {
+          setLoading(false);
+        }
+      }
       return;
     }
 
@@ -94,7 +129,6 @@ const PageHeader = ({
     }
   };
 
-  // ✅ Handle Enter press in search
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && onSearchEnter) {
       onSearchEnter();
@@ -112,7 +146,6 @@ const PageHeader = ({
       />
 
       <Group justify="space-between" mt={50}>
-        {/* Left: Back button + Title */}
         <Group>
           {showBack && (
             <Tooltip label="Go Back" position="bottom" withArrow>
@@ -146,14 +179,13 @@ const PageHeader = ({
           </Text>
         </Group>
 
-        {/* Right: Search + Add Button */}
         <Group>
           {showSearch && (
             <TextInput
               placeholder={`Search ${title}...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={handleKeyDown} // ✅ only triggers on Enter
+              onKeyDown={handleKeyDown}
               leftSection={<Icons.Search style={{ color: "#444444" }} size={18} />}
               radius="md"
               style={{ maxWidth: 250, width: 250 }}
