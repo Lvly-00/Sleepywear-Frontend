@@ -144,8 +144,8 @@ export default function Item() {
         )}
 
         {items.length === 0 && !loading ? (
-          <Center py="lg">
-            <Text>No items found for this collection.</Text>
+          <Center py="lg" c="dimmed">
+            <Text size="lg">No items found for this collection.</Text>
           </Center>
         ) : (
           <Grid gutter="md">
