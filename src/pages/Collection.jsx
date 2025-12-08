@@ -262,8 +262,8 @@ export default function Collection() {
               <Table.Tr>
                 <Table.Th>Collection Name</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Release Date</Table.Th>
-                <Table.Th style={{ textAlign: "center" }}>QTY</Table.Th>
-                <Table.Th style={{ textAlign: "center" }}>Stock QTY</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Qty</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Stock Qty</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Capital</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Revenue</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Status</Table.Th>
@@ -386,7 +386,7 @@ export default function Collection() {
                         style={{ textAlign: "center", padding: "1.5rem" }}
                       >
                         <Text c="dimmed" size="20px">
-                          No collections found
+                          No collections found.
                         </Text>
                       </Table.Td>
                     </Table.Tr>

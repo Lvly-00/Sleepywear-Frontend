@@ -225,7 +225,7 @@ export default function Order() {
               <Table.Tr>
                 <Table.Th>Order ID</Table.Th>
                 <Table.Th>Customer Name</Table.Th>
-                <Table.Th style={{ textAlign: "center" }}>QTY</Table.Th>
+                <Table.Th style={{ textAlign: "center" }}>Qty</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Order Date</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Price</Table.Th>
                 <Table.Th style={{ textAlign: "center" }}>Payment Status</Table.Th>
@@ -241,7 +241,7 @@ export default function Order() {
                     <Table.Tr>
                       <Table.Td colSpan={7} style={{ textAlign: "center", padding: "1.5rem" }}>
                         <Text c="dimmed" size="20px">
-                          {"No orders found"}
+                          No orders found.
                         </Text>
                       </Table.Td>
                     </Table.Tr>
@@ -328,7 +328,6 @@ export default function Order() {
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         name={orderToDelete ? `Order ${orderToDelete.formatted_id || String(orderToDelete.order_number).padStart(4, '0')}` : ""}
-
         onConfirm={async () => {
           if (!orderToDelete) return;
           try {

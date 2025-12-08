@@ -1,7 +1,7 @@
-// src/components/DeleteConfirmModal.jsx
+import React from 'react';
 import { Modal, Button, Group, Text } from "@mantine/core";
 
-function DeleteConfirmModal({ opened, onClose, name, onConfirm }) {
+function DeleteConfirmModal({ opened, onClose, name, onConfirm, message }) {
   return (
     <Modal.Root
       opened={opened}
@@ -12,10 +12,9 @@ function DeleteConfirmModal({ opened, onClose, name, onConfirm }) {
       <Modal.Content
         style={{
           borderRadius: "26px",
-          padding: " 20px",
+          padding: "20px",
           overflow: "hidden",
           minHeight: "220px",
-          // width: "400px"
         }}
       >
         <Modal.Header>
@@ -30,23 +29,36 @@ function DeleteConfirmModal({ opened, onClose, name, onConfirm }) {
         </Modal.Header>
 
         <Modal.Body>
-          <Text align="center" color="#6B6B6B"
+          <Text
+            align="center"
+            color="#6B6B6B"
             style={{
               width: "100%",
               fontWeight: "400",
               fontSize: "18px",
               paddingBottom: "5px",
-            }}>
-            Are you sure you want to delete{" "}
+            }}
+          >
+            This will permanently delete all past orders for{" "}
             <Text span fw={700} style={{ textTransform: "uppercase" }}>
               {name || "this item"}
             </Text>
-
-            <Text span >
-              ?
-            </Text>
-
+            . Are you sure?
           </Text>
+
+
+          {/* You can keep this logic here. If you don't pass a 'message' prop 
+              from the parent, this part simply won't render. */}
+          {message && (
+            <Text
+              align="center"
+              color="#9E2626"
+              size="sm"
+              style={{ maxWidth: "95%", margin: "5px auto 0" }}
+            >
+              {message}
+            </Text>
+          )}
 
           <Group justify="center" mt="lg" align="center" >
             <Button color="#F2F2F2"
@@ -58,8 +70,8 @@ function DeleteConfirmModal({ opened, onClose, name, onConfirm }) {
               <Text color="#535353">
                 Cancel
               </Text>
-
             </Button>
+
             <Button color="#9E2626"
               style={{
                 borderRadius: "26px",
@@ -71,7 +83,7 @@ function DeleteConfirmModal({ opened, onClose, name, onConfirm }) {
           </Group>
         </Modal.Body>
       </Modal.Content>
-    </Modal.Root >
+    </Modal.Root>
   );
 }
 

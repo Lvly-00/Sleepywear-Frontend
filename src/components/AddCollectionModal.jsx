@@ -128,7 +128,6 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
                 name="name"
                 value={form.name}
                 onChange={(e) => {
-                  // Allow only digits in the input
                   const value = e.target.value;
                   const digitsOnly = value.replace(/\D/g, ""); // remove non-digits
                   setForm((f) => ({ ...f, name: digitsOnly }));
@@ -142,20 +141,36 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
 
               <NumberInput
                 label="Capital"
+                withAsterisk
                 placeholder="Enter capital"
                 value={form.capital}
-                onChange={handleCapitalChange}
+                onChange={(value) => {
+                  let valStr = value?.toString() || "";
+
+                  if (valStr.length > 1) {
+                    valStr = valStr.replace(/^0+/, "");
+                  }
+                  const cleanedValue = valStr === "" ? 0 : parseInt(valStr, 10);
+
+                  setForm({ ...form, capital: cleanedValue });
+                }}
                 min={0}
-                parser={(value) => value.replace(/\₱\s?|(,*)/g, "")}
+                step={1}
+                precision={0}
+                allowDecimal={false}
+                allowNegative={false}
+                clampBehavior="strict"
+                parser={(value) =>
+                  value.replace(/\₱\s?|(,*)/g, "").replace(/\./g, "")
+                }
                 formatter={(value) =>
-                  !Number.isNaN(parseFloat(value))
+                  !Number.isNaN(parseInt(value, 10))
                     ? `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                     : "₱ "
                 }
                 error={errors.capital}
-                required
-
               />
+
 
               <DateInput
                 label="Release Date"

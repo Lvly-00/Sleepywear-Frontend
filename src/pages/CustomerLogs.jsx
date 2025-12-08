@@ -229,7 +229,7 @@ export default function CustomerLogs() {
                     <Table.Tr>
                       <Table.Td colSpan={6} style={{ textAlign: "center", padding: "1.5rem" }}>
                         <Text c="dimmed" size="20px">
-                          {"No customers found"}
+                          No customers found.
                         </Text>
                       </Table.Td>
                     </Table.Tr>

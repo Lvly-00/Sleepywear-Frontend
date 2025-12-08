@@ -167,17 +167,33 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
                 label="Capital"
                 placeholder="Enter capital"
                 value={form.capital}
-                onChange={handleCapitalChange}
+                onChange={(value) => {
+                  let valStr = value?.toString() || "";
+                  if (valStr.length > 1) {
+                    valStr = valStr.replace(/^0+/, "");
+                  }
+                  const cleanedValue = valStr === "" ? 0 : parseInt(valStr, 10);
+
+                  handleCapitalChange(cleanedValue);
+                }}
                 min={0}
-                parser={(value) => value.replace(/\₱\s?|(,*)/g, "")}
+                step={1}
+                precision={0}
+                allowDecimal={false}
+                allowNegative={false}
+                clampBehavior="strict"
+                parser={(value) =>
+                  value.replace(/\₱\s?|(,*)/g, "").replace(/\./g, "")
+                }
                 formatter={(value) =>
-                  !Number.isNaN(parseFloat(value))
+                  !Number.isNaN(parseInt(value, 10))
                     ? `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                     : "₱ "
                 }
                 error={errors.capital}
                 required
               />
+
 
               <DateInput
                 label="Release Date"
