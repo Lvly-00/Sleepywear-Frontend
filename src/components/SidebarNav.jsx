@@ -1,23 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Center, Stack, Menu } from "@mantine/core";
 import AppLogo from "../assets/Logo.svg";
 import classes from "../css/NavbarMinimal.module.css";
 import api from "../api/axios";
 import { Icons } from "./Icons";
-import TopLoadingBar from "./TopLoadingBar";
+// Removed TopLoadingBar import
 
 const links = [
-  { icon: Icons.Dashboard, label: "Dashboard", path: "/dashboard", api: "/dashboard-summary", key: "preloadedSummary" },
-  { icon: Icons.ShoppingBag, label: "Orders", path: "/orders", api: "/orders", key: "preloadedOrders" },
-  { icon: Icons.Store, label: "Inventory", path: "/collections", api: "/collections", key: "preloadedCollections" },
-  { icon: Icons.ContactBook, label: "Customers", path: "/customers", api: "/customers", key: "preloadedCustomers" },
+  { icon: Icons.Dashboard, label: "Dashboard", path: "/dashboard" },
+  { icon: Icons.ShoppingBag, label: "Orders", path: "/orders" },
+  { icon: Icons.Store, label: "Inventory", path: "/collections" },
+  { icon: Icons.ContactBook, label: "Customers", path: "/customers" },
 ];
 
 function SidebarNav() {
-  // Track which specific link is currently fetching
-  const [fetchingPath, setFetchingPath] = useState(null);
-
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -37,41 +34,15 @@ function SidebarNav() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [location, navigate]);
 
-  // ====== GENERIC PRE-FETCH HANDLER ======
-  const handleNavigation = async (e, path, apiEndpoint, stateKey) => {
-    e.preventDefault();
-
-    if (fetchingPath) return; // Prevent multiple clicks
-
-    setFetchingPath(path);
-
-    try {
-      // 1. Fetch data WHILE staying on the current page
-      const res = await api.get(apiEndpoint);
-
-      // 2. Data received! Now navigate and pass data in state
-      navigate(path, { state: { [stateKey]: res.data } });
-
-    } catch (err) {
-      console.error(`Failed to load ${path}:`, err);
-    } finally {
-      setFetchingPath(null);
-    }
+  // ====== NAVIGATION HANDLER ======
+  const handleNavigation = (path) => {
+    // Navigate immediately without fetching data first
+    navigate(path);
   };
 
-  const handleSettingsClick = async (e) => {
-    e.preventDefault();
-    if (fetchingPath) return;
-
-    setFetchingPath("settings");
-    try {
-      const res = await api.get("/user/settings");
-      navigate("/settings", { state: { preloadedProfile: res.data } });
-    } catch (err) {
-      console.error("Failed to fetch settings:", err);
-    } finally {
-      setFetchingPath(null);
-    }
+  const handleSettingsClick = () => {
+    // Navigate immediately to settings
+    navigate("/settings");
   };
 
   const handleLogout = async () => {
@@ -94,30 +65,22 @@ function SidebarNav() {
 
       <div className={classes.navbarMain}>
         <Stack justify="center" gap={10}>
-          {links.map(({ icon: Icon, label, path, api, key }) => {
+          {links.map(({ icon: Icon, label, path }) => {
+            // Keep existing active state logic
             const isActive = location.pathname === path || (path === "/collections" && location.pathname.startsWith("/collections"));
-            const isLoadingThis = fetchingPath === path;
-
+            
             return (
               <div
                 key={label}
-                onClick={(e) => handleNavigation(e, path, api, key)}
+                onClick={() => handleNavigation(path)}
                 className={`${classes.link} ${isActive ? classes.active : ""}`}
                 style={{
-                  cursor: isLoadingThis || fetchingPath ? "wait" : "pointer",
+                  cursor: "pointer",
                   position: "relative",
-                  opacity: (fetchingPath && !isLoadingThis) ? 0.5 : 1 // Dim other links when one is loading
                 }}
               >
                 <Icon active={isActive} size={25} />
                 <span className={classes.linkLabel}>{label}</span>
-
-                {/* Loader shows INSIDE the button while fetching */}
-                {isLoadingThis && (
-                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
-                    <TopLoadingBar loading={true} />
-                  </div>
-                )}
               </div>
             );
           })}
@@ -133,16 +96,10 @@ function SidebarNav() {
             >
               <Icons.User size={25} />
               <span className={classes.linkLabel}>Account</span>
-              {fetchingPath === "settings" && (
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
-                  <TopLoadingBar loading={true} />
-                </div>
-              )}
             </div>
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Item
-              // Added className here
               className={classes.menuItem}
               color="white"
               leftSection={<Icons.Settings size={20} />}
@@ -151,7 +108,6 @@ function SidebarNav() {
               Settings
             </Menu.Item>
             <Menu.Item
-              // Added className here
               className={classes.menuItem}
               color="white"
               leftSection={<Icons.Logout size={20} />}
