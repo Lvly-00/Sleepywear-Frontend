@@ -34,12 +34,12 @@ const ConfirmOrder = () => {
     return savedForm
       ? JSON.parse(savedForm)
       : {
-          first_name: "",
-          last_name: "",
-          address: "",
-          contact_number: "",
-          social_handle: "",
-        };
+        first_name: "",
+        last_name: "",
+        address: "",
+        contact_number: "",
+        social_handle: "",
+      };
   });
 
   const [customers, setCustomers] = useState([]);
@@ -48,6 +48,9 @@ const ConfirmOrder = () => {
   const [customerSearch, setCustomerSearch] = useState("");
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [cancelModalOpened, setCancelModalOpened] = useState(false);
+
+  // New state to handle submission status
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const total = orderItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
 
@@ -102,6 +105,9 @@ const ConfirmOrder = () => {
   };
 
   const handlePlaceOrder = async () => {
+    // Prevent multiple clicks
+    if (isSubmitting) return;
+
     const newErrors = {};
 
     if (orderItems.length === 0) {
@@ -127,6 +133,8 @@ const ConfirmOrder = () => {
       return;
     }
 
+    // Start submitting - Disable inputs and buttons
+    setIsSubmitting(true);
     NotifySuccess.addedOrderLoading();
 
     const unavailableItems = orderItems.filter((item) => item.status !== "Available");
@@ -136,6 +144,7 @@ const ConfirmOrder = () => {
           .map((i) => i.name)
           .join(", ")}`
       );
+      setIsSubmitting(false); // Re-enable if validation fails
       return;
     }
 
@@ -160,7 +169,6 @@ const ConfirmOrder = () => {
         })),
       };
 
-      // The backend now creates the order AND sets items to "Reserved" automatically.
       const response = await api.post("/orders", payload);
 
       if (response.status === 200 || response.status === 201) {
@@ -170,32 +178,32 @@ const ConfirmOrder = () => {
         setOrderItems([]);
         sessionStorage.removeItem("orderItems");
         sessionStorage.removeItem("customerForm");
-        
-        // Clear LocalStorage V2 keys
+
         localStorage.removeItem("orderItemsCache_v2");
         localStorage.removeItem("selectedCollectionCache_v2");
-        localStorage.removeItem("collectionsCache_v2"); // optional
-        
+        localStorage.removeItem("collectionsCache_v2");
+
         window.dispatchEvent(new Event("collectionsUpdated"));
 
         NotifySuccess.addedOrder();
 
-        // Redirect to Orders page and open invoice modal
+        // Redirect to Orders page
         navigate("/orders", {
           state: { reloadOrders: true, newOrder: createdOrder, openInvoice: true },
         });
       } else {
         alert("Unexpected response from server.");
+        setIsSubmitting(false); // Re-enable on error
       }
     } catch (err) {
       console.error("Order creation failed:", err.response?.data || err.message);
-      
-      // Display specific backend error if available
+
       if (err.response?.data?.message) {
         alert(`Error: ${err.response.data.message}`);
       } else {
         alert("Failed to place order. Check console for details.");
       }
+      setIsSubmitting(false); // Re-enable on error
     }
   };
 
@@ -204,15 +212,13 @@ const ConfirmOrder = () => {
   };
 
   const handleConfirmCancel = () => {
-    // --- CLEAR ALL CACHES ON CANCEL ---
     setOrderItems([]);
     sessionStorage.removeItem("orderItems");
     sessionStorage.removeItem("customerForm");
 
-    // Clear LocalStorage V2 keys so AddOrder starts fresh next time
     localStorage.removeItem("orderItemsCache_v2");
     localStorage.removeItem("selectedCollectionCache_v2");
-    
+
     navigate("/orders");
   };
 
@@ -237,6 +243,7 @@ const ConfirmOrder = () => {
               <Button
                 variant="filled"
                 size="md"
+                disabled={isSubmitting} // Disable Edit button
                 style={{ backgroundColor: "#B59276", borderRadius: "10px", color: "white", fontWeight: 600, width: "80px", height: "28px" }}
                 onClick={() => {
                   sessionStorage.setItem("orderItems", JSON.stringify(orderItems));
@@ -307,6 +314,7 @@ const ConfirmOrder = () => {
                 loading={loadingCustomers}
                 mb="md"
                 styles={{ input: { height: 42, borderRadius: 8 } }}
+                disabled={isSubmitting} // Disable Customer Select
               />
 
               <Grid pb={20}>
@@ -318,6 +326,7 @@ const ConfirmOrder = () => {
                     size="md"
                     onChange={(e) => setForm({ ...form, first_name: e.target.value })}
                     error={errors.first_name}
+                    disabled={isSubmitting} // Disable Input
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>
@@ -328,6 +337,7 @@ const ConfirmOrder = () => {
                     size="md"
                     onChange={(e) => setForm({ ...form, last_name: e.target.value })}
                     error={errors.last_name}
+                    disabled={isSubmitting} // Disable Input
                   />
                 </Grid.Col>
               </Grid>
@@ -341,6 +351,7 @@ const ConfirmOrder = () => {
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
                 error={errors.address}
+                disabled={isSubmitting} // Disable Input
               />
 
               <Grid mt="sm">
@@ -357,6 +368,7 @@ const ConfirmOrder = () => {
                       }
                     }}
                     error={errors.contact_number}
+                    disabled={isSubmitting} // Disable Input
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>
@@ -367,6 +379,7 @@ const ConfirmOrder = () => {
                     size="md"
                     onChange={(e) => setForm({ ...form, social_handle: e.target.value })}
                     error={errors.social_handle}
+                    disabled={isSubmitting} // Disable Input
                   />
                 </Grid.Col>
               </Grid>
@@ -375,15 +388,19 @@ const ConfirmOrder = () => {
             {/* BUTTONS: Cancel & Generate */}
             <Group justify="flex-end" mt="md" spacing="sm">
               <Button
-                style={{ backgroundColor: "#9E2626", borderRadius: "10px", color: "white", fontSize: "16px", fontWeight: 600, height: "42px" }}
+              color="#9E2626"
+                style={{ borderRadius: "10px", color: "white", fontSize: "16px", fontWeight: 600, height: "42px" }}
                 onClick={handleCancelOrder}
+                disabled={isSubmitting} // Disable Cancel Button
               >
-                Cancel Order  
+                Cancel Order
               </Button>
 
               <Button
-                style={{ backgroundColor: "#B59276", borderRadius: "10px", color: "white", fontSize: "16px", fontWeight: 600, height: "42px" }}
+                color="#AB8262"
+                style={{ borderRadius: "10px", color: "white", fontSize: "16px", fontWeight: 600, height: "42px" }}
                 onClick={handlePlaceOrder}
+                disabled={isSubmitting} // Disable Generate Button
               >
                 Generate
               </Button>
@@ -395,8 +412,8 @@ const ConfirmOrder = () => {
       <CancelOrderModal
         opened={cancelModalOpened}
         onClose={() => setCancelModalOpened(false)}
-        onResetItems={() => setOrderItems([])} // Local state
-        onConfirm={handleConfirmCancel}        // Triggers storage cleanup + nav
+        onResetItems={() => setOrderItems([])}
+        onConfirm={handleConfirmCancel}
       />
     </div>
   );
