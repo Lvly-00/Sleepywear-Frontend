@@ -85,7 +85,7 @@ function CancelOrderModal({ opened, onClose, onConfirm, onResetItems }) {
               paddingBottom: "5px",
             }}
           >
-            Are you sure you want to delete{" "}
+            Are you sure you want to cancel{" "}
             <Text span fw={700} style={{ textTransform: "uppercase" }}>
               this ORDER
             </Text>

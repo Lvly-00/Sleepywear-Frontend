@@ -24,14 +24,13 @@ api.interceptors.response.use(
     (error) => {
         const originalRequest = error.config;
 
-        // Handle unauthorized or expired session
         if (
             error.response &&
-            error.response.status === 401 &&
+            (error.response.status === 401 || error.response.status === 419) &&
             !originalRequest.url.includes("/login") &&
             !originalRequest.url.includes("/register")
         ) {
-            console.warn("⚠️ Session expired — clearing all caches and redirecting to login...");
+            console.warn("⚠️ Session expired or Server Redeployed — clearing all caches and redirecting to login...");
 
             const cacheKeys = [
                 "access_token",
@@ -43,9 +42,10 @@ api.interceptors.response.use(
                 "dashboard_cache",
                 "orderItemsCache",
                 "selectedCollectionCache",
-                "paginationCache"
-
-
+                "paginationCache",
+                "orderItemsCache_v2",
+                "collectionsCache_v2",
+                "selectedCollectionCache_v2"
             ];
 
             cacheKeys.forEach((key) => localStorage.removeItem(key));
