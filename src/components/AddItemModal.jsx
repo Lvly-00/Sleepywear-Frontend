@@ -38,6 +38,8 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setErrors({ name: "", price: "", file: "" });
 
     let hasError = false;
@@ -79,7 +81,11 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
   };
 
   return (
-    <Modal.Root opened={opened} onClose={onClose} centered>
+    <Modal.Root
+      opened={opened}
+      onClose={!isSubmitting ? onClose : undefined}
+      centered
+    >
       <Modal.Overlay />
       <Modal.Content
         style={{
@@ -97,6 +103,7 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
         >
           <Modal.CloseButton
             size={35}
+            disabled={isSubmitting}
             style={{
               order: 0,
               marginRight: "1rem",
@@ -121,7 +128,6 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
 
         <Modal.Body>
           <form onSubmit={handleSubmit} noValidate>
-            {/* ✅ Aspect-ratio consistent image upload box */}
             <div
               style={{
                 display: "flex",
@@ -140,12 +146,14 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
                     border: "2px dashed #000",
                     textAlign: "center",
                     color: "#999",
-                    cursor: "pointer",
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
                     fontSize: "16px",
                     fontWeight: 500,
                     overflow: "hidden",
                     position: "relative",
                     borderRadius: "12px",
+                    pointerEvents: isSubmitting ? "none" : "auto", // Block clicks
+                    opacity: isSubmitting ? 0.7 : 1,
                   }}
                 >
                   {preview ? (
@@ -182,6 +190,7 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
               accept="image/*"
               style={{ display: "none" }}
               onChange={handleFileChange}
+              disabled={isSubmitting}
             />
             {errors.file && (
               <Text color="red" size="xs" mt={-5} ta="center">
@@ -197,6 +206,7 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 error={errors.name}
+                disabled={isSubmitting}
               />
               <NumberInput
                 label="Price"
@@ -205,13 +215,10 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
                 value={form.price}
                 onChange={(value) => {
                   let valStr = value?.toString() || "";
-
                   if (valStr.length > 1) {
                     valStr = valStr.replace(/^0+/, "");
                   }
-
                   const cleanedValue = valStr === "" ? 0 : parseInt(valStr, 10);
-
                   setForm({ ...form, price: cleanedValue });
                 }}
                 min={0}
@@ -227,24 +234,16 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
                     : "₱ "
                 }
                 error={errors.price}
+                disabled={isSubmitting}
               />
-
             </div>
 
             <Group mt="30px" justify="flex-end">
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                style={{
-                  backgroundColor: "#AB8262",
-                  color: "white",
-                  borderRadius: "12px",
-                  width: "90px",
-                  height: "36px",
-                  fontSize: "15px",
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
-                  opacity: isSubmitting ? 0.7 : 1,
-                }}
+                color="#AB8262"
+                style={{ borderRadius: "15px", width: "110px", fontSize: "16px" }}
               >
                 Save
               </Button>

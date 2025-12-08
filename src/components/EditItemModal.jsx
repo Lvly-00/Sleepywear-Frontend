@@ -16,7 +16,9 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
   const [form, setForm] = useState({ name: "", price: 0, collection_id: "" });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({ name: "", price: "", file: "" });
 
   useEffect(() => {
@@ -28,6 +30,7 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
       });
       setPreview(item.image_url || null);
       setLoading(false);
+      setIsSubmitting(false); // Reset submission state
     }
   }, [item]);
 
@@ -42,6 +45,10 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Prevent double clicks
+    if (isSubmitting) return;
+
     if (!form) return;
 
     setErrors({ name: "", price: "", file: "" });
@@ -58,6 +65,9 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
     }
 
     if (hasError) return;
+
+    // 1. Start loading state
+    setIsSubmitting(true);
 
     const data = new FormData();
     data.append("collection_id", form.collection_id);
@@ -79,11 +89,19 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
         name:
           err.response?.data?.message || "Failed to update item. Try again.",
       }));
+    } finally {
+      // 2. Stop loading state regardless of success/failure
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal.Root opened={opened} onClose={onClose} centered>
+    <Modal.Root
+      opened={opened}
+      // Prevent closing the modal while submitting
+      onClose={!isSubmitting ? onClose : undefined}
+      centered
+    >
       <Modal.Overlay />
       <Modal.Content
         style={{
@@ -101,6 +119,7 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
         >
           <Modal.CloseButton
             size={35}
+            disabled={isSubmitting}
             style={{
               order: 0,
               marginRight: "1rem",
@@ -126,7 +145,7 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
             </Center>
           ) : (
             <form onSubmit={handleSubmit} noValidate>
-              {/* ✅ Aspect-ratio consistent image preview */}
+              {/* Image Preview */}
               <div
                 style={{
                   display: "flex",
@@ -145,12 +164,14 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
                       border: "2px dashed #000",
                       textAlign: "center",
                       color: "#999",
-                      cursor: "pointer",
+                      cursor: isSubmitting ? "not-allowed" : "pointer", // Change cursor
                       fontSize: "16px",
                       fontWeight: 500,
                       overflow: "hidden",
                       position: "relative",
                       borderRadius: "12px",
+                      pointerEvents: isSubmitting ? "none" : "auto", // Disable clicks
+                      opacity: isSubmitting ? 0.7 : 1,
                     }}
                   >
                     {preview ? (
@@ -187,6 +208,7 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
                 accept="image/*"
                 style={{ display: "none" }}
                 onChange={handleFileChange}
+                disabled={isSubmitting} // Disable file input
               />
 
               {errors.file && (
@@ -212,6 +234,7 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
                       setForm({ ...form, name: e.target.value })
                     }
                     error={errors.name}
+                    disabled={isSubmitting} // Disable input
                   />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -229,6 +252,7 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
                         : "₱ "
                     }
                     error={errors.price}
+                    disabled={isSubmitting} // Disable input
                   />
                 </div>
               </div>
@@ -236,14 +260,9 @@ export default function EditItemModal({ opened, onClose, item, onItemUpdated }) 
               <Group mt="30px" justify="flex-end">
                 <Button
                   type="submit"
-                  style={{
-                    backgroundColor: "#AB8262",
-                    color: "white",
-                    borderRadius: "12px",
-                    width: "100px",
-                    height: "36px",
-                    fontSize: "15px",
-                  }}
+                  disabled={isSubmitting} // Disable button
+                  color="#AB8262"
+                  style={{ borderRadius: "15px", width: "110px", fontSize: "16px" }}
                 >
                   Update
                 </Button>

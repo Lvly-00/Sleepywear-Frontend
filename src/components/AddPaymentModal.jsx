@@ -15,7 +15,7 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
     additionalFee: 0,
   });
   const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false); // <-- prevent double click
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (opened) {
@@ -26,17 +26,20 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
   }, [opened, order]);
 
   const savePayment = async () => {
-    if (submitting) return; // <-- ignore double click
-    setSubmitting(true);
+    // Prevent double clicks
+    if (submitting) return; 
 
     const newErrors = {};
     if (!payment.method) newErrors.paymentMethod = "Please select a payment method";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      setSubmitting(false);
+      // Do NOT set submitting to true if validation failed
       return;
     }
+
+    // Disable UI
+    setSubmitting(true);
 
     try {
       const totalAmount =
@@ -58,12 +61,18 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
     } catch (err) {
       console.error("Error saving payment:", err);
       alert("Failed to save payment.");
-      setSubmitting(false); // allow retry
+    } finally {
+      // Re-enable UI
+      setSubmitting(false);
     }
   };
 
   return (
-    <Modal.Root opened={opened} onClose={onClose} centered>
+    <Modal.Root 
+      opened={opened} 
+      onClose={!submitting ? onClose : undefined} 
+      centered
+    >
       <Modal.Overlay />
       <Modal.Content style={{ borderRadius: "16px", padding: "20px" }}>
         <Modal.Header
@@ -71,6 +80,7 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
         >
           <Modal.CloseButton
             size={35}
+            disabled={submitting}
             style={{ marginRight: "1rem", color: "#AB8262" }}
           />
           <Modal.Title style={{ flex: 1 }}>
@@ -99,6 +109,7 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
               error={errors.paymentMethod}
               onChange={(value) => setPayment({ ...payment, method: value })}
               required
+              disabled={submitting}
             />
 
             <Group mt="lg" style={{ justifyContent: "flex-end" }}>
@@ -106,7 +117,7 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
                 color="#AB8262"
                 style={{ borderRadius: "15px", width: "110px", fontSize: "16px" }}
                 onClick={savePayment}
-                disabled={submitting} // <-- prevent multiple clicks
+                disabled={submitting} // Disabled, no loader
               >
                 Submit
               </Button>

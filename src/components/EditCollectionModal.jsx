@@ -26,6 +26,9 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
     ordinal: "",
   });
 
+  // New state to handle loading status
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (opened && collection) {
       const ordinalMatch = collection.name.match(/\d+/);
@@ -38,6 +41,8 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
         ordinal: ordinalNumber,
       });
       setErrors({ name: "", release_date: "", capital: "" });
+      // Reset submitting state when modal opens
+      setIsSubmitting(false);
     }
   }, [opened, collection]);
 
@@ -61,6 +66,9 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Prevent submitting if already loading
+    if (isSubmitting) return;
+
     const newErrors = { name: "", release_date: "", capital: "" };
     let valid = true;
 
@@ -77,15 +85,17 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
       valid = false;
     }
     if (!form.ordinal || form.ordinal < 1) {
-      newErrors.ordinal = "Colelction Name is required";
+      newErrors.ordinal = "Collection Name is required";
       valid = false;
     }
-
 
     if (!valid) {
       setErrors(newErrors);
       return;
     }
+
+    // 1. Start loading
+    setIsSubmitting(true);
 
     try {
       const payload = {
@@ -118,11 +128,15 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
       } else {
         console.error(error.response?.data || error.message);
       }
+    } finally {
+      // 2. Stop loading regardless of success or error
+      // Note: If modal closes successfully, this might run on an unmounted component, which is fine in modern React.
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal.Root opened={opened} onClose={onClose} centered>
+    <Modal.Root opened={opened} onClose={!isSubmitting ? onClose : undefined} centered>
       <Modal.Overlay />
       <Modal.Content style={{ borderRadius: 16, padding: 20 }}>
         <Modal.Header
@@ -134,6 +148,8 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
         >
           <Modal.CloseButton
             size={35}
+            // Disable close button while submitting
+            disabled={isSubmitting}
             style={{ order: 0, marginRight: 16, color: "#AB8262" }}
           />
           <Modal.Title style={{ flex: 1 }}>
@@ -159,9 +175,8 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
                 error={errors.ordinal}
                 placeholder="Enter collection number"
                 required
+                disabled={isSubmitting} 
               />
-
-
 
               <NumberInput
                 label="Capital"
@@ -192,8 +207,8 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
                 }
                 error={errors.capital}
                 required
+                disabled={isSubmitting}
               />
-
 
               <DateInput
                 label="Release Date"
@@ -204,6 +219,7 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
                 required
                 valueFormat="MM/DD/YYYY"
                 clearable={false}
+                disabled={isSubmitting}
               />
 
               <Group mt="lg" justify="flex-end">
@@ -211,6 +227,7 @@ function EditCollectionModal({ opened, onClose, collection, onSuccess }) {
                   color="#AB8262"
                   style={{ borderRadius: 15, width: 95, fontSize: 16 }}
                   type="submit"
+                  disabled={isSubmitting}
                 >
                   Update
                 </Button>

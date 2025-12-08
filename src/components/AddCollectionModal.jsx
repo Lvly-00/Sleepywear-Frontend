@@ -12,6 +12,7 @@ import { DateInput } from "@mantine/dates";
 import api from "../api/axios";
 
 function AddCollectionModal({ opened, onClose, onSuccess }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     name: "",
     release_date: null,
@@ -28,26 +29,9 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
     if (opened) {
       setForm({ name: "", release_date: null, capital: 0 });
       setErrors({ name: "", release_date: "", capital: "" });
+      setIsSubmitting(false);
     }
   }, [opened]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
-    setErrors((e) => ({ ...e, [name]: "" }));
-  };
-
-  const handleCapitalChange = (value) => {
-    let strValue = value?.toString() || "";
-
-    if (strValue.length > 1) {
-      strValue = strValue.replace(/^0+/, "");
-    }
-
-    setForm((f) => ({ ...f, capital: strValue }));
-    setErrors((e) => ({ ...e, capital: "" }));
-  };
-
 
   const handleDateChange = (value) => {
     setForm((f) => ({ ...f, release_date: value }));
@@ -56,6 +40,9 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Prevent double clicks
+    if (isSubmitting) return;
 
     const newErrors = { name: "", release_date: "", capital: "" };
     let valid = true;
@@ -78,6 +65,9 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
       return;
     }
 
+    // Disable UI
+    setIsSubmitting(true);
+
     try {
       const payload = {
         ...form,
@@ -97,23 +87,50 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
         setErrors((prev) => ({
           ...prev,
           name: validationErrors.name ? validationErrors.name[0] : "",
-          release_date: validationErrors.release_date ? validationErrors.release_date[0] : "",
-          capital: validationErrors.capital ? validationErrors.capital[0] : "",
+          release_date: validationErrors.release_date
+            ? validationErrors.release_date[0]
+            : "",
+          capital: validationErrors.capital
+            ? validationErrors.capital[0]
+            : "",
         }));
       } else {
         console.error(error.response?.data || error.message);
       }
+    } finally {
+      // Re-enable UI (if modal didn't close or error occurred)
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal.Root opened={opened} onClose={onClose} centered>
+    <Modal.Root 
+      opened={opened} 
+      // Prevent closing while submitting
+      onClose={!isSubmitting ? onClose : undefined} 
+      centered
+    >
       <Modal.Overlay />
       <Modal.Content style={{ borderRadius: 16, padding: 20 }}>
-        <Modal.Header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Modal.CloseButton size={35} style={{ order: 0, marginRight: 16, color: "#AB8262" }} />
+        <Modal.Header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Modal.CloseButton
+            size={35}
+            // Disable close button
+            disabled={isSubmitting}
+            style={{ order: 0, marginRight: 16, color: "#AB8262" }}
+          />
           <Modal.Title style={{ flex: 1 }}>
-            <Text align="center" color="black" style={{ fontSize: 26, fontWeight: 700 }}>
+            <Text
+              align="center"
+              color="black"
+              style={{ fontSize: 26, fontWeight: 700 }}
+            >
               New Collection
             </Text>
           </Modal.Title>
@@ -129,15 +146,15 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
                 value={form.name}
                 onChange={(e) => {
                   const value = e.target.value;
-                  const digitsOnly = value.replace(/\D/g, ""); // remove non-digits
+                  const digitsOnly = value.replace(/\D/g, "");
                   setForm((f) => ({ ...f, name: digitsOnly }));
                   setErrors((e) => ({ ...e, name: "" }));
                 }}
                 error={errors.name}
                 placeholder="Enter collection number"
                 required
+                disabled={isSubmitting}
               />
-
 
               <NumberInput
                 label="Capital"
@@ -146,12 +163,10 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
                 value={form.capital}
                 onChange={(value) => {
                   let valStr = value?.toString() || "";
-
                   if (valStr.length > 1) {
                     valStr = valStr.replace(/^0+/, "");
                   }
                   const cleanedValue = valStr === "" ? 0 : parseInt(valStr, 10);
-
                   setForm({ ...form, capital: cleanedValue });
                 }}
                 min={0}
@@ -169,8 +184,8 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
                     : "₱ "
                 }
                 error={errors.capital}
+                disabled={isSubmitting}
               />
-
 
               <DateInput
                 label="Release Date"
@@ -181,6 +196,7 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
                 required
                 valueFormat="MM/DD/YYYY"
                 clearable={false}
+                disabled={isSubmitting}
               />
 
               <Group mt="lg" justify="flex-end">
@@ -188,6 +204,7 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
                   color="#AB8262"
                   style={{ borderRadius: 15, width: 90, fontSize: 16 }}
                   type="submit"
+                  disabled={isSubmitting} // Disabled, no loader
                 >
                   Save
                 </Button>
