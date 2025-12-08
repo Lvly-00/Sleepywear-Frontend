@@ -46,9 +46,6 @@ function DeleteConfirmModal({ opened, onClose, name, onConfirm, message }) {
             . Are you sure you want to delete?
           </Text>
 
-
-          {/* You can keep this logic here. If you don't pass a 'message' prop 
-              from the parent, this part simply won't render. */}
           {message && (
             <Text
               align="center"
