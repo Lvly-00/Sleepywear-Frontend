@@ -43,7 +43,7 @@ function DeleteConfirmModal({ opened, onClose, name, onConfirm, message }) {
             <Text span fw={700} style={{ textTransform: "uppercase" }}>
               {name || "this item"}
             </Text>
-            . Are you sure?
+            . Are you sure you want to delete?
           </Text>
 
 
