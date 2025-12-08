@@ -56,25 +56,19 @@ This system improves **accuracy, efficiency, organization, and overall business 
 
 ### Backend (Laravel API)
 
-1. Clone the repository: https://github.com/Lvly-00/Sleepywear-Backend.git
+1. Clone the repository: https://github.com/Lvly-00/Sleepywear-Backend
 
    ```
    git clone <backend-repo-url>
    ```
 
-2. Navigate to the backend folder:
-
-   ```
-   cd backend   # adjust if your backend folder is named differently
-   ```
-
-3. Install dependencies:
+2. Install dependencies:
 
    ```
    composer install
    ```
 
-4. Create `.env` file and configure:
+3. Create `.env` file and configure:
    
    ```
    cp .env.example .env
@@ -83,19 +77,19 @@ This system improves **accuracy, efficiency, organization, and overall business 
    * Cloudinary keys
    * Brevo API key
 
-6. Generate application key:
+4. Generate application key:
 
    ```
    php artisan key:generate
    ```
 
-7. Run migrations:
+5. Run migrations:
 
    ```
    php artisan migrate --seed
    ```
 
-8. Start the backend server:
+6. Start the backend server:
 
    ```
    php artisan serve
@@ -105,25 +99,24 @@ This system improves **accuracy, efficiency, organization, and overall business 
 
 ### Frontend (React.js)
 
-1. Clone the repository:
+1. Clone the repository: 
 
    ```
    git clone <frontend-repo-url>
    ```
-   
 
-3. Install dependencies:
+2. Install dependencies:
 
    ```
    npm install
    ```
 
-4. Configure `.env` with backend API URL
+3. Configure `.env` with backend API URL
 
-5. Start the app:
+4. Start the app:
 
    ```
-   npm start
+   npm run dev
    ```
 
 ---
@@ -148,7 +141,7 @@ The **Sleepywears.ph Business Management System** is an automated, web-based sol
 
 For questions, support, or collaboration regarding the **Sleepywears.ph Business Management System**, please contact:
 
-**Project Lead / Full-Stack Developer** Lovely Heart Pintes
+**Full-Stack Developer** Lovely Heart Pintes
 * Email: lovelypintes@gmail.com
 * GitHub: [https://github.com/Lvly-00](https://github.com/Lvly-00)
 
