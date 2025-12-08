@@ -73,7 +73,7 @@ function ResetPassword() {
     };
 
     try {
-      const response = await api.post("/reset-password", payload);
+      const response = await api.post("/passwords/reset", payload);
       setMessage({
         text:
           response.data.message ||

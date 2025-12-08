@@ -65,7 +65,7 @@ function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/dashboard-summary");
+      const res = await api.get("/dashboard");
       const data = res.data;
 
       setSummary({

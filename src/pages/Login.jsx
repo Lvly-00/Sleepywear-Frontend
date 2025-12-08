@@ -237,7 +237,7 @@ function Login() {
               {!cooldown && (
                 <Text align="right" size="xs">
                   <Link
-                    to="/forgot-password"
+                    to="/passwords/forgot"
                     style={{
                       color: "#1D72D4",
                       fontSize: "12px",

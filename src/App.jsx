@@ -43,8 +43,8 @@ function App() {
               <Login />
             </PublicRoute>
             } />
-          <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-          <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+          <Route path="/passwords/forgot" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+          <Route path="/passwords/reset" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
           {/* Protected Routes */}
           < Route element={<MainLayout />}>

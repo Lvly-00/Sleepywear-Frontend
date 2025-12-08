@@ -29,7 +29,7 @@
       setMessage({ text: "", type: "" });
 
       try {
-        const response = await api.post("/forgot-password", { email });
+        const response = await api.post("/passwords/forgot", { email });
         setMessage({
           text: response.data.message || "Password reset link sent! Check your email.",
           type: "success",

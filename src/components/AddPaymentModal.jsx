@@ -27,7 +27,7 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
 
   const savePayment = async () => {
     // Prevent double clicks
-    if (submitting) return; 
+    if (submitting) return;
 
     const newErrors = {};
     if (!payment.method) newErrors.paymentMethod = "Please select a payment method";
@@ -52,7 +52,7 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
         additional_fee: payment.additionalFee || 0,
       };
 
-      await api.post(`/orders/${order.id}/payment`, payload);
+      await api.post(`/orders/${order.id}/payments`, payload);
 
       const updatedOrderRes = await api.get(`/orders/${order.id}`);
       if (onOrderUpdated) onOrderUpdated(updatedOrderRes.data);
@@ -68,9 +68,9 @@ const AddPaymentModal = ({ opened, onClose, order, onOrderUpdated }) => {
   };
 
   return (
-    <Modal.Root 
-      opened={opened} 
-      onClose={!submitting ? onClose : undefined} 
+    <Modal.Root
+      opened={opened}
+      onClose={!submitting ? onClose : undefined}
       centered
     >
       <Modal.Overlay />
