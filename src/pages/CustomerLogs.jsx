@@ -43,7 +43,7 @@ export default function CustomerLogs() {
   const [customersCache, setCustomersCache] = useState(
     preloadedCustomers.length > 0 ? { [pageFromUrl]: preloadedCustomers } : {}
   );
-  
+
   const [page, setPage] = useState(pageFromUrl);
   const [search, setSearch] = useState(searchFromUrl);
   const [searchValue, setSearchValue] = useState(searchFromUrl);
@@ -97,8 +97,8 @@ export default function CustomerLogs() {
       } catch (err) {
         console.error("Fetch error:", err);
         setCustomersCache((prev) => ({
-            ...prev,
-            [targetPage]: [],
+          ...prev,
+          [targetPage]: [],
         }));
       } finally {
         if (showLoader) setLoading(false);
@@ -163,7 +163,7 @@ export default function CustomerLogs() {
   const currentCustomers = Array.isArray(customersCache[page])
     ? customersCache[page]
     : [];
-    
+
   const skeletonRows = Math.max(currentCustomers.length, MIN_SKELETON_ROWS);
 
   const renderSkeletonRows = () =>
@@ -229,7 +229,7 @@ export default function CustomerLogs() {
                     <Table.Tr>
                       <Table.Td colSpan={6} style={{ textAlign: "center", padding: "1.5rem" }}>
                         <Text c="dimmed" size="20px">
-                           {search ? "No customers found matching your search." : "No customers found"}
+                          {"No customers found"}
                         </Text>
                       </Table.Td>
                     </Table.Tr>

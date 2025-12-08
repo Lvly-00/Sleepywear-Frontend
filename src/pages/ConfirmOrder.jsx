@@ -101,18 +101,6 @@ const ConfirmOrder = () => {
     }
   };
 
-  const updateItemStatus = async (itemId, newStatus) => {
-    try {
-      const { data: currentItem } = await api.get(`/items/${itemId}`);
-      const { image, image_url, created_at, updated_at, collection, collection_name, ...rest } =
-        currentItem;
-      await api.put(`/items/${itemId}`, { ...rest, status: newStatus });
-    } catch (error) {
-      console.error(`Failed to update item ${itemId}:`, error.response?.data || error.message);
-      throw error;
-    }
-  };
-
   const handlePlaceOrder = async () => {
     const newErrors = {};
 
@@ -172,17 +160,11 @@ const ConfirmOrder = () => {
         })),
       };
 
+      // The backend now creates the order AND sets items to "Reserved" automatically.
       const response = await api.post("/orders", payload);
 
       if (response.status === 200 || response.status === 201) {
         const createdOrder = response.data;
-
-        try {
-          await Promise.all(orderItems.map((item) => updateItemStatus(item.id, "Sold Out")));
-        } catch (inventoryErr) {
-          console.error("Failed to update inventory:", inventoryErr);
-          alert("Warning: Order placed but failed to update some item statuses.");
-        }
 
         // --- CLEAR ALL CACHES ON SUCCESS ---
         setOrderItems([]);
@@ -207,7 +189,13 @@ const ConfirmOrder = () => {
       }
     } catch (err) {
       console.error("Order creation failed:", err.response?.data || err.message);
-      alert("Failed to place order. Check console for details.");
+      
+      // Display specific backend error if available
+      if (err.response?.data?.message) {
+        alert(`Error: ${err.response.data.message}`);
+      } else {
+        alert("Failed to place order. Check console for details.");
+      }
     }
   };
 
@@ -390,7 +378,7 @@ const ConfirmOrder = () => {
                 style={{ backgroundColor: "#9E2626", borderRadius: "10px", color: "white", fontSize: "16px", fontWeight: 600, height: "42px" }}
                 onClick={handleCancelOrder}
               >
-                Cancel Order
+                Cancel Order  
               </Button>
 
               <Button

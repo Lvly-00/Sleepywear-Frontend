@@ -204,22 +204,25 @@ export default function AddItemModal({ opened, onClose, collectionId, onItemAdde
                 placeholder="Enter price"
                 value={form.price}
                 onChange={(value) => {
-                  // Convert to string to remove leading zeros (except if value is 0)
                   let valStr = value?.toString() || "";
 
                   if (valStr.length > 1) {
                     valStr = valStr.replace(/^0+/, "");
                   }
 
-                  // Convert back to number or 0 if empty
-                  const cleanedValue = valStr === "" ? 0 : Number(valStr);
+                  const cleanedValue = valStr === "" ? 0 : parseInt(valStr, 10);
 
                   setForm({ ...form, price: cleanedValue });
                 }}
                 min={0}
-                parser={(value) => value.replace(/\₱\s?|(,*)/g, "")}
+                step={1}
+                precision={0}
+                allowDecimal={false}
+                allowNegative={false}
+                clampBehavior="strict"
+                parser={(value) => value.replace(/\₱\s?|(,*)/g, "").replace(/\./g, "")}
                 formatter={(value) =>
-                  !Number.isNaN(parseFloat(value))
+                  !Number.isNaN(parseInt(value, 10))
                     ? `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                     : "₱ "
                 }

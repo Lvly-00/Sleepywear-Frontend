@@ -30,7 +30,7 @@ const Settings = () => {
 
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  
+
   // Separate error states for clarity
   const [profileErrors, setProfileErrors] = useState({});
   const [passwordErrors, setPasswordErrors] = useState({});
@@ -88,7 +88,7 @@ const Settings = () => {
 
   const updatePassword = async (e) => {
     e.preventDefault();
-    
+
     // 1. Reset previous errors
     setPasswordErrors({});
 
@@ -107,7 +107,7 @@ const Settings = () => {
     // If local validation fails, show errors and STOP.
     if (Object.keys(validationErrors).length > 0) {
       setPasswordErrors(validationErrors);
-      return; 
+      return;
     }
 
     // 3. Server-Side Validation (Current Password & Final Check)
@@ -136,12 +136,12 @@ const Settings = () => {
         // This takes the object { current_password: ["Incorrect..."], new_password: ["..."] }
         // and sets it to state. The Inputs will read this immediately.
         setPasswordErrors(response.errors);
-        
+
         // Optional: Also show a toast if it's the specific password error
         if (response.errors.current_password) {
-             NotifySuccess.error("Current password is incorrect");
+          NotifySuccess.error("Current password is incorrect");
         }
-      } 
+      }
       else if (response?.message) {
         NotifySuccess.error(response.message);
         setPasswordErrors({ general: response.message });
@@ -172,7 +172,7 @@ const Settings = () => {
             Profile Information
           </Title>
           <Text size="md" c="#02034c6e">
-            Update your Business Name and Email.
+            Update your account’s Business Name and Email
           </Text>
         </Grid.Col>
 
@@ -202,7 +202,7 @@ const Settings = () => {
                         disabled={updating}
                         styles={{ label: { color: "#232D80" }, input: { borderColor: "#232D80", color: "#232c808f" } }}
                       />
-                      
+
                       <TextInput
                         label="Email"
                         value={profile.email}
@@ -233,12 +233,27 @@ const Settings = () => {
 
       {/* Password Section */}
       <Grid gutter="sm" align="flex-start">
-        <Grid.Col span={{ base: 12, md: 5 }} style={{ marginLeft: 40, marginTop: 30 }}>
+        <Grid.Col
+          span={{ base: 12, md: 5 }}
+          style={{ marginLeft: 40, marginTop: 30 }}
+        >
           <Title order={2} style={{ color: "#02034C", fontWeight: 500 }}>
             Update Password
           </Title>
-          <Text size="md" c="#02034c6e">
-            Use a strong combination of letters, numbers, and symbols.
+
+          <Text
+            size="md"
+            c="#02034c6e"
+            style={{
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              lineHeight: "1.4", 
+              maxWidth: "320px", 
+            }}
+          >
+            Use a strong combination of letters, numbers, and random symbols (e.g., @, ?, 1, 2) to enhance account security.
           </Text>
         </Grid.Col>
 
@@ -278,9 +293,9 @@ const Settings = () => {
                         disabled={updating}
                         styles={{
                           label: { color: "#232D80" },
-                          input: { 
-                             borderColor: passwordErrors.current_password ? "#fa5252" : "#232D80", 
-                             color: "#232c808f" 
+                          input: {
+                            borderColor: passwordErrors.current_password ? "#fa5252" : "#232D80",
+                            color: "#232c808f"
                           },
                         }}
                       />

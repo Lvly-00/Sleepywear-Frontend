@@ -49,13 +49,13 @@ export default function Order() {
   const [search, setSearch] = useState(initialSearch);
   const [searchValue, setSearchValue] = useState(initialSearch);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   // Initialize loading: true if we don't have preloaded data
   const [loading, setLoading] = useState(!preloadedOrders);
 
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  
+
   // Invoice Modal State
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
@@ -69,10 +69,10 @@ export default function Order() {
     const params = new URLSearchParams();
     if (currentPage > 1) params.set("page", currentPage);
     if (search.trim() !== "") params.set("search", search.trim());
-    
+
     // Only navigate if the search string is actually different to prevent re-renders
     if (location.search !== `?${params.toString()}` && (location.search !== "" || params.toString() !== "")) {
-        navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+      navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
     }
   }, [currentPage, search, navigate, location.pathname, location.search]);
 
@@ -121,7 +121,7 @@ export default function Order() {
 
     // Otherwise, fetch it.
     fetchOrdersPage(currentPage, search);
-    
+
     // We intentionally omit 'ordersCache' from deps to prevent loops, 
     // relying on currentPage/search changes to trigger new fetches.
   }, [currentPage, search, fetchOrdersPage]);
@@ -130,17 +130,17 @@ export default function Order() {
   const handleSearchTrigger = () => {
     const trimmed = searchValue.trim();
     if (trimmed !== search) {
-        setLoading(true); // Show loader immediately
-        setSearch(trimmed); 
-        setCurrentPage(1);  
-        setOrdersCache({}); // Clear cache to force a refetch in the useEffect
+      setLoading(true); // Show loader immediately
+      setSearch(trimmed);
+      setCurrentPage(1);
+      setOrdersCache({}); // Clear cache to force a refetch in the useEffect
     }
   };
 
   const handleRowClick = async (orderId) => {
     setInvoiceModal(true);
     setModalLoading(true);
-    setInvoiceData(null); 
+    setInvoiceData(null);
 
     try {
       const res = await api.get(`/orders/${orderId}`);
@@ -234,18 +234,18 @@ export default function Order() {
             </Table.Thead>
 
             <Table.Tbody>
-              {loading 
-                ? renderSkeletonRows(skeletonRowCount) 
-                : displayedOrders.length === 0 
+              {loading
+                ? renderSkeletonRows(skeletonRowCount)
+                : displayedOrders.length === 0
                   ? (
                     <Table.Tr>
                       <Table.Td colSpan={7} style={{ textAlign: "center", padding: "1.5rem" }}>
                         <Text c="dimmed" size="20px">
-                          {search ? "No orders found matching your search." : "No orders found"}
+                          {"No orders found"}
                         </Text>
                       </Table.Td>
                     </Table.Tr>
-                  ) 
+                  )
                   : displayedOrders.map((order) => {
                     const fullName = `${order.first_name} ${order.last_name}`;
                     const totalQty = order.items_count || order.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
@@ -327,12 +327,13 @@ export default function Order() {
       <DeleteConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        name={orderToDelete ? `Order ${orderToDelete.formatted_id || String(orderToDelete.id).padStart(4, '0')}` : ""}
+        name={orderToDelete ? `Order ${orderToDelete.formatted_id || String(orderToDelete.order_number).padStart(4, '0')}` : ""}
+
         onConfirm={async () => {
           if (!orderToDelete) return;
           try {
             await api.delete(`/orders/${orderToDelete.id}`);
-            
+
             setDeleteModalOpen(false);
             setOrderToDelete(null);
             setOrdersCache({});
@@ -363,11 +364,11 @@ export default function Order() {
       )}
 
       {invoiceModal && (
-        <InvoicePreview 
-          opened={invoiceModal} 
-          onClose={() => setInvoiceModal(false)} 
-          invoiceData={invoiceData} 
-          isLoading={modalLoading} 
+        <InvoicePreview
+          opened={invoiceModal}
+          onClose={() => setInvoiceModal(false)}
+          invoiceData={invoiceData}
+          isLoading={modalLoading}
         />
       )}
     </Stack>
