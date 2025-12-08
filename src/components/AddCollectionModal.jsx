@@ -204,7 +204,7 @@ function AddCollectionModal({ opened, onClose, onSuccess }) {
                   color="#AB8262"
                   style={{ borderRadius: 15, width: 90, fontSize: 16 }}
                   type="submit"
-                  disabled={isSubmitting} // Disabled, no loader
+                  disabled={isSubmitting} 
                 >
                   Save
                 </Button>
