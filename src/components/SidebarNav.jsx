@@ -66,7 +66,7 @@ function SidebarNav() {
       <div className={classes.navbarMain}>
         <Stack justify="center" gap={10}>
           {links.map(({ icon: Icon, label, path }) => {
-            // Keep existing active state logic
+            
             const isActive = location.pathname === path || (path === "/collections" && location.pathname.startsWith("/collections"));
             
             return (
