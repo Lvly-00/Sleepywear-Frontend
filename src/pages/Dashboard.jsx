@@ -145,7 +145,7 @@ function Dashboard() {
               extraText: "pieces",
             },
             {
-              label: "Customers",
+              label: "Active Customers",
               icon: <Icons.Customers size={66} />,
               value: formatNumber(summary.totalCustomers),
               extraText: "total",
