@@ -35,7 +35,7 @@ function Login() {
       <>
         There have been several failed attempts to sign in from this account.{" "}
         Please wait a while and try again later.{" "}
-        <Link to="/forgot-password" style={{ color: "#1D72D4" }}>
+        <Link to="/passwords/forgot" style={{ color: "#1D72D4" }}>
           Forgot password?
         </Link>
       </>
