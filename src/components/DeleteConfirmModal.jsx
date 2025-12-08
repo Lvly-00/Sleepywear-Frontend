@@ -29,7 +29,6 @@ function DeleteConfirmModal({ opened, onClose, name, onConfirm, message, childre
         </Modal.Header>
 
         <Modal.Body>
-          {/* LOGIC: If children (custom text) is provided, use it. Otherwise, use default. */}
           {children ? (
             children
           ) : (

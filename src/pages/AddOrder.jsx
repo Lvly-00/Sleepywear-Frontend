@@ -219,7 +219,7 @@ const AddOrder = () => {
             }}
           >
             <Text color="#62626279" size="50px" style={{ marginBottom: 32, fontWeight: 400 }}>
-              No items available in this collection
+              No items available in this collection.
             </Text>
             <Button
               color="#232D80"
