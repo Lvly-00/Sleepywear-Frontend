@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Button, Group, Text } from "@mantine/core";
 
-function DeleteConfirmModal({ opened, onClose, name, onConfirm, message }) {
+function DeleteConfirmModal({ opened, onClose, name, onConfirm, message, children }) {
   return (
     <Modal.Root
       opened={opened}
@@ -29,23 +29,29 @@ function DeleteConfirmModal({ opened, onClose, name, onConfirm, message }) {
         </Modal.Header>
 
         <Modal.Body>
-          <Text
-            align="center"
-            color="#6B6B6B"
-            style={{
-              width: "100%",
-              fontWeight: "400",
-              fontSize: "18px",
-              paddingBottom: "5px",
-            }}
-          >
-            This will <Text span fw={700} style={{ textTransform: "uppercase" }}>permanently delete</Text> all past orders for{" "}
-            <Text span fw={700} style={{ textTransform: "uppercase" }}>
-              {name || "this item"}
+          {/* LOGIC: If children (custom text) is provided, use it. Otherwise, use default. */}
+          {children ? (
+            children
+          ) : (
+            <Text
+              align="center"
+              color="#6B6B6B"
+              style={{
+                width: "100%",
+                fontWeight: "400",
+                fontSize: "18px",
+                paddingBottom: "5px",
+              }}
+            >
+              Are you sure you want to delete{" "}
+              <Text span fw={700}>
+                {name || "this item"}
+              </Text>
+              ?
             </Text>
-            . Are you sure you want to delete?
-          </Text>
+          )}
 
+          {/* Optional extra red message */}
           {message && (
             <Text
               align="center"

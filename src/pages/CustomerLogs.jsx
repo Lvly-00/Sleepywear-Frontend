@@ -28,18 +28,13 @@ export default function CustomerLogs() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ------------------------------------------------------------------------------
-  // READ URL PARAMS
-  // ------------------------------------------------------------------------------
   const queryParams = new URLSearchParams(location.search);
   const pageFromUrl = parseInt(queryParams.get("page") || "1", 10);
   const searchFromUrl = queryParams.get("search") || "";
   const preloadedCustomers = location.state?.preloadedCustomers || [];
 
-  // Track if component just mounted
   const isInitialMount = useRef(true);
 
-  // State Management (Matching Order.js structure)
   const [customersCache, setCustomersCache] = useState(
     preloadedCustomers.length > 0 ? { [pageFromUrl]: preloadedCustomers } : {}
   );
@@ -55,9 +50,6 @@ export default function CustomerLogs() {
     customer: null,
   });
 
-  // ------------------------------------------------------------------------------
-  // SYNC URL PARAMS
-  // ------------------------------------------------------------------------------
   useEffect(() => {
     const params = new URLSearchParams();
     if (page > 1) params.set("page", page);
@@ -69,9 +61,6 @@ export default function CustomerLogs() {
     );
   }, [page, search, navigate, location.pathname]);
 
-  // ------------------------------------------------------------------------------
-  // FETCH CUSTOMERS
-  // ------------------------------------------------------------------------------
   const fetchCustomers = useCallback(
     async (targetPage, searchTerm = search, showLoader = true) => {
       if (showLoader) setLoading(true);
@@ -107,37 +96,22 @@ export default function CustomerLogs() {
     [search]
   );
 
-  // ------------------------------------------------------------------------------
-  // MAIN EFFECT
-  // ------------------------------------------------------------------------------
   useEffect(() => {
-    // 1. If it's the very first render AND we have preloaded data, skip fetch.
     if (isInitialMount.current && preloadedCustomers.length > 0) {
       isInitialMount.current = false;
-      // Ensure total pages is set from preloaded state if available, otherwise default to 1
-      // Note: Usually preloaded data comes with pagination info, if passed via state.
-      // If not, we might need one initial fetch or just accept 1.
       return;
     }
-
-    // 2. Otherwise (search changed, page changed, or no preloaded data), fetch data.
     isInitialMount.current = false;
     fetchCustomers(page, search);
   }, [page, search, fetchCustomers, preloadedCustomers.length]);
 
-  // ------------------------------------------------------------------------------
-  // SEARCH HANDLER
-  // ------------------------------------------------------------------------------
   const handleSearchTrigger = () => {
     const trimmed = searchValue.trim();
     setSearch(trimmed);
     setPage(1);
-    setCustomersCache({}); // Clear cache
+    setCustomersCache({});
   };
 
-  // ------------------------------------------------------------------------------
-  // DELETE CUSTOMER
-  // ------------------------------------------------------------------------------
   const handleDelete = async () => {
     if (!deleteModal.customer) return;
 
@@ -145,7 +119,7 @@ export default function CustomerLogs() {
       setLoading(true);
       await api.delete(`/customers/${deleteModal.customer.id}`);
 
-      setCustomersCache({}); // Clear cache to force refresh
+      setCustomersCache({});
       await fetchCustomers(page, search);
 
       NotifySuccess.deleted();
@@ -157,9 +131,6 @@ export default function CustomerLogs() {
     }
   };
 
-  // ------------------------------------------------------------------------------
-  // DATA PREP
-  // ------------------------------------------------------------------------------
   const currentCustomers = Array.isArray(customersCache[page])
     ? customersCache[page]
     : [];
@@ -179,9 +150,6 @@ export default function CustomerLogs() {
       </Table.Tr>
     ));
 
-  // ------------------------------------------------------------------------------
-  // RENDER
-  // ------------------------------------------------------------------------------
   return (
     <Stack p="xs" spacing="lg">
       <PageHeader
@@ -297,7 +265,27 @@ export default function CustomerLogs() {
             : ""
         }
         onConfirm={handleDelete}
-      />
+      >
+        {/* THIS IS THE CUSTOM TEXT SPECIFICALLY FOR CUSTOMERS */}
+        <Text
+            align="center"
+            color="#6B6B6B"
+            style={{
+              width: "100%",
+              fontWeight: "400",
+              fontSize: "18px",
+              paddingBottom: "5px",
+            }}
+          >
+            This will <Text span fw={700} style={{ textTransform: "uppercase" }}>permanently delete</Text> all past orders for{" "}
+            <Text span fw={700} style={{ textTransform: "uppercase" }}>
+              {deleteModal.customer
+                ? `${deleteModal.customer.first_name} ${deleteModal.customer.last_name}`
+                : "this customer"}
+            </Text>
+            . Are you sure you want to delete?
+          </Text>
+      </DeleteConfirmModal>
     </Stack>
   );
 }
