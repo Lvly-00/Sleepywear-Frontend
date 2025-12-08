@@ -39,7 +39,7 @@ function DeleteConfirmModal({ opened, onClose, name, onConfirm, message }) {
               paddingBottom: "5px",
             }}
           >
-            This will permanently delete all past orders for{" "}
+            This will <Text span fw={700} style={{ textTransform: "uppercase" }}>permanently delete</Text> all past orders for{" "}
             <Text span fw={700} style={{ textTransform: "uppercase" }}>
               {name || "this item"}
             </Text>
